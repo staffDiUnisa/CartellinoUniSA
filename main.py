@@ -13,6 +13,7 @@ def main():
     # https://presenze.unisa.it/
     driver = webdriver.Firefox()
     # driver = webdriver.Chrome()
+
     try:
         driver.get("https://presenze.unisa.it/")
         driver.find_element(By.LINK_TEXT, "Credenziali UNISA").click()
@@ -24,7 +25,7 @@ def main():
         # WebDriverWait(driver, 100).until(EC.text_to_be_present_in_element((By.XPATH,"//title"), "Start Web"))
         time.sleep(10)
         driver.get("https://presenze.unisa.it/default.aspx?page=cartellino#dtfine=1767135600000&dtinizio=1735686000000&iddip=146187&view=full")
-        p = WebDriverWait(driver, 100).until(EC.element_to_be_clickable((By.LINK_TEXT, "Successivo")))
+        p = WebDriverWait(driver, 20).until(EC.element_to_be_clickable((By.LINK_TEXT, "Successivo")))
         print(driver.page_source)
     except TimeoutException as e:
         print(f"Timeout {e}")
