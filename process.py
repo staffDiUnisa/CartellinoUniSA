@@ -52,8 +52,6 @@ def main():
     output_folder = data_folder / 'output'
     output_folder.mkdir(parents=True, exist_ok=True)
     output_file = output_folder / 'riposo_compensativo.xlsx'
-    # cartellino = pd.concat([pd.read_excel(input_file, sheet_name="P1"), pd.read_excel(input_file, sheet_name="GG")])
-    # cartellino.ffill(inplace=True)
     cartellino = pd.read_excel(input_file)
     cartellino["Voci Base"]=cartellino["Voci Base"].str.split(chr(160)+'&-&'+chr(160))
     cartellino = cartellino.explode("Voci Base")
