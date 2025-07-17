@@ -12,6 +12,7 @@ from selenium.webdriver.support.ui import Select
 from selenium.webdriver.support import expected_conditions as EC
 from dotenv import load_dotenv
 from io import StringIO
+from pathlib import Path
 
 load_dotenv()
 
@@ -22,6 +23,9 @@ def multiselect_set_selections(driver, element_name, labels):
             option.click()
 
 def main():
+    data_folder = Path('data')
+    output_folder = data_folder / 'input'
+    output_file = output_folder / 'cartellino.xlsx'
     # https://presenze.unisa.it/
     driver = webdriver.Firefox()
     # driver = webdriver.Chrome()
@@ -64,7 +68,7 @@ def main():
             table = StringIO(table)
             df.extend(pd.read_html(table))
         df = pd.concat(df, ignore_index=True)
-        df.to_excel("cartellino.xlsx", index=False)
+        df.to_excel(output_file, index=False)
     except TimeoutException as e:
         print(f"Timeout {e}")
     finally:
