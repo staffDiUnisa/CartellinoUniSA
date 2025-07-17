@@ -1,13 +1,25 @@
 import time
 import os
+import shutil
+
+import pandas as pd
+
 from selenium import webdriver
 from selenium.common import TimeoutException
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support.ui import Select
 from selenium.webdriver.support import expected_conditions as EC
 from dotenv import load_dotenv
+from io import StringIO
 
 load_dotenv()
+
+def multiselect_set_selections(driver, element_name, labels):
+    el = driver.find_element(By.NAME, element_name)
+    for option in el.find_elements(By.TAG_NAME,'option'):
+        if option.text in labels:
+            option.click()
 
 def main():
     # https://presenze.unisa.it/
@@ -25,8 +37,34 @@ def main():
         # WebDriverWait(driver, 100).until(EC.text_to_be_present_in_element((By.XPATH,"//title"), "Start Web"))
         time.sleep(10)
         driver.get("https://presenze.unisa.it/default.aspx?page=cartellino#dtfine=1767135600000&dtinizio=1735686000000&iddip=146187&view=full")
-        p = WebDriverWait(driver, 20).until(EC.element_to_be_clickable((By.LINK_TEXT, "Successivo")))
-        print(driver.page_source)
+        WebDriverWait(driver, 20).until(EC.element_to_be_clickable((By.LINK_TEXT, "Successivo")))
+        el = driver.find_element(By.ID, "1011_next")
+        class_attr = el.get_attribute('class')
+        class_names = class_attr.split(' ')
+        driver.find_element(By.ID, "cookieChoiceDismiss").click()
+        multiselect_set_selections(driver, "1011_length", ["100"])
+        table = "<table>" + driver.find_element(By.ID, "1011").get_attribute('innerHTML') + "</table>"
+        table = table.replace("<br><span>", "<br>&nbsp;&amp;-&amp;&nbsp;<span>")
+        table = StringIO(table)
+        # with open('cartellino.html', 'w') as fd:
+        #     table.seek(0)
+        #     shutil.copyfileobj(table, fd)
+        df = pd.read_html(table)
+        while "disabled" not in class_names:
+            el = driver.find_element(By.LINK_TEXT, "Successivo")
+            el.click()
+            time.sleep(1)
+            WebDriverWait(driver, 20).until(EC.element_to_be_clickable((By.LINK_TEXT, "Successivo")))
+            el = driver.find_element(By.ID, "1011_next")
+            class_attr = el.get_attribute('class')
+            class_names = class_attr.split(' ')
+            print(class_attr)
+            table = "<table>" + driver.find_element(By.ID, "1011").get_attribute('innerHTML') + "</table>"
+            table = table.replace("<br><span>", "<br>&nbsp;&amp;-&amp;&nbsp;<span>")
+            table = StringIO(table)
+            df.extend(pd.read_html(table))
+        df = pd.concat(df, ignore_index=True)
+        df.to_excel("cartellino.xlsx", index=False)
     except TimeoutException as e:
         print(f"Timeout {e}")
     finally:
