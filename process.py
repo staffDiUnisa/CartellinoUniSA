@@ -47,7 +47,7 @@ def elabora_ore_eccedenti(df: pd.DataFrame, output_file: Path) -> None:
 
         # Write the time column with proper formatting
         for row_num, value in enumerate(df['intervallo'], 1):
-            worksheet.write_datetime(row_num, 5, value, time_format)  # Column index 5 for column f
+            worksheet.write_datetime(row_num, 5, value, time_format)  # Column index 5 for column F
         riassunto.to_excel(writer, index=False, sheet_name='riassunto')
     print(riassunto)
 
