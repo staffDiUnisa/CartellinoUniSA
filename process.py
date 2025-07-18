@@ -8,6 +8,7 @@ from pathlib import Path
 
 def elabora_ore_eccedenti(df: pd.DataFrame, output_file: Path) -> None:
     df = df[["Stato", "Data", "Voci Base"]]
+    df = df[~df["Data"].isin(["gio 16 gen"])]
     ore_eccedenti = []
     for values in df['Voci Base']:
         ore_eccedenti.append(re.search(r'\d\d\.', values).group()[:-1])
@@ -18,7 +19,6 @@ def elabora_ore_eccedenti(df: pd.DataFrame, output_file: Path) -> None:
         minuti_eccedenti.append(re.search(r'\.\d\d', values).group()[1:])
     df["minuti eccedenti"] = minuti_eccedenti
     df["minuti eccedenti"] = df["minuti eccedenti"].astype(int)
-    # df["ore"] = df["ore eccedenti"].astype(str).str.zfill(2) + ":" + df["minuti eccedenti"].astype(str).str.zfill(2)
     df['intervallo'] = pd.to_timedelta(df['ore eccedenti'], unit='h') + pd.to_timedelta(df['minuti eccedenti'], unit='m')
     base_date = datetime(1900, 1, 1)
     df['intervallo'] = df['intervallo'].apply(lambda x: base_date + x)
