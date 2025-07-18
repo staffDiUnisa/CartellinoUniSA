@@ -47,13 +47,13 @@ def main():
         class_names = class_attr.split(' ')
         driver.find_element(By.ID, "cookieChoiceDismiss").click()
         multiselect_set_selections(driver, "1011_length", ["100"])
+        page = 1
+        print(f"Processing page {page}")
         table = "<table>" + driver.find_element(By.ID, "1011").get_attribute('innerHTML') + "</table>"
         table = table.replace("<br><span>", "<br>&nbsp;&amp;-&amp;&nbsp;<span>")
         table = StringIO(table)
-        # with open('cartellino.html', 'w') as fd:
-        #     table.seek(0)
-        #     shutil.copyfileobj(table, fd)
         df = pd.read_html(table)
+
         while "disabled" not in class_names:
             el = driver.find_element(By.LINK_TEXT, "Successivo")
             el.click()
@@ -62,7 +62,8 @@ def main():
             el = driver.find_element(By.ID, "1011_next")
             class_attr = el.get_attribute('class')
             class_names = class_attr.split(' ')
-            print(class_attr)
+            page += 1
+            print(f"Processing page {page}")
             table = "<table>" + driver.find_element(By.ID, "1011").get_attribute('innerHTML') + "</table>"
             table = table.replace("<br><span>", "<br>&nbsp;&amp;-&amp;&nbsp;<span>")
             table = StringIO(table)

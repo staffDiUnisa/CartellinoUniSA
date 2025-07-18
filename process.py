@@ -1,4 +1,6 @@
 import re
+from datetime import datetime
+
 import pandas as pd
 
 from pathlib import Path
@@ -16,16 +18,27 @@ def elabora_ore_eccedenti(df: pd.DataFrame, output_file: Path) -> None:
         minuti_eccedenti.append(re.search(r'\.\d\d', values).group()[1:])
     df["minuti eccedenti"] = minuti_eccedenti
     df["minuti eccedenti"] = df["minuti eccedenti"].astype(int)
+    # df["ore"] = df["ore eccedenti"].astype(str).str.zfill(2) + ":" + df["minuti eccedenti"].astype(str).str.zfill(2)
+    df['intervallo'] = pd.to_timedelta(df['ore eccedenti'], unit='h') + pd.to_timedelta(df['minuti eccedenti'], unit='m')
+    base_date = datetime(1900, 1, 1)
+    df['intervallo'] = df['intervallo'].apply(lambda x: base_date + x)
     riassunto = df[["Stato", "ore eccedenti", "minuti eccedenti"]].groupby(['Stato']).sum().reset_index().set_index(
         "Stato").sort_index(ascending=False)
     riassunto["OE"] = riassunto["ore eccedenti"] + (riassunto["minuti eccedenti"] // 60)
     riassunto["ME"] = riassunto["minuti eccedenti"] % 60
-    output_writer = pd.ExcelWriter(output_file, engine='openpyxl', date_format=None, mode='w')
-    df.to_excel(output_writer, index=False, sheet_name='dettaglio')
-    output_writer.close()
-    output_writer = pd.ExcelWriter(output_file, engine='openpyxl', date_format=None, mode='a')
-    riassunto.to_excel(output_writer, index=False, sheet_name='riassunto')
-    output_writer.close()
+    with pd.ExcelWriter(output_file, engine='xlsxwriter') as writer:
+        df.to_excel(writer, sheet_name='dettaglio', index=False)
+        # Get the workbook and worksheet
+        workbook = writer.book
+        worksheet = writer.sheets['dettaglio']
+
+        # Format the time column
+        time_format = workbook.add_format({'num_format': 'hh:mm'})
+
+        # Write the time column with proper formatting
+        for row_num, value in enumerate(df['intervallo'], 1):
+            worksheet.write_datetime(row_num, 5, value, time_format)  # Column index 5 for column f
+        riassunto.to_excel(writer, index=False, sheet_name='riassunto')
     print(riassunto)
 
 

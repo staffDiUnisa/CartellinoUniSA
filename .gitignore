@@ -298,3 +298,7 @@ cython_debug/
 #.idea/
 *.xlsx
 data/
+test*
+test.*
+test*.*
+
