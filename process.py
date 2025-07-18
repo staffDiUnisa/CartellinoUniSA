@@ -8,7 +8,17 @@ from pathlib import Path
 
 def elabora_ore_eccedenti(df: pd.DataFrame, output_file: Path) -> None:
     df = df[["Stato", "Data", "Voci Base"]]
-    df = df[~df["Data"].isin(["gio 16 gen"])]
+    excluded_dates_file = output_file.parent.parent / "input" / "date_escluse.txt"
+    with open(excluded_dates_file, 'r') as file:
+        excluded_dates = []
+        for line in file:
+            print(f"Adding to excluded dates: {line.strip()}")
+            excluded_dates.append(line.strip())
+        if(excluded_dates and len(excluded_dates) > 0):
+            print(f"Excluding dates: {excluded_dates}")
+            df = df[~df["Data"].isin(excluded_dates)]
+        else:
+            print("No excluded dates found, processing all data.")
     ore_eccedenti = []
     for values in df['Voci Base']:
         ore_eccedenti.append(re.search(r'\d\d\.', values).group()[:-1])
@@ -61,6 +71,8 @@ def credito_ore(df: pd.DataFrame, output_file: Path) -> None:
 def main():
     data_folder = Path('data')
     input_folder = data_folder / 'input'
+    if input_folder.exists():
+        input_folder.mkdir(parents=True, exist_ok=True)
     input_file = input_folder / 'cartellino.xlsx'
     output_folder = data_folder / 'output'
     output_folder.mkdir(parents=True, exist_ok=True)

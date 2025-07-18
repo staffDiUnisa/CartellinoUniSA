@@ -25,6 +25,8 @@ def multiselect_set_selections(driver, element_name, labels):
 def main():
     data_folder = Path('data')
     output_folder = data_folder / 'input'
+    if not output_folder.exists():
+        output_folder.mkdir(parents=True, exist_ok=True)
     output_file = output_folder / 'cartellino.xlsx'
     # https://presenze.unisa.it/
     driver = webdriver.Firefox()
