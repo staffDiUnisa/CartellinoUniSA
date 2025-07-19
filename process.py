@@ -1,14 +1,62 @@
 import re
-from datetime import datetime
+from datetime import datetime,timedelta
 
 import pandas as pd
 
 from pathlib import Path
+from typing import List
+
+from model.ore_inserite import OreInserite
+from model.riposo_compensativo import RiposoCompensativo
 
 
-def elabora_ore_eccedenti(df: pd.DataFrame, output_file: Path) -> None:
+def scrivi_riposo_compensativo(df: pd.DataFrame, output_file: Path) -> None:
+    print(f"Scrivo riposi compensativo su {output_file}")
+    base_date = datetime(1900, 1, 1)
+    df['intervallo'] = df['intervallo'].apply(lambda x: base_date + x)
+
+    riassunto = df[["Stato", "ore eccedenti", "minuti eccedenti"]].groupby(['Stato']).sum().reset_index().set_index(
+        "Stato").sort_index(ascending=False)
+    riassunto["OE"] = riassunto["ore eccedenti"] + (riassunto["minuti eccedenti"] // 60)
+    riassunto["ME"] = riassunto["minuti eccedenti"] % 60
+    with pd.ExcelWriter(output_file, engine='xlsxwriter') as writer:
+        df.to_excel(writer, sheet_name='dettaglio', index=False)
+        # Get the workbook and worksheet
+        workbook = writer.book
+        worksheet = writer.sheets['dettaglio']
+
+        # Format the time column
+        time_format = workbook.add_format({'num_format': 'hh:mm'})
+
+        # Write the time column with proper formatting
+        for row_num, value in enumerate(df['intervallo'], 1):
+            worksheet.write_datetime(row_num, 5, value, time_format)  # Column index 5 for column F
+        riassunto.to_excel(writer, index=False, sheet_name='riassunto')
+
+def scrivi_credito_ore(df: pd.DataFrame, output_file: Path) -> None:
+    print(f"Scrivo credito ore su {output_file}")
+    df[["Stato", "mese", "credito"]].to_excel(output_file, index=False, sheet_name='credito_ore')
+
+def scrivi_riposi_compensativi(riposi_compensativi: List[RiposoCompensativo], output_file: Path) -> None:
+    print(f"Scrivo riposi compensativi su {output_file}")
+    with open(output_file, mode='w') as file:
+        for riposo in riposi_compensativi:
+            file.write("_________________________________________________\n")
+            file.write(f"Riposo compensativo {riposo.id}:")
+            if riposo.data:
+                file.write(f" - usato per il {riposo.data}")
+            if riposo.ore_mancanti() > timedelta(hours=0, minutes=0):
+                hours, minutes = (riposo.ore_mancanti().seconds // 3600, (riposo.ore_mancanti().seconds // 60) % 60)
+                file.write(f" - ore necessarie al completamento: {hours}:{minutes}")
+            file.write("\n")
+            file.write("_________________________________________________\n")
+            for ore in riposo.ore_inserite:
+                hours, minutes = (ore.ore.seconds // 3600, (ore.ore.seconds // 60) % 60)
+                file.write(f"\t- {ore.data} -> {hours}:{minutes} [{ore.stato}]\n")
+            file.write("_________________________________________________\n")
+
+def elabora_ore_eccedenti(df: pd.DataFrame, excluded_dates_file: Path) -> pd.DataFrame:
     df = df[["Stato", "Data", "Voci Base"]]
-    excluded_dates_file = output_file.parent.parent / "input" / "date_escluse.txt"
     with open(excluded_dates_file, 'r') as file:
         excluded_dates = []
         for line in file:
@@ -30,29 +78,9 @@ def elabora_ore_eccedenti(df: pd.DataFrame, output_file: Path) -> None:
     df["minuti eccedenti"] = minuti_eccedenti
     df["minuti eccedenti"] = df["minuti eccedenti"].astype(int)
     df['intervallo'] = pd.to_timedelta(df['ore eccedenti'], unit='h') + pd.to_timedelta(df['minuti eccedenti'], unit='m')
-    base_date = datetime(1900, 1, 1)
-    df['intervallo'] = df['intervallo'].apply(lambda x: base_date + x)
-    riassunto = df[["Stato", "ore eccedenti", "minuti eccedenti"]].groupby(['Stato']).sum().reset_index().set_index(
-        "Stato").sort_index(ascending=False)
-    riassunto["OE"] = riassunto["ore eccedenti"] + (riassunto["minuti eccedenti"] // 60)
-    riassunto["ME"] = riassunto["minuti eccedenti"] % 60
-    with pd.ExcelWriter(output_file, engine='xlsxwriter') as writer:
-        df.to_excel(writer, sheet_name='dettaglio', index=False)
-        # Get the workbook and worksheet
-        workbook = writer.book
-        worksheet = writer.sheets['dettaglio']
+    return df
 
-        # Format the time column
-        time_format = workbook.add_format({'num_format': 'hh:mm'})
-
-        # Write the time column with proper formatting
-        for row_num, value in enumerate(df['intervallo'], 1):
-            worksheet.write_datetime(row_num, 5, value, time_format)  # Column index 5 for column F
-        riassunto.to_excel(writer, index=False, sheet_name='riassunto')
-    print(riassunto)
-
-
-def credito_ore(df: pd.DataFrame, output_file: Path) -> None:
+def credito_ore(df: pd.DataFrame) -> pd.DataFrame:
     df = df[["Stato", "Data", "Voci Base", "Saldo (ore medie)"]]
     df["mese"] = df["Data"].str[-3:]
     df["saldo_ore"] = df["Saldo (ore medie)"].astype(int) * 60
@@ -63,10 +91,33 @@ def credito_ore(df: pd.DataFrame, output_file: Path) -> None:
     custom_dict = {'gen': 0, 'feb': 1, 'mar': 2, 'apr': 3, 'mag': 4, 'giu': 5, 'lug': 6, 'ago': 7, 'set': 8, 'ott': 9,
                    'nov': 10, 'dic': 11}
     df.sort_values(by=['mese'], key=lambda x: x.map(custom_dict), inplace=True)
-    df[["Stato", "mese", "credito"]].to_excel(output_file, index=False, sheet_name='credito_ore')
+    return df
 
-    print(df)
+def raggruppa_ore_eccedenti(df: pd.DataFrame, riposi_usati: List[str]) -> List[RiposoCompensativo]:
+    riposi_compensativi = []
+    id = 1
+    riposo_compensativo = RiposoCompensativo(id=id)
+    for index, row in df.iterrows():
+        if riposo_compensativo.ore_mancanti() >= row['intervallo']:
+            riposo_compensativo.ore_inserite.append(OreInserite(id=index, data=row['Data'], ore=row['intervallo'], stato=row['Stato']))
+        else:
+            residuo = row['intervallo']-riposo_compensativo.ore_mancanti()
+            riposo_compensativo.ore_inserite.append(OreInserite(id=index, data=row['Data'], ore=riposo_compensativo.ore_mancanti(), stato=row['Stato']))
+            if len(riposi_usati) > 0:
+                riposo_compensativo.data = riposi_usati.pop(0)
+            riposi_compensativi.append(riposo_compensativo)
+            id+=1
+            riposo_compensativo = RiposoCompensativo(id=id,ore_inserite=[OreInserite(id=index, data=row['Data'], ore=residuo, stato=row['Stato'])])
+    riposi_compensativi.append(riposo_compensativo)
+    return riposi_compensativi
 
+def get_date_usate_riposi_compensativi(riposi_usati_file: Path) -> List[str]:
+    riposi_usati = []
+    if riposi_usati_file.exists():
+        with open(riposi_usati_file, 'r') as file:
+            for line in file:
+                riposi_usati.append(line.strip())
+    return riposi_usati
 
 def main():
     data_folder = Path('data')
@@ -74,17 +125,26 @@ def main():
     if input_folder.exists():
         input_folder.mkdir(parents=True, exist_ok=True)
     input_file = input_folder / 'cartellino.xlsx'
+    excluded_dates_file = input_folder / 'date_escluse.txt'
+    riposi_usati_file = input_folder / 'riposi_usati.txt'
     output_folder = data_folder / 'output'
     output_folder.mkdir(parents=True, exist_ok=True)
     output_file = output_folder / 'riposo_compensativo.xlsx'
+    credito_ore_file = output_folder / 'credito_ore.xlsx'
+    riposi_compensativi_file = output_folder / 'riposi_compensativi.txt'
     cartellino = pd.read_excel(input_file)
     cartellino["Voci Base"]=cartellino["Voci Base"].str.split(chr(160)+'&-&'+chr(160))
     cartellino = cartellino.explode("Voci Base")
     cartellino.to_excel(output_folder / 'cartellino.xlsx', index=False)
-    elabora_ore_eccedenti(
-        cartellino[(cartellino["Voci Base"].notnull()) & (cartellino["Voci Base"].str.match('^OE-DIU'))], output_file)
-    credito_ore(cartellino[(cartellino["Voci Base"].notnull()) & (cartellino["Voci Base"].str.match('^OO-DIU'))],
-                output_file=output_folder / 'credito_ore.xlsx')
+    oe = elabora_ore_eccedenti(
+        cartellino[(cartellino["Voci Base"].notnull()) & (cartellino["Voci Base"].str.match('^OE-DIU'))], excluded_dates_file)
+    riposi_usati = get_date_usate_riposi_compensativi(riposi_usati_file)
+    riposi_compensativi= raggruppa_ore_eccedenti(oe, riposi_usati)
+    scrivi_riposo_compensativo(oe, output_file)
+    scrivi_riposi_compensativi(riposi_compensativi, riposi_compensativi_file)
+    ce = credito_ore(cartellino[(cartellino["Voci Base"].notnull()) & (cartellino["Voci Base"].str.match('^OO-DIU'))])
+    scrivi_credito_ore(ce, credito_ore_file)
+    print("Script completato")
 
 
 if __name__ == "__main__":
