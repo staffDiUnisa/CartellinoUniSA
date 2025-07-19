@@ -1,7 +1,10 @@
+![Python >=3.12](https://img.shields.io/badge/Python-_>=_3.12-3670A0?style=for-the-badge&logo=python&logoColor=ffdd54) ![PyCharm](https://img.shields.io/badge/pycharm-143?style=for-the-badge&logo=pycharm&logoColor=black&color=black&labelColor=green) ![Linux](https://img.shields.io/badge/Linux-FCC624?style=for-the-badge&logo=linux&logoColor=black) ![macOS](https://img.shields.io/badge/mac%20os-000000?style=for-the-badge&logo=macos&logoColor=F0F0F0) ![Selenium](https://img.shields.io/badge/selenium-python_selenium-%43B02A?style=for-the-badge&logo=selenium&logoColor=white) ![GitHub](https://img.shields.io/badge/github-%23121011.svg?style=for-the-badge&logo=github&logoColor=white)
+
 # Elaborazione cartellino UniSA
 Applicazione per l'estrazione di informazioni dal proprio cartellino UniSA
 
 ## Installazione
+***Richiede Python >= 3.12***
 1. Create un virtual environment Python e installare tutti i pacchetti richiesti
 
 ```bash
