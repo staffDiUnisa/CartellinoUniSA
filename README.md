@@ -20,9 +20,9 @@ cp env.template .env
 ```
 
 3. Editare il file `.env` per settare il valore delle variabili `USERNAME` e `PASSWORD` per inserire le proprie credenziali UniSA.
-4. Eseguire lo script `main.py` e attendere che venga scaricato il proprio cartellino, si aprirà una finestra di Firefox e l'applicazione scorrerà i dettagli del cartellino ***ATTENZIONE:*** Questo script funziona solo dalla rete interna dell'università
+4. Eseguire lo script `get.py` e attendere che venga scaricato il proprio cartellino, si aprirà una finestra di Firefox e l'applicazione scorrerà i dettagli del cartellino ***ATTENZIONE:*** Questo script funziona solo dalla rete interna dell'università
 ```bash
-python main.py
+python get.py
 ```
 5. [OPZIONALE] Nella cartella `data`, creata dallo script del punto precedente aprire la cartella `input` e creare il file `date_escluse.txt` che contiene le date in cui si sa che ci sono delle Ore di Eccedenza che devono essere scluse dal conto, esempio per dello straordinario fatto in quel giorno. Le date devono essere nel formato ggg dd mmm, ed una per riga
 ```bash
@@ -52,9 +52,9 @@ _es:_
 python process.py
 ```
 ## Esecuzione
-1. Una volta al giorno eseguire lo script `main.py`per aggiornare i dati del cartellino ***ATTENZIONE:*** Questo script funziona solo dalla rete interna dell'università, si sconsiglia di eseguirlo più di una volta al giorno
+1. Una volta al giorno eseguire lo script `get.py`per aggiornare i dati del cartellino ***ATTENZIONE:*** Questo script funziona solo dalla rete interna dell'università, si sconsiglia di eseguirlo più di una volta al giorno
 ```bash
-python main.py
+python get.py
 ```
 2. Se necessario aggiornare i file `date_escluse.txt`e `riposi_usati.txt`
 3. Eseguire lo script `process.py`per elaborare i dati del cartellino. ***ATTENZIONE:*** Questo script non accede ai datid el cartellino online, ma lavora su quelli scaricati nel punto 1 e può essere esguito anche fuori della rete universitaria

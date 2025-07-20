@@ -16,14 +16,13 @@ from pathlib import Path
 
 load_dotenv()
 
-def multiselect_set_selections(driver, element_name, labels):
+def multiselect_set_selections(driver, element_name, labels) -> None:
     el = driver.find_element(By.NAME, element_name)
     for option in el.find_elements(By.TAG_NAME,'option'):
         if option.text in labels:
             option.click()
 
-def main():
-    data_folder = Path('data')
+def ottieni_cartellino(data_folder:Path) -> None:
     output_folder = data_folder / 'input'
     if not output_folder.exists():
         output_folder.mkdir(parents=True, exist_ok=True)
@@ -77,6 +76,13 @@ def main():
     finally:
         driver.close()
         driver.quit()
+
+def main() -> None:
+    data_folder = Path('data')
+    if not data_folder.exists():
+        data_folder.mkdir(parents=True, exist_ok=True)
+    ottieni_cartellino(data_folder)
+
 
 if __name__ == '__main__':
     main()

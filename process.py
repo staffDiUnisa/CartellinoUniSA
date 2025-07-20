@@ -20,7 +20,7 @@ def scrivi_riposo_compensativo(df: pd.DataFrame, output_file: Path) -> None:
     riassunto["OE"] = riassunto["ore eccedenti"] + (riassunto["minuti eccedenti"] // 60)
     riassunto["ME"] = riassunto["minuti eccedenti"] % 60
     with pd.ExcelWriter(output_file, engine='xlsxwriter') as writer:
-        df.to_excel(writer, sheet_name='dettaglio', index=False)
+        df[["Stato", "Data", "Voci Base", "ore eccedenti", "minuti eccedenti", "intervallo"]].to_excel(writer, sheet_name='dettaglio', index=False)
         # Get the workbook and worksheet
         workbook = writer.book
         worksheet = writer.sheets['dettaglio']
@@ -62,7 +62,7 @@ def elabora_ore_eccedenti(df: pd.DataFrame, excluded_dates_file: Path) -> pd.Dat
         for line in file:
             print(f"Adding to excluded dates: {line.strip()}")
             excluded_dates.append(line.strip())
-        if(excluded_dates and len(excluded_dates) > 0):
+        if excluded_dates and len(excluded_dates) > 0:
             print(f"Excluding dates: {excluded_dates}")
             df = df[~df["Data"].isin(excluded_dates)]
         else:
@@ -119,8 +119,28 @@ def get_date_usate_riposi_compensativi(riposi_usati_file: Path) -> List[str]:
                 riposi_usati.append(line.strip())
     return riposi_usati
 
-def main():
-    data_folder = Path('data')
+def get_date_from_string(date_string: str, year:int) -> datetime:
+    regex = r"[a-z]{3}\s(\d\d?)\s([a-z]{3})"
+    date_search = re.search(regex, date_string, re.IGNORECASE)
+    day = int(date_search.group(1))
+    month_dict = {
+        "gen": 1,
+        "feb": 2,
+        "mar": 3,
+        "apr": 4,
+        "mag": 5,
+        "giu": 6,
+        "lug": 7,
+        "ago": 7,
+        "set": 8,
+        "ott": 10,
+        "nov": 11,
+        "dic": 12
+    }
+    month = month_dict[date_search.group(2)]
+    return datetime(year, month, day)
+
+def processa_dati(data_folder: Path) -> None:
     input_folder = data_folder / 'input'
     if input_folder.exists():
         input_folder.mkdir(parents=True, exist_ok=True)
@@ -134,6 +154,8 @@ def main():
     riposi_compensativi_file = output_folder / 'riposi_compensativi.txt'
     cartellino = pd.read_excel(input_file)
     cartellino["Voci Base"]=cartellino["Voci Base"].str.split(chr(160)+'&-&'+chr(160))
+
+    cartellino["date"]=cartellino["Data"].apply(lambda x: get_date_from_string(x, datetime.now().year))
     cartellino = cartellino.explode("Voci Base")
     cartellino.to_excel(output_folder / 'cartellino.xlsx', index=False)
     oe = elabora_ore_eccedenti(
@@ -144,9 +166,12 @@ def main():
     scrivi_riposi_compensativi(riposi_compensativi, riposi_compensativi_file)
     ce = credito_ore(cartellino[(cartellino["Voci Base"].notnull()) & (cartellino["Voci Base"].str.match('^OO-DIU'))])
     scrivi_credito_ore(ce, credito_ore_file)
-    print("Script completato")
 
+def main() -> None:
+    data_folder = Path('data')
+    processa_dati(data_folder)
 
 if __name__ == "__main__":
     pd.set_option('display.max_rows', None)
     main()
+    print("Script completato")
