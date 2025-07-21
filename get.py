@@ -1,6 +1,7 @@
 import time
 import os
 import shutil
+from datetime import datetime
 
 import pandas as pd
 
@@ -23,6 +24,9 @@ def multiselect_set_selections(driver, element_name, labels) -> None:
             option.click()
 
 def ottieni_cartellino(data_folder:Path) -> None:
+    current_year = int(os.getenv("CURRENT_YEAR"))
+    start_date = datetime(year=current_year, month=1, day=1)
+    end_date = datetime(year=current_year, month=12, day=31)
     output_folder = data_folder / 'input'
     if not output_folder.exists():
         output_folder.mkdir(parents=True, exist_ok=True)
@@ -41,7 +45,9 @@ def ottieni_cartellino(data_folder:Path) -> None:
         driver.find_element(By.NAME, "_eventId_proceed").click()
         # WebDriverWait(driver, 100).until(EC.text_to_be_present_in_element((By.XPATH,"//title"), "Start Web"))
         time.sleep(10)
-        driver.get("https://presenze.unisa.it/default.aspx?page=cartellino#dtfine=1767135600000&dtinizio=1735686000000&iddip=146187&view=full")
+        dtinizio=int(start_date.timestamp()*1000)
+        dtfine=int(end_date.timestamp()*1000)
+        driver.get(f"https://presenze.unisa.it/default.aspx?page=cartellino#dtfine={dtfine}&dtinizio={dtinizio}&iddip=146187&view=full")
         WebDriverWait(driver, 20).until(EC.element_to_be_clickable((By.LINK_TEXT, "Successivo")))
         el = driver.find_element(By.ID, "1011_next")
         class_attr = el.get_attribute('class')
@@ -77,12 +83,14 @@ def ottieni_cartellino(data_folder:Path) -> None:
         driver.close()
         driver.quit()
 
-def main() -> None:
+def run():
     data_folder = Path('data')
     if not data_folder.exists():
         data_folder.mkdir(parents=True, exist_ok=True)
     ottieni_cartellino(data_folder)
 
+def main() -> None:
+    run()
 
 if __name__ == '__main__':
     main()

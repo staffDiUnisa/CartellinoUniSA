@@ -1,3 +1,4 @@
+import os
 import re
 from datetime import datetime,timedelta
 
@@ -8,6 +9,9 @@ from typing import List
 
 from model.ore_inserite import OreInserite
 from model.riposo_compensativo import RiposoCompensativo
+from dotenv import load_dotenv
+
+load_dotenv()
 
 
 def scrivi_riposo_compensativo(df: pd.DataFrame, output_file: Path) -> None:
@@ -55,18 +59,14 @@ def scrivi_riposi_compensativi(riposi_compensativi: List[RiposoCompensativo], ou
                 file.write(f"\t- {ore.data} -> {hours}:{minutes} [{ore.stato}]\n")
             file.write("_________________________________________________\n")
 
-def elabora_ore_eccedenti(df: pd.DataFrame, excluded_dates_file: Path) -> pd.DataFrame:
-    df = df[["Stato", "Data", "Voci Base"]]
+def elabora_ore_eccedenti(df: pd.DataFrame, excluded_dates_file: Path, year:int) -> pd.DataFrame:
+    df = df[["Stato", "Data", "Voci Base", "date"]]
     with open(excluded_dates_file, 'r') as file:
         excluded_dates = []
         for line in file:
-            print(f"Adding to excluded dates: {line.strip()}")
-            excluded_dates.append(line.strip())
+            excluded_dates.append(get_date_from_string(line.strip(),year))
         if excluded_dates and len(excluded_dates) > 0:
-            print(f"Excluding dates: {excluded_dates}")
-            df = df[~df["Data"].isin(excluded_dates)]
-        else:
-            print("No excluded dates found, processing all data.")
+            df = df[~df["date"].isin(excluded_dates)]
     ore_eccedenti = []
     for values in df['Voci Base']:
         ore_eccedenti.append(re.search(r'\d\d\.', values).group()[:-1])
@@ -140,7 +140,21 @@ def get_date_from_string(date_string: str, year:int) -> datetime:
     month = month_dict[date_search.group(2)]
     return datetime(year, month, day)
 
+def get_riposi_compensativi_usati_from_data(df: pd.DataFrame, min_date:datetime) -> List[str]:
+    df = df[df.date > min_date]
+    riposi_usati = []
+    for index, row in df.iterrows():
+        riposi_usati.append(row['date'].strftime('%d-%m-%Y'))
+    return riposi_usati
+
 def processa_dati(data_folder: Path) -> None:
+    current_year = int(os.getenv("CURRENT_YEAR"))
+    try:
+        min_date = datetime.strptime(f"{current_year}-{os.getenv('MIN_DATE_RIPOSI_USATI')}", "%Y-%m-%d")
+        print(f"Data da cui verranno considerati i Riposi Compensativi Usati: {min_date.strftime('%d-%m-%Y')}")
+    except ValueError:
+        print("Errore nel processare la variabile MIN_DATE_RIPOSI_USATI. Userò il file dei riposi usati, se disponibile, per determinare quelli già usati")
+        min_date = None
     input_folder = data_folder / 'input'
     if input_folder.exists():
         input_folder.mkdir(parents=True, exist_ok=True)
@@ -159,17 +173,26 @@ def processa_dati(data_folder: Path) -> None:
     cartellino = cartellino.explode("Voci Base")
     cartellino.to_excel(output_folder / 'cartellino.xlsx', index=False)
     oe = elabora_ore_eccedenti(
-        cartellino[(cartellino["Voci Base"].notnull()) & (cartellino["Voci Base"].str.match('^OE-DIU'))], excluded_dates_file)
-    riposi_usati = get_date_usate_riposi_compensativi(riposi_usati_file)
+        cartellino[(cartellino["Voci Base"].notnull()) & (cartellino["Voci Base"].str.match('^OE-DIU'))],
+        excluded_dates_file, year=current_year)
+    if min_date:
+        riposi_usati = get_riposi_compensativi_usati_from_data(
+            df=cartellino[(cartellino["Voci Base"].notnull()) & (cartellino["Voci Base"].str.match('^SRC'))],
+            min_date=min_date)
+    else:
+        riposi_usati = get_date_usate_riposi_compensativi(riposi_usati_file)
     riposi_compensativi= raggruppa_ore_eccedenti(oe, riposi_usati)
     scrivi_riposo_compensativo(oe, output_file)
     scrivi_riposi_compensativi(riposi_compensativi, riposi_compensativi_file)
     ce = credito_ore(cartellino[(cartellino["Voci Base"].notnull()) & (cartellino["Voci Base"].str.match('^OO-DIU'))])
     scrivi_credito_ore(ce, credito_ore_file)
 
-def main() -> None:
+def run() -> None:
     data_folder = Path('data')
     processa_dati(data_folder)
+
+def main() -> None:
+    run()
 
 if __name__ == "__main__":
     pd.set_option('display.max_rows', None)
