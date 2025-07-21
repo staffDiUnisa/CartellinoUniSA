@@ -39,7 +39,10 @@ def scrivi_riposo_compensativo(df: pd.DataFrame, output_file: Path) -> None:
 
 def scrivi_credito_ore(df: pd.DataFrame, output_file: Path) -> None:
     print(f"Scrivo credito ore su {output_file}")
-    df[["Stato", "mese", "credito","credito_ore_residuo"]].to_excel(output_file, index=False, sheet_name='credito_ore')
+    df[["Stato", "mese", "credito","credito_ore_residuo"]].rename(columns={"Stato":"Stato elaborazione mese",
+             "mese":"Mese",
+             "credito": "Credito ore",
+             "credito_ore_residuo": "Credito ore al netto dei riposi maturati"}).to_excel(output_file, index=False, sheet_name='credito_ore')
 
 def scrivi_riposi_compensativi(riposi_compensativi: List[RiposoCompensativo], output_file: Path) -> None:
     print(f"Scrivo riposi compensativi su {output_file}")
