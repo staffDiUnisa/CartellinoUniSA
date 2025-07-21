@@ -39,7 +39,7 @@ def scrivi_riposo_compensativo(df: pd.DataFrame, output_file: Path) -> None:
 
 def scrivi_credito_ore(df: pd.DataFrame, output_file: Path) -> None:
     print(f"Scrivo credito ore su {output_file}")
-    df[["Stato", "mese", "credito"]].to_excel(output_file, index=False, sheet_name='credito_ore')
+    df[["Stato", "mese", "credito","credito_ore_residuo"]].to_excel(output_file, index=False, sheet_name='credito_ore')
 
 def scrivi_riposi_compensativi(riposi_compensativi: List[RiposoCompensativo], output_file: Path) -> None:
     print(f"Scrivo riposi compensativi su {output_file}")
@@ -80,14 +80,25 @@ def elabora_ore_eccedenti(df: pd.DataFrame, excluded_dates_file: Path, year:int)
     df['intervallo'] = pd.to_timedelta(df['ore eccedenti'], unit='h') + pd.to_timedelta(df['minuti eccedenti'], unit='m')
     return df
 
-def credito_ore(df: pd.DataFrame) -> pd.DataFrame:
+def credito_ore(df: pd.DataFrame, oe: pd.DataFrame) -> pd.DataFrame:
     df = df[["Stato", "Data", "Voci Base", "Saldo (ore medie)"]]
     df["mese"] = df["Data"].str[-3:]
     df["saldo_ore"] = df["Saldo (ore medie)"].astype(int) * 60
     df["saldo_minuti"] = ((df["Saldo (ore medie)"] - df["Saldo (ore medie)"].astype(int)) * 100).astype(int)
     df["Saldo (ore medie)"] = df["saldo_ore"] + df["saldo_minuti"]
+    oe["mese"] = oe["Data"].str[-3:]
+    oe["Riposo Compensativo"] = (oe["ore eccedenti"] * 60) + oe["minuti eccedenti"]
+    oe = oe[["Stato", "mese", "Riposo Compensativo"]].groupby(["Stato", "mese"]).sum().reset_index()
+    custom_dict = {'gen': 0, 'feb': 1, 'mar': 2, 'apr': 3, 'mag': 4, 'giu': 5, 'lug': 6, 'ago': 7, 'set': 8, 'ott': 9,
+                   'nov': 10, 'dic': 11}
+    oe.sort_values(by=['mese'], key=lambda x: x.map(custom_dict), inplace=True)
     df = df[["Stato", "mese", "Saldo (ore medie)"]].groupby(["Stato", "mese"]).sum().reset_index()
+    df = pd.merge(df, oe[["Stato", "mese", "Riposo Compensativo"]], on=["Stato", "mese"], how="outer")
+    df['Riposo Compensativo'] = df["Riposo Compensativo"].fillna(0).astype(int)
+    df["ore_residue"] = df["Saldo (ore medie)"] - df["Riposo Compensativo"]
+    df["ore_residue"] = df["ore_residue"].apply(lambda x: max(x, 0))  # Assicurati che le ore residue non siano negative
     df["credito"] = pd.to_datetime(df["Saldo (ore medie)"], unit="m").dt.strftime('%H:%M')
+    df["credito_ore_residuo"] = pd.to_datetime(df["ore_residue"], unit="m").dt.strftime('%H:%M')
     custom_dict = {'gen': 0, 'feb': 1, 'mar': 2, 'apr': 3, 'mag': 4, 'giu': 5, 'lug': 6, 'ago': 7, 'set': 8, 'ott': 9,
                    'nov': 10, 'dic': 11}
     df.sort_values(by=['mese'], key=lambda x: x.map(custom_dict), inplace=True)
@@ -101,7 +112,7 @@ def raggruppa_ore_eccedenti(df: pd.DataFrame, riposi_usati: List[str]) -> List[R
         if riposo_compensativo.ore_mancanti() >= row['intervallo']:
             riposo_compensativo.ore_inserite.append(OreInserite(id=index, data=row['Data'], ore=row['intervallo'], stato=row['Stato']))
         else:
-            residuo = row['intervallo']-riposo_compensativo.ore_mancanti()
+            residuo = row['intervallo'] - riposo_compensativo.ore_mancanti()
             riposo_compensativo.ore_inserite.append(OreInserite(id=index, data=row['Data'], ore=riposo_compensativo.ore_mancanti(), stato=row['Stato']))
             if len(riposi_usati) > 0:
                 riposo_compensativo.data = riposi_usati.pop(0)
@@ -184,7 +195,10 @@ def processa_dati(data_folder: Path) -> None:
     riposi_compensativi= raggruppa_ore_eccedenti(oe, riposi_usati)
     scrivi_riposo_compensativo(oe, output_file)
     scrivi_riposi_compensativi(riposi_compensativi, riposi_compensativi_file)
-    ce = credito_ore(cartellino[(cartellino["Voci Base"].notnull()) & (cartellino["Voci Base"].str.match('^OO-DIU'))])
+    ce = credito_ore(
+        df=cartellino[(cartellino["Voci Base"].notnull()) & (cartellino["Voci Base"].str.match('^OO-DIU'))],
+        oe=oe
+    )
     scrivi_credito_ore(ce, credito_ore_file)
 
 def run() -> None:
