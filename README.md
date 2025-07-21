@@ -9,24 +9,27 @@ Applicazione per l'estrazione di informazioni dal proprio cartellino UniSA
 1. Create un virtual environment Python e installare tutti i pacchetti richiesti
 
 ```bash
-python3 -m venv .venv
-source .venv/activate
-python3 -m pip install -r requirements.txt
+$ python3 -m venv .venv
+$ source .venv/activate
+$ python3 -m pip install -r requirements.txt
 ```
 2. Creare il file `.env` a partire dal file `env.template` 
 
 ```bash
-cp env.template .env
+$ cp env.template .env
 ```
 
-3. Editare il file `.env` per settare il valore delle variabili `USERNAME` e `PASSWORD` per inserire le proprie credenziali UniSA.
-4. Eseguire lo script `get.py` e attendere che venga scaricato il proprio cartellino, si aprirà una finestra di Firefox e l'applicazione scorrerà i dettagli del cartellino ***ATTENZIONE:*** Questo script funziona solo dalla rete interna dell'università
-```bash
-python get.py
+3. Editare il file `.env` per settare il valore delle variabili:
 ```
-5. [OPZIONALE] Nella cartella `data`, creata dallo script del punto precedente aprire la cartella `input` e creare il file `date_escluse.txt` che contiene le date in cui si sa che ci sono delle Ore di Eccedenza che devono essere scluse dal conto, esempio per dello straordinario fatto in quel giorno. Le date devono essere nel formato ggg dd mmm, ed una per riga
+USERNAME=La propria username con le credenziali UniSA (es. utente@unisa.it)
+PASSWORD=La propria password con le credenziali UniSA 
+CURRENT_YEAR=2025 # Anno corrente, usato per definire i limiti di estrazione dal cartellino (dal 1 gennaio al 31 dicembre di questo anno)
+MIN_DATE_RIPOSI_USATI=01-01 # [OPZIONALE] Data minima nel formato mese-giorno per i riposi usatiquelli precedenti a questa data sono riferiti a riposi accumulati nell'anno precedente
+
+```
+4. [OPZIONALE] Nella cartella `data`, creata dallo script del punto precedente aprire la cartella `input` e creare il file `date_escluse.txt` che contiene le date in cui si sa che ci sono delle Ore di Eccedenza che devono essere escluse dal conto, esempio per dello straordinario fatto in quel giorno. Le date devono essere nel formato ggg dd mmm, ed una per riga
 ```bash
-vim data/input/date_escluse.txt
+$ vim data/input/date_escluse.txt
 ```
 
 _es:_
@@ -35,9 +38,9 @@ _es:_
 gio 16 gen
 ven 17 gen
 ```
-6. [OPZIONALE] Nella cartella `data`, creata dallo script del punto precedente aprire la cartella `input` e creare il file `riposi_usati.txt` che contiene le date di Rriposi compensativi già usati. Le date devono essere nel formato YYYY-MM-DD, ed una per riga
+5. [OPZIONALE, usata solop nel caso non sia settata la variabile `MIN_DATE_RIPOSI_USATI`] Nella cartella `data`, creata dallo script del punto precedente aprire la cartella `input` e creare il file `riposi_usati.txt` che contiene le date di Rriposi compensativi già usati. Le date devono essere nel formato YYYY-MM-DD, ed una per riga
 ```bash
-vim data/input/riposi_usati.txt
+$ vim data/input/riposi_usati.txt
 ```
 
 _es:_
@@ -46,18 +49,49 @@ _es:_
 2025-06-26
 2025-06-27
 ```
-
-7. Eseguire lo script `process.py`per l'elaborazione del cartellino, i risutati saranno nella cartella `data/output` ***ATTENZIONE:*** Questo script non accede ai datid el cartellino online, ma lavora su quelli scaricati nel punto 4 e può essere esguito anche fuori della rete universitaria
+6. Eseguire lo script `main.py` e al prompt inserire `y` e attendere che venga scaricato il proprio cartellino, si aprirà una finestra di Firefox e l'applicazione scorrerà i dettagli del cartellino ***ATTENZIONE:*** Con questa opzione funziona solo dalla rete interna dell'università
 ```bash
-python process.py
+$ python main.py
+```
+```
+Vuoi aggiornare i dati del cartellino? [y/N]: y
+Processing page 1
+Processing page 2
+Processing page 3
+Processing page 4
+Data da cui verranno considerati i Riposi Compensativi Usati: 01-01-2025
+Scrivo riposi compensativo su data/output/riposo_compensativo.xlsx
+Scrivo riposi compensativi su data/output/riposi_compensativi.txt
+Scrivo credito ore su data/output/credito_ore.xlsx
 ```
 ## Esecuzione
-1. Una volta al giorno eseguire lo script `get.py`per aggiornare i dati del cartellino ***ATTENZIONE:*** Questo script funziona solo dalla rete interna dell'università, si sconsiglia di eseguirlo più di una volta al giorno
+1. Una volta al giorno eseguire lo script `main.py` e al prompt inserire `y` e attendere che venga scaricato il proprio cartellino. ***ATTENZIONE:*** Con questa opzione funziona solo dalla rete interna dell'università, si sconsiglia di eseguirlo più di una volta al giorno
 ```bash
-python get.py
+$ python main.py
+```
+```
+Vuoi aggiornare i dati del cartellino? [y/N]: y
+Processing page 1
+Processing page 2
+Processing page 3
+Processing page 4
+Data da cui verranno considerati i Riposi Compensativi Usati: 01-01-2025
+Scrivo riposi compensativo su data/output/riposo_compensativo.xlsx
+Scrivo riposi compensativi su data/output/riposi_compensativi.txt
+Scrivo credito ore su data/output/credito_ore.xlsx
 ```
 2. Se necessario aggiornare i file `date_escluse.txt`e `riposi_usati.txt`
-3. Eseguire lo script `process.py`per elaborare i dati del cartellino. ***ATTENZIONE:*** Questo script non accede ai datid el cartellino online, ma lavora su quelli scaricati nel punto 1 e può essere esguito anche fuori della rete universitaria
+3. Eseguire lo script `main.py` e al prompt inserire `y` per limitarsi elaborare i dati del cartellino già scaricati. ***ATTENZIONE:*** Questo script non accede ai datid el cartellino online, ma lavora su quelli scaricati nel punto 1 e può essere esguito anche fuori della rete universitaria
 ```bash
-python process.py
+$ python main.py
+```
+```
+Esegue lo script per l'estrazione dei dati dal cartellino.
+Se scegli di non aggiornare i dati, salterà il processo di aggiornamento i dati da https://presenze.unisa.it.
+Vuoi aggiornare i dati del cartellino (L'aggiornamento funziona solo dalla rete universitaria.)? [y/N]: n
+Data da cui verranno considerati i Riposi Compensativi Usati: 31-01-2025
+Scrivo riposi compensativo su data/output/riposo_compensativo.xlsx
+Scrivo riposi compensativi su data/output/riposi_compensativi.txt
+Scrivo credito ore su data/output/credito_ore.xlsx
+
 ```
