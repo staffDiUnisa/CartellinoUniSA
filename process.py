@@ -1,11 +1,14 @@
 import os
 import re
+from cmath import isnan
 from datetime import datetime,timedelta
 
 import pandas as pd
 
 from pathlib import Path
-from typing import List
+from typing import List, Dict
+
+from numpy.f2py.auxfuncs import isreal
 
 from model.ore_inserite import OreInserite
 from model.riposo_compensativo import RiposoCompensativo
@@ -13,6 +16,16 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+def scrivi_dataframe(dfs: Dict[str, pd.DataFrame], output_file: Path) -> None:
+    """
+    Scrive i DataFrame in un file Excel con più fogli.
+    :param dfs: Dizionario con i nomi dei fogli come chiavi e i DataFrame come valori.
+    :param output_file: Percorso del file di output.
+    """
+    print(f"Scrivo le statistiche ottenute su {output_file}")
+    with pd.ExcelWriter(output_file, engine='xlsxwriter') as writer:
+        for sheet_name, df in dfs.items():
+            df.to_excel(writer, sheet_name=sheet_name, index=False)
 
 def scrivi_riposo_compensativo(df: pd.DataFrame, output_file: Path) -> None:
     print(f"Scrivo riposi compensativo su {output_file}")
@@ -152,7 +165,11 @@ def get_date_from_string(date_string: str, year:int) -> datetime:
         "dic": 12
     }
     month = month_dict[date_search.group(2)]
-    return datetime(year, month, day)
+    try:
+        return datetime(year, month, day)
+    except ValueError:
+        print(f"Invalid date: {day}-{month}-{year}")
+        raise ValueError("Invalid date format")
 
 def get_riposi_compensativi_usati_from_data(df: pd.DataFrame, min_date:datetime) -> List[str]:
     df = df[df.date > min_date]
@@ -160,6 +177,61 @@ def get_riposi_compensativi_usati_from_data(df: pd.DataFrame, min_date:datetime)
     for index, row in df.iterrows():
         riposi_usati.append(row['date'].strftime('%d-%m-%Y'))
     return riposi_usati
+
+def extract_codice(voci_base: str) -> str:
+    """
+    Estrae il codice da una stringa di voci base.
+    Il codice è definito come la parte della stringa che precede il primo trattino.
+    """
+    match = re.search(r'[A-Z]+-?[A-Z][A-Z]+', voci_base)
+    if match:
+        return match.group(0).strip()
+    return '-'
+
+def ottieni_visite_specialistiche(cartellino: pd.DataFrame) -> pd.DataFrame:
+    cartellino = cartellino[cartellino["Codice"] == "VSG"]
+    cartellino = cartellino[["Stato", "Data", "Voci Base"]]
+    return cartellino
+
+def ottieni_straordinari(cartellino: pd.DataFrame) -> pd.DataFrame:
+    cartellino = cartellino[(cartellino["Codice"] == "STRSOS") | (cartellino["Codice"] == "FSTLAV") | (cartellino["Codice"] == "OS-FSD")]
+    cartellino = cartellino[["Stato", "Data", "Voci Base"]]
+    return cartellino
+
+def ottieni_ticket(cartellino: pd.DataFrame) -> pd.DataFrame:
+    cartellino = cartellino[cartellino["Codice"] == "TCK"]
+    cartellino = cartellino[["Stato", "Data", "Voci Base"]]
+    return cartellino
+
+def ottieni_malattia(cartellino: pd.DataFrame) -> pd.DataFrame:
+    cartellino = cartellino[(cartellino["Codice"] == "MAL") | (cartellino["Codice"] == "RIC")]
+    cartellino = cartellino[["Stato", "Data", "Voci Base"]]
+    return cartellino
+
+def ottieni_ferie(cartellino: pd.DataFrame) -> pd.DataFrame:
+    cartellino = cartellino[(cartellino["Codice"] == "FER") | (cartellino["Codice"] == "FEV") | (cartellino["Codice"] == "FST")]
+    cartellino = cartellino[["Stato", "Data", "Voci Base"]]
+    return cartellino
+
+def ottieni_permesso_gravi_motivi(cartellino: pd.DataFrame) -> pd.DataFrame:
+    cartellino = cartellino[cartellino["Codice"] == "PMF"]
+    cartellino = cartellino[["Stato", "Data", "Voci Base"]]
+    return cartellino
+
+def ottieni_entrata_ritardo(cartellino: pd.DataFrame) -> pd.DataFrame:
+    cartellino = cartellino[cartellino["Codice"] == "ERIT"]
+    cartellino = cartellino[["Stato", "Data", "Voci Base"]]
+    return cartellino
+
+def ottieni_vigilanza_concorsi(cartellino: pd.DataFrame) -> pd.DataFrame:
+    cartellino = cartellino[cartellino["Codice"] == "VIG"]
+    cartellino = cartellino[["Stato", "Data", "Voci Base"]]
+    return cartellino
+
+def ottieni_motivi_di_servizio(cartellino: pd.DataFrame) -> pd.DataFrame:
+    cartellino = cartellino[cartellino["Codice"] == "AMU"]
+    cartellino = cartellino[["Stato", "Data", "Voci Base"]]
+    return cartellino
 
 def processa_dati(data_folder: Path) -> None:
     current_year = int(os.getenv("CURRENT_YEAR"))
@@ -182,16 +254,18 @@ def processa_dati(data_folder: Path) -> None:
     riposi_compensativi_file = output_folder / 'riposi_compensativi.txt'
     cartellino = pd.read_excel(input_file)
     cartellino["Voci Base"]=cartellino["Voci Base"].str.split(chr(160)+'&-&'+chr(160))
-
-    cartellino["date"]=cartellino["Data"].apply(lambda x: get_date_from_string(x, datetime.now().year))
+    cartellino["date"]=cartellino["Data"].apply(lambda x: get_date_from_string(x, current_year))
     cartellino = cartellino.explode("Voci Base")
+    cartellino["Voci Base"]=cartellino["Voci Base"].fillna("____")
+    cartellino["Codice"]=cartellino["Voci Base"].apply(lambda x: extract_codice(x))
+    # print(cartellino["Codice"].unique())
     cartellino.to_excel(output_folder / 'cartellino.xlsx', index=False)
     oe = elabora_ore_eccedenti(
-        cartellino[(cartellino["Voci Base"].notnull()) & (cartellino["Voci Base"].str.match('^OE-DIU'))],
+        cartellino[cartellino["Codice"]=="OE-DIU"],
         excluded_dates_file, year=current_year)
     if min_date:
         riposi_usati = get_riposi_compensativi_usati_from_data(
-            df=cartellino[(cartellino["Voci Base"].notnull()) & (cartellino["Voci Base"].str.match('^SRC'))],
+            df=cartellino[cartellino["Codice"]=="SRC"],
             min_date=min_date)
     else:
         riposi_usati = get_date_usate_riposi_compensativi(riposi_usati_file)
@@ -199,10 +273,36 @@ def processa_dati(data_folder: Path) -> None:
     scrivi_riposo_compensativo(oe, output_file)
     scrivi_riposi_compensativi(riposi_compensativi, riposi_compensativi_file)
     ce = credito_ore(
-        df=cartellino[(cartellino["Voci Base"].notnull()) & (cartellino["Voci Base"].str.match('^OO-DIU'))],
+        df=cartellino[cartellino["Codice"]=="OO-DIU"],
         oe=oe
     )
     scrivi_credito_ore(ce, credito_ore_file)
+    vsg = ottieni_visite_specialistiche(cartellino)
+    str = ottieni_straordinari(cartellino)
+    tck = ottieni_ticket(cartellino)
+    tck_stat = tck.copy()
+    tck_stat["mese"] = tck_stat["Data"].str[-3:]
+    tck_stat = tck_stat[["Stato","mese","Data"]].groupby(["Stato", "mese"]).count().reset_index()
+    tck_stat.rename(columns={"Data": "Numero Ticket"}, inplace=True)
+    mal = ottieni_malattia(cartellino)
+    fer = ottieni_ferie(cartellino)
+    vig = ottieni_vigilanza_concorsi(cartellino)
+    pmf = ottieni_permesso_gravi_motivi(cartellino)
+    erit = ottieni_entrata_ritardo(cartellino)
+
+    dfs = {
+        "visite_specialistiche": vsg,
+        "straordinari": str,
+        "ticket": tck,
+        "statistica_ticket": tck_stat,
+        "malattia": mal,
+        "ferie": fer,
+        "vigilanza_concorsi": vig,
+        "permessi_gravi_motivi": pmf,
+        "entrata_ritardo": erit,
+    }
+    scrivi_dataframe(dfs, output_folder / 'statistiche.xlsx')
+
 
 def run() -> None:
     data_folder = Path('data')
