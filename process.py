@@ -284,6 +284,9 @@ def processa_dati(data_folder: Path) -> None:
     tck_stat["mese"] = tck_stat["Data"].str[-3:]
     tck_stat = tck_stat[["Stato","mese","Data"]].groupby(["Stato", "mese"]).count().reset_index()
     tck_stat.rename(columns={"Data": "Numero Ticket"}, inplace=True)
+    custom_dict = {'gen': 0, 'feb': 1, 'mar': 2, 'apr': 3, 'mag': 4, 'giu': 5, 'lug': 6, 'ago': 7, 'set': 8, 'ott': 9,
+                   'nov': 10, 'dic': 11}
+    tck_stat.sort_values(by=['mese'], key=lambda x: x.map(custom_dict), inplace=True)
     mal = ottieni_malattia(cartellino)
     fer = ottieni_ferie(cartellino)
     vig = ottieni_vigilanza_concorsi(cartellino)
