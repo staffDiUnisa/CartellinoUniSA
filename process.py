@@ -96,8 +96,14 @@ def elabora_ore_eccedenti(df: pd.DataFrame, excluded_dates_file: Path, year:int)
     df['intervallo'] = pd.to_timedelta(df['ore eccedenti'], unit='h') + pd.to_timedelta(df['minuti eccedenti'], unit='m')
     return df
 
-def credito_ore(df: pd.DataFrame, oe: pd.DataFrame) -> pd.DataFrame:
-    df = df[["Stato", "Data", "Voci Base", "Saldo (ore medie)"]]
+def credito_ore(df: pd.DataFrame, oe: pd.DataFrame, excluded_dates_file: Path, year: int) -> pd.DataFrame:
+    df = df[["Stato", "Data", "Voci Base", "Saldo (ore medie)", "date"]]
+    with open(excluded_dates_file, 'r') as file:
+        excluded_dates = []
+        for line in file:
+            excluded_dates.append(get_date_from_string(line.strip(),year))
+        if excluded_dates and len(excluded_dates) > 0:
+            df = df[~df["date"].isin(excluded_dates)]
     df["mese"] = df["Data"].str[-3:]
     df["saldo_ore"] = df["Saldo (ore medie)"].astype(int) * 60
     df["saldo_minuti"] = ((df["Saldo (ore medie)"] - df["Saldo (ore medie)"].astype(int)) * 100).astype(int)
@@ -274,7 +280,9 @@ def processa_dati(data_folder: Path) -> None:
     scrivi_riposi_compensativi(riposi_compensativi, riposi_compensativi_file)
     ce = credito_ore(
         df=cartellino[cartellino["Codice"]=="OO-DIU"],
-        oe=oe
+        oe=oe,
+        excluded_dates_file=excluded_dates_file,
+        year=current_year
     )
     scrivi_credito_ore(ce, credito_ore_file)
     vsg = ottieni_visite_specialistiche(cartellino)
