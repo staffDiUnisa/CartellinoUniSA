@@ -72,7 +72,8 @@ def scrivi_riposi_compensativi(riposi_compensativi: List[RiposoCompensativo], ou
             file.write("_________________________________________________\n")
             for ore in riposo.ore_inserite:
                 hours, minutes = (ore.ore.seconds // 3600, (ore.ore.seconds // 60) % 60)
-                file.write(f"\t- {ore.data} -> {hours}:{minutes} [{ore.stato}]\n")
+                stato = "OK" if ore.stato == "ELAB P1" else "NO"
+                file.write(f"\t- {ore.data} -> {hours}:{minutes} [{stato}]\n")
             file.write("_________________________________________________\n")
 
 def elabora_ore_eccedenti(df: pd.DataFrame, excluded_dates_file: Path, year:int) -> pd.DataFrame:
