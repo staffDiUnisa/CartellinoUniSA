@@ -8,8 +8,6 @@ import pandas as pd
 from pathlib import Path
 from typing import List, Dict
 
-from numpy.f2py.auxfuncs import isreal
-
 from model.ore_inserite import OreInserite
 from model.riposo_compensativo import RiposoCompensativo
 from dotenv import load_dotenv
