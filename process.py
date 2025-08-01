@@ -14,6 +14,8 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+codici_usati = []
+
 def scrivi_dataframe(dfs: Dict[str, pd.DataFrame], output_file: Path) -> None:
     """
     Scrive i DataFrame in un file Excel con più fogli.
@@ -194,51 +196,81 @@ def extract_codice(voci_base: str) -> str:
     return '-'
 
 def ottieni_visite_specialistiche(cartellino: pd.DataFrame) -> pd.DataFrame:
+    global codici_usati
+    codici_usati.append("VSG")
     cartellino = cartellino[cartellino["Codice"] == "VSG"]
     cartellino = cartellino[["Stato", "Data", "Voci Base"]]
     return cartellino
 
 def ottieni_straordinari(cartellino: pd.DataFrame) -> pd.DataFrame:
+    global codici_usati
+    codici_usati.append("STRSOS")
+    codici_usati.append("FSTLAV")
+    codici_usati.append("OS-FSD")
     cartellino = cartellino[(cartellino["Codice"] == "STRSOS") | (cartellino["Codice"] == "FSTLAV") | (cartellino["Codice"] == "OS-FSD")]
     cartellino = cartellino[["Stato", "Data", "Voci Base"]]
     return cartellino
 
 def ottieni_ticket(cartellino: pd.DataFrame) -> pd.DataFrame:
+    global codici_usati
+    codici_usati.append("TCK")
     cartellino = cartellino[cartellino["Codice"] == "TCK"]
     cartellino = cartellino[["Stato", "Data", "Voci Base"]]
     return cartellino
 
 def ottieni_malattia(cartellino: pd.DataFrame) -> pd.DataFrame:
+    global codici_usati
+    codici_usati.append("MAL")
+    codici_usati.append("RIC")
     cartellino = cartellino[(cartellino["Codice"] == "MAL") | (cartellino["Codice"] == "RIC")]
     cartellino = cartellino[["Stato", "Data", "Voci Base"]]
     return cartellino
 
 def ottieni_ferie(cartellino: pd.DataFrame) -> pd.DataFrame:
+    global codici_usati
+    codici_usati.append("FER")
+    codici_usati.append("FEV")
+    codici_usati.append("FST")
     cartellino = cartellino[(cartellino["Codice"] == "FER") | (cartellino["Codice"] == "FEV") | (cartellino["Codice"] == "FST")]
     cartellino = cartellino[["Stato", "Data", "Voci Base"]]
     return cartellino
 
 def ottieni_permesso_gravi_motivi(cartellino: pd.DataFrame) -> pd.DataFrame:
+    global codici_usati
+    codici_usati.append("PMF")
     cartellino = cartellino[cartellino["Codice"] == "PMF"]
     cartellino = cartellino[["Stato", "Data", "Voci Base"]]
     return cartellino
 
 def ottieni_entrata_ritardo(cartellino: pd.DataFrame) -> pd.DataFrame:
+    global codici_usati
+    codici_usati.append("ERIT")
     cartellino = cartellino[cartellino["Codice"] == "ERIT"]
     cartellino = cartellino[["Stato", "Data", "Voci Base"]]
     return cartellino
 
 def ottieni_vigilanza_concorsi(cartellino: pd.DataFrame) -> pd.DataFrame:
+    global codici_usati
+    codici_usati.append("VIG")
     cartellino = cartellino[cartellino["Codice"] == "VIG"]
     cartellino = cartellino[["Stato", "Data", "Voci Base"]]
     return cartellino
 
 def ottieni_motivi_di_servizio(cartellino: pd.DataFrame) -> pd.DataFrame:
+    global codici_usati
+    codici_usati.append("AMU")
     cartellino = cartellino[cartellino["Codice"] == "AMU"]
     cartellino = cartellino[["Stato", "Data", "Voci Base"]]
     return cartellino
 
+def ottieni_codici_non_usati(cartellino: pd.DataFrame) -> List[str]:
+    all_codes = set(cartellino["Codice"].unique())
+    used_codes = set(codici_usati)
+    unused_codes = all_codes - used_codes
+    return list(unused_codes)
+
 def processa_dati(data_folder: Path) -> None:
+    global codici_usati
     current_year = int(os.getenv("CURRENT_YEAR"))
     try:
         min_date = datetime.strptime(f"{current_year}-{os.getenv('MIN_DATE_RIPOSI_USATI')}", "%Y-%m-%d")
@@ -268,12 +300,14 @@ def processa_dati(data_folder: Path) -> None:
     oe = elabora_ore_eccedenti(
         cartellino[cartellino["Codice"]=="OE-DIU"],
         excluded_dates_file, year=current_year)
+    codici_usati.append("OE-DIU")
     if min_date:
         riposi_usati = get_riposi_compensativi_usati_from_data(
             df=cartellino[cartellino["Codice"]=="SRC"],
             min_date=min_date)
     else:
         riposi_usati = get_date_usate_riposi_compensativi(riposi_usati_file)
+    codici_usati.append("SRC")
     riposi_compensativi= raggruppa_ore_eccedenti(oe, riposi_usati)
     scrivi_riposo_compensativo(oe, output_file)
     scrivi_riposi_compensativi(riposi_compensativi, riposi_compensativi_file)
@@ -283,6 +317,7 @@ def processa_dati(data_folder: Path) -> None:
         excluded_dates_file=excluded_dates_file,
         year=current_year
     )
+    codici_usati.append("OO-DIU")
     scrivi_credito_ore(ce, credito_ore_file)
     vsg = ottieni_visite_specialistiche(cartellino)
     str = ottieni_straordinari(cartellino)
@@ -312,6 +347,12 @@ def processa_dati(data_folder: Path) -> None:
         "entrata_ritardo": erit,
     }
     scrivi_dataframe(dfs, output_folder / 'statistiche.xlsx')
+
+    print("Codici usati per le statistiche del cartellino:")
+    print(codici_usati)
+
+    print("Codici non usati per le statistiche del cartellino:")
+    print(ottieni_codici_non_usati(cartellino))
 
 
 def run() -> None:
