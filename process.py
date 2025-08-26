@@ -16,6 +16,11 @@ load_dotenv()
 
 codici_usati = []
 
+current_year=2025
+
+custom_dict = {'gen': 0, 'feb': 1, 'mar': 2, 'apr': 3, 'mag': 4, 'giu': 5, 'lug': 6, 'ago': 7, 'set': 8, 'ott': 9,
+                   'nov': 10, 'dic': 11}
+
 def scrivi_dataframe(dfs: Dict[str, pd.DataFrame], output_file: Path) -> None:
     """
     Scrive i DataFrame in un file Excel con più fogli.
@@ -73,15 +78,16 @@ def scrivi_riposi_compensativi(riposi_compensativi: List[RiposoCompensativo], ou
             for ore in riposo.ore_inserite:
                 hours, minutes = (ore.ore.seconds // 3600, (ore.ore.seconds // 60) % 60)
                 stato = "OK" if ore.stato == "ELAB P1" else "NO"
-                file.write(f"\t- {ore.data} -> {hours}:{minutes} [{stato}]\n")
+                data_ore=get_date_from_string(ore.data, current_year).strftime("%d-%m-%Y")
+                file.write(f"\t- {data_ore} -> {hours:02}:{minutes:02} [{stato}]\n")
             file.write("_________________________________________________\n")
 
-def elabora_ore_eccedenti(df: pd.DataFrame, excluded_dates_file: Path, year:int) -> pd.DataFrame:
+def elabora_ore_eccedenti(df: pd.DataFrame, excluded_dates_file: Path) -> pd.DataFrame:
     df = df[["Stato", "Data", "Voci Base", "date"]]
     with open(excluded_dates_file, 'r') as file:
         excluded_dates = []
         for line in file:
-            excluded_dates.append(get_date_from_string(line.strip(),year))
+            excluded_dates.append(get_date_from_string(line.strip(),current_year))
         if excluded_dates and len(excluded_dates) > 0:
             df = df[~df["date"].isin(excluded_dates)]
     ore_eccedenti = []
@@ -97,12 +103,12 @@ def elabora_ore_eccedenti(df: pd.DataFrame, excluded_dates_file: Path, year:int)
     df['intervallo'] = pd.to_timedelta(df['ore eccedenti'], unit='h') + pd.to_timedelta(df['minuti eccedenti'], unit='m')
     return df
 
-def credito_ore(df: pd.DataFrame, oe: pd.DataFrame, excluded_dates_file: Path, year: int) -> pd.DataFrame:
+def credito_ore(df: pd.DataFrame, oe: pd.DataFrame, excluded_dates_file: Path) -> pd.DataFrame:
     df = df[["Stato", "Data", "Voci Base", "Saldo (ore medie)", "date"]]
     with open(excluded_dates_file, 'r') as file:
         excluded_dates = []
         for line in file:
-            excluded_dates.append(get_date_from_string(line.strip(),year))
+            excluded_dates.append(get_date_from_string(line.strip(),current_year))
         if excluded_dates and len(excluded_dates) > 0:
             df = df[~df["date"].isin(excluded_dates)]
     df["mese"] = df["Data"].str[-3:]
@@ -112,8 +118,7 @@ def credito_ore(df: pd.DataFrame, oe: pd.DataFrame, excluded_dates_file: Path, y
     oe["mese"] = oe["Data"].str[-3:]
     oe["Riposo Compensativo"] = (oe["ore eccedenti"] * 60) + oe["minuti eccedenti"]
     oe = oe[["Stato", "mese", "Riposo Compensativo"]].groupby(["Stato", "mese"]).sum().reset_index()
-    custom_dict = {'gen': 0, 'feb': 1, 'mar': 2, 'apr': 3, 'mag': 4, 'giu': 5, 'lug': 6, 'ago': 7, 'set': 8, 'ott': 9,
-                   'nov': 10, 'dic': 11}
+
     oe.sort_values(by=['mese'], key=lambda x: x.map(custom_dict), inplace=True)
     df = df[["Stato", "mese", "Saldo (ore medie)"]].groupby(["Stato", "mese"]).sum().reset_index()
     df = pd.merge(df, oe[["Stato", "mese", "Riposo Compensativo"]], on=["Stato", "mese"], how="outer")
@@ -122,8 +127,7 @@ def credito_ore(df: pd.DataFrame, oe: pd.DataFrame, excluded_dates_file: Path, y
     df["ore_residue"] = df["ore_residue"].apply(lambda x: max(x, 0))  # Assicurati che le ore residue non siano negative
     df["credito"] = pd.to_datetime(df["Saldo (ore medie)"], unit="m").dt.strftime('%H:%M')
     df["credito_ore_residuo"] = pd.to_datetime(df["ore_residue"], unit="m").dt.strftime('%H:%M')
-    custom_dict = {'gen': 0, 'feb': 1, 'mar': 2, 'apr': 3, 'mag': 4, 'giu': 5, 'lug': 6, 'ago': 7, 'set': 8, 'ott': 9,
-                   'nov': 10, 'dic': 11}
+
     df.sort_values(by=['mese'], key=lambda x: x.map(custom_dict), inplace=True)
     return df
 
@@ -271,6 +275,8 @@ def ottieni_codici_non_usati(cartellino: pd.DataFrame) -> List[str]:
 
 def processa_dati(data_folder: Path) -> None:
     global codici_usati
+    global current_year
+
     current_year = int(os.getenv("CURRENT_YEAR"))
     try:
         min_date = datetime.strptime(f"{current_year}-{os.getenv('MIN_DATE_RIPOSI_USATI')}", "%Y-%m-%d")
@@ -299,7 +305,7 @@ def processa_dati(data_folder: Path) -> None:
     cartellino.to_excel(output_folder / 'cartellino.xlsx', index=False)
     oe = elabora_ore_eccedenti(
         cartellino[cartellino["Codice"]=="OE-DIU"],
-        excluded_dates_file, year=current_year)
+        excluded_dates_file)
     codici_usati.append("OE-DIU")
     if min_date:
         riposi_usati = get_riposi_compensativi_usati_from_data(
@@ -315,7 +321,6 @@ def processa_dati(data_folder: Path) -> None:
         df=cartellino[cartellino["Codice"]=="OO-DIU"],
         oe=oe,
         excluded_dates_file=excluded_dates_file,
-        year=current_year
     )
     codici_usati.append("OO-DIU")
     scrivi_credito_ore(ce, credito_ore_file)
@@ -326,8 +331,6 @@ def processa_dati(data_folder: Path) -> None:
     tck_stat["mese"] = tck_stat["Data"].str[-3:]
     tck_stat = tck_stat[["Stato","mese","Data"]].groupby(["Stato", "mese"]).count().reset_index()
     tck_stat.rename(columns={"Data": "Numero Ticket"}, inplace=True)
-    custom_dict = {'gen': 0, 'feb': 1, 'mar': 2, 'apr': 3, 'mag': 4, 'giu': 5, 'lug': 6, 'ago': 7, 'set': 8, 'ott': 9,
-                   'nov': 10, 'dic': 11}
     tck_stat.sort_values(by=['mese'], key=lambda x: x.map(custom_dict), inplace=True)
     mal = ottieni_malattia(cartellino)
     fer = ottieni_ferie(cartellino)
