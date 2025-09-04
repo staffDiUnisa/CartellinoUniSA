@@ -2,6 +2,7 @@ import os
 import re
 from cmath import isnan
 from datetime import datetime,timedelta
+from fileinput import lineno
 
 import pandas as pd
 
@@ -87,9 +88,15 @@ def elabora_ore_eccedenti(df: pd.DataFrame, excluded_dates_file: Path) -> pd.Dat
     with open(excluded_dates_file, 'r') as file:
         excluded_dates = []
         for line in file:
-            excluded_dates.append(get_date_from_string(line.strip(),current_year))
+            line = line.strip()
+            preg_datetime = re.match(r'^\d{2}-\d{2}-\d{4} \d{2}:\d{2}$', line)
+            if preg_datetime is not None:
+                data_con_ore = datetime.strptime(line, "%d-%m-%Y %H:%M")
+            else:
+                data_con_ore = datetime.strptime(line, "%d-%m-%Y")
+            excluded_dates.append(data_con_ore)
         if excluded_dates and len(excluded_dates) > 0:
-            df = df[~df["date"].isin(excluded_dates)]
+            df = df[~df["date"].isin([d.date for d in excluded_dates if d.time() <= datetime.strptime("00:00", "%H:%M").time()])]
     ore_eccedenti = []
     for values in df['Voci Base']:
         ore_eccedenti.append(re.search(r'\d\d\.', values).group()[:-1])
@@ -100,6 +107,16 @@ def elabora_ore_eccedenti(df: pd.DataFrame, excluded_dates_file: Path) -> pd.Dat
         minuti_eccedenti.append(re.search(r'\.\d\d', values).group()[1:])
     df["minuti eccedenti"] = minuti_eccedenti
     df["minuti eccedenti"] = df["minuti eccedenti"].astype(int)
+    for d in excluded_dates:
+        if d.time() > datetime.strptime("00:00", "%H:%M").time():
+            minuti_eccedenti = df.loc[df.date == d.strftime("%d-%m-%Y"), "minuti eccedenti"].values[0]
+            ore_eccedenti = df.loc[df.date == d.strftime("%d-%m-%Y"), "ore eccedenti"].values[0]
+            minuti_eccedenti = minuti_eccedenti - d.minute
+            ore_eccedenti = ore_eccedenti - d.hour
+            ore_eccedenti = ore_eccedenti -1 if minuti_eccedenti < 0 else ore_eccedenti
+            minuti_eccedenti = minuti_eccedenti + 60 if minuti_eccedenti < 0 else minuti_eccedenti
+            df.loc[df.date == d.strftime("%d-%m-%Y"), "minuti eccedenti"] = minuti_eccedenti
+            df.loc[df.date == d.strftime("%d-%m-%Y"), "ore eccedenti"] = ore_eccedenti
     df['intervallo'] = pd.to_timedelta(df['ore eccedenti'], unit='h') + pd.to_timedelta(df['minuti eccedenti'], unit='m')
     return df
 
@@ -108,9 +125,15 @@ def credito_ore(df: pd.DataFrame, oe: pd.DataFrame, excluded_dates_file: Path) -
     with open(excluded_dates_file, 'r') as file:
         excluded_dates = []
         for line in file:
-            excluded_dates.append(get_date_from_string(line.strip(),current_year))
+            line = line.strip()
+            preg_datetime = re.match(r'^\d{2}-\d{2}-\d{4} \d{2}:\d{2}$', line)
+            if preg_datetime is not None:
+                data_con_ore = datetime.strptime(line, "%d-%m-%Y %H:%M")
+            else:
+                data_con_ore = datetime.strptime(line, "%d-%m-%Y")
+            excluded_dates.append(data_con_ore)
         if excluded_dates and len(excluded_dates) > 0:
-            df = df[~df["date"].isin(excluded_dates)]
+            df = df[~df["date"].isin([d.date for d in excluded_dates])]
     df["mese"] = df["Data"].str[-3:]
     df["saldo_ore"] = df["Saldo (ore medie)"].astype(int) * 60
     df["saldo_minuti"] = ((df["Saldo (ore medie)"] - df["Saldo (ore medie)"].astype(int)) * 100).astype(int)
@@ -169,8 +192,8 @@ def get_date_from_string(date_string: str, year:int) -> datetime:
         "mag": 5,
         "giu": 6,
         "lug": 7,
-        "ago": 7,
-        "set": 8,
+        "ago": 8,
+        "set": 9,
         "ott": 10,
         "nov": 11,
         "dic": 12
