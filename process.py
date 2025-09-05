@@ -96,7 +96,7 @@ def elabora_ore_eccedenti(df: pd.DataFrame, excluded_dates_file: Path) -> pd.Dat
                 data_con_ore = datetime.strptime(line, "%d-%m-%Y")
             excluded_dates.append(data_con_ore)
         if excluded_dates and len(excluded_dates) > 0:
-            df = df[~df["date"].isin([d.date for d in excluded_dates if d.time() <= datetime.strptime("00:00", "%H:%M").time()])]
+            df = df[~df["date"].isin([d.date() for d in excluded_dates if d.time() <= datetime.strptime("00:00", "%H:%M").time()])]
     ore_eccedenti = []
     for values in df['Voci Base']:
         ore_eccedenti.append(re.search(r'\d\d\.', values).group()[:-1])
@@ -133,7 +133,7 @@ def credito_ore(df: pd.DataFrame, oe: pd.DataFrame, excluded_dates_file: Path) -
                 data_con_ore = datetime.strptime(line, "%d-%m-%Y")
             excluded_dates.append(data_con_ore)
         if excluded_dates and len(excluded_dates) > 0:
-            df = df[~df["date"].isin([d.date for d in excluded_dates])]
+            df = df[~df["date"].isin([d.date() for d in excluded_dates])]
     df["mese"] = df["Data"].str[-3:]
     df["saldo_ore"] = df["Saldo (ore medie)"].astype(int) * 60
     df["saldo_minuti"] = ((df["Saldo (ore medie)"] - df["Saldo (ore medie)"].astype(int)) * 100).astype(int)
