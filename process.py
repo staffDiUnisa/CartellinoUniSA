@@ -1,8 +1,7 @@
 import os
 import re
-from cmath import isnan
 from datetime import datetime,timedelta
-from fileinput import lineno
+import numpy as np
 
 import pandas as pd
 
@@ -12,6 +11,7 @@ from typing import List, Dict
 from model.ore_inserite import OreInserite
 from model.riposo_compensativo import RiposoCompensativo
 from dotenv import load_dotenv
+from pandas.io.formats import excel
 
 load_dotenv()
 
@@ -83,6 +83,31 @@ def scrivi_riposi_compensativi(riposi_compensativi: List[RiposoCompensativo], ou
                 file.write(f"\t- {data_ore} -> {hours:02}:{minutes:02} [{stato}]\n")
             file.write("_________________________________________________\n")
 
+def scrivi_ore_giornaliere(og: Dict[str, pd.DataFrame], output_file: Path) -> None:
+    mesi = sorted(og.keys(), key=lambda x: custom_dict[x])
+
+    excel.ExcelFormatter.header_style = None
+
+    writer = pd.ExcelWriter(output_file,
+                            engine='xlsxwriter',
+                            datetime_format="dd/mm/yyyy",
+                            date_format="dd/mm/yyyy")
+    for mese in mesi:
+        sheetname = mese
+        df = og[mese]
+        df.to_excel(writer,
+                    sheet_name=sheetname,
+                    index=False)
+        worksheet = writer.sheets[sheetname]
+        for idx, col in enumerate(df):
+            series = df[col]
+            max_len = max((
+                series.astype(str).map(len).max(),
+                len(str(series.name))
+            )) + 1
+            worksheet.set_column(idx, idx, max_len)
+    writer.close()
+
 def elabora_ore_eccedenti(df: pd.DataFrame, excluded_dates_file: Path) -> pd.DataFrame:
     df = df[["Stato", "Data", "Voci Base", "date"]]
     with open(excluded_dates_file, 'r') as file:
@@ -92,11 +117,15 @@ def elabora_ore_eccedenti(df: pd.DataFrame, excluded_dates_file: Path) -> pd.Dat
             preg_datetime = re.match(r'^\d{2}-\d{2}-\d{4} \d{2}:\d{2}$', line)
             if preg_datetime is not None:
                 data_con_ore = datetime.strptime(line, "%d-%m-%Y %H:%M")
+                has_time = True
             else:
                 data_con_ore = datetime.strptime(line, "%d-%m-%Y")
-            excluded_dates.append(data_con_ore)
+                has_time = False
+            data_con_ore = np.datetime64(data_con_ore)
+            excluded_dates.append({"data":data_con_ore, "has_time": has_time})
         if excluded_dates and len(excluded_dates) > 0:
-            df = df[~df["date"].isin([d.date() for d in excluded_dates if d.time() <= datetime.strptime("00:00", "%H:%M").time()])]
+            [print(d) for d in excluded_dates ]
+            df = df[~df["date"].isin([d['data'] for d in excluded_dates if ~d["has_time"]])]
     ore_eccedenti = []
     for values in df['Voci Base']:
         ore_eccedenti.append(re.search(r'\d\d\.', values).group()[:-1])
@@ -108,15 +137,16 @@ def elabora_ore_eccedenti(df: pd.DataFrame, excluded_dates_file: Path) -> pd.Dat
     df["minuti eccedenti"] = minuti_eccedenti
     df["minuti eccedenti"] = df["minuti eccedenti"].astype(int)
     for d in excluded_dates:
-        if d.time() > datetime.strptime("00:00", "%H:%M").time():
-            minuti_eccedenti = df.loc[df.date == d.strftime("%d-%m-%Y"), "minuti eccedenti"].values[0]
-            ore_eccedenti = df.loc[df.date == d.strftime("%d-%m-%Y"), "ore eccedenti"].values[0]
-            minuti_eccedenti = minuti_eccedenti - d.minute
-            ore_eccedenti = ore_eccedenti - d.hour
+        if d['has_time']:
+            dt = pd.Timestamp(d['data']).to_pydatetime()
+            minuti_eccedenti = df.loc[df.date == dt.strftime("%d-%m-%Y"), "minuti eccedenti"].values[0]
+            ore_eccedenti = df.loc[df.date == dt.strftime("%d-%m-%Y"), "ore eccedenti"].values[0]
+            minuti_eccedenti = minuti_eccedenti - dt.minute
+            ore_eccedenti = ore_eccedenti - dt.hour
             ore_eccedenti = ore_eccedenti -1 if minuti_eccedenti < 0 else ore_eccedenti
             minuti_eccedenti = minuti_eccedenti + 60 if minuti_eccedenti < 0 else minuti_eccedenti
-            df.loc[df.date == d.strftime("%d-%m-%Y"), "minuti eccedenti"] = minuti_eccedenti
-            df.loc[df.date == d.strftime("%d-%m-%Y"), "ore eccedenti"] = ore_eccedenti
+            df.loc[df.date == dt.strftime("%d-%m-%Y"), "minuti eccedenti"] = minuti_eccedenti
+            df.loc[df.date == dt.strftime("%d-%m-%Y"), "ore eccedenti"] = ore_eccedenti
     df['intervallo'] = pd.to_timedelta(df['ore eccedenti'], unit='h') + pd.to_timedelta(df['minuti eccedenti'], unit='m')
     return df
 
@@ -129,11 +159,14 @@ def credito_ore(df: pd.DataFrame, oe: pd.DataFrame, excluded_dates_file: Path) -
             preg_datetime = re.match(r'^\d{2}-\d{2}-\d{4} \d{2}:\d{2}$', line)
             if preg_datetime is not None:
                 data_con_ore = datetime.strptime(line, "%d-%m-%Y %H:%M")
+                has_time = True
             else:
                 data_con_ore = datetime.strptime(line, "%d-%m-%Y")
-            excluded_dates.append(data_con_ore)
+                has_time = False
+            data_con_ore = np.datetime64(data_con_ore)
+            excluded_dates.append({"data": data_con_ore, "has_time": has_time})
         if excluded_dates and len(excluded_dates) > 0:
-            df = df[~df["date"].isin([d.date() for d in excluded_dates])]
+            df = df[~df["date"].isin([d["data"] for d in excluded_dates])]
     df["mese"] = df["Data"].str[-3:]
     df["saldo_ore"] = df["Saldo (ore medie)"].astype(int) * 60
     df["saldo_minuti"] = ((df["Saldo (ore medie)"] - df["Saldo (ore medie)"].astype(int)) * 100).astype(int)
@@ -153,6 +186,20 @@ def credito_ore(df: pd.DataFrame, oe: pd.DataFrame, excluded_dates_file: Path) -
 
     df.sort_values(by=['mese'], key=lambda x: x.map(custom_dict), inplace=True)
     return df
+
+def ore_giornaliere(df: pd.DataFrame) -> Dict[str, pd.DataFrame]:
+    # OO-DIU
+    df = df[["Stato", "Data", "Svolte", "date"]]
+    df["mese"] = df["Data"].str[-3:]
+    df["Giorno della settimana"] = df.date.dt.day_name(locale='it_IT.UTF-8')
+    mesi = sorted(set(df["mese"].unique()), key=lambda x: custom_dict[x])
+    ret = {}
+    for mese in mesi:
+        df_mese = df[df["mese"] == mese]
+        df_mese = df_mese[["date", "Giorno della settimana", "Svolte"]]
+        ret[mese] = df_mese
+
+    return ret
 
 def raggruppa_ore_eccedenti(df: pd.DataFrame, riposi_usati: List[str]) -> List[RiposoCompensativo]:
     riposi_compensativi = []
@@ -380,6 +427,8 @@ def processa_dati(data_folder: Path) -> None:
     print("Codici non usati per le statistiche del cartellino:")
     print(ottieni_codici_non_usati(cartellino))
 
+    scrivi_ore_giornaliere(ore_giornaliere(df=cartellino[cartellino["Codice"]=="OO-DIU"]),
+                           output_file=output_folder / "ore_giornaliere.xlsx")
 
 def run() -> None:
     data_folder = Path('data')
