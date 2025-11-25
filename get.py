@@ -38,9 +38,10 @@ def ottieni_cartellino(data_folder:Path) -> None:
     try:
         driver.get("https://presenze.unisa.it/")
         driver.find_element(By.LINK_TEXT, "Credenziali UNISA").click()
-        username = driver.find_element(By.NAME, "_username")
+        time.sleep(1)
+        username = driver.find_element(By.ID, "_username")
         username.send_keys(os.getenv("USERNAME"))
-        password = driver.find_element(By.NAME, "j_password")
+        password = driver.find_element(By.ID, "password")
         password.send_keys(os.getenv("PASSWORD"))
         driver.find_element(By.NAME, "_eventId_proceed").click()
         # WebDriverWait(driver, 100).until(EC.text_to_be_present_in_element((By.XPATH,"//title"), "Start Web"))
