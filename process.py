@@ -285,11 +285,24 @@ def ottieni_straordinari(cartellino: pd.DataFrame) -> pd.DataFrame:
     cartellino = cartellino[["Stato", "Data", "Voci Base"]]
     return cartellino
 
-def ottieni_ticket(cartellino: pd.DataFrame) -> pd.DataFrame:
+def get_ticket_paid(date: datetime, ticket_paid_date: datetime) -> int:
+    if date > ticket_paid_date:
+        return 1
+    return 0
+
+def ottieni_ticket(cartellino: pd.DataFrame, input_folder: Path) -> pd.DataFrame:
     global codici_usati
     codici_usati.append("TCK")
+    data_ticket_file = input_folder / 'data_ticket.txt'
+    if data_ticket_file.exists():
+        line = data_ticket_file.read_text().strip()
+        ticket_date = datetime.strptime(line, "%d-%m-%Y")
     cartellino = cartellino[cartellino["Codice"] == "TCK"]
     cartellino = cartellino[["Stato", "Data", "Voci Base"]]
+    cartellino["Maturati"] = 1
+    cartellino["Valore maturati"] = cartellino["Maturati"] * 7.00
+    cartellino["Da ricevere"] = cartellino["Data"].apply(lambda x: get_ticket_paid(get_date_from_string(x,current_year), ticket_date))
+    cartellino["Valore da ricevere"] = cartellino["Da ricevere"] * 7.00
     return cartellino
 
 def ottieni_malattia(cartellino: pd.DataFrame) -> pd.DataFrame:
@@ -354,13 +367,13 @@ def processa_dati(data_folder: Path) -> None:
     except ValueError:
         print("Errore nel processare la variabile MIN_DATE_RIPOSI_USATI. Userò il file dei riposi usati, se disponibile, per determinare quelli già usati")
         min_date = None
-    input_folder = data_folder / 'input'
-    if input_folder.exists():
+    input_folder = data_folder / str(current_year) / 'input'
+    if not input_folder.exists():
         input_folder.mkdir(parents=True, exist_ok=True)
     input_file = input_folder / 'cartellino.xlsx'
     excluded_dates_file = input_folder / 'date_escluse.txt'
     riposi_usati_file = input_folder / 'riposi_usati.txt'
-    output_folder = data_folder / 'output'
+    output_folder = data_folder / str(current_year) / 'output'
     output_folder.mkdir(parents=True, exist_ok=True)
     output_file = output_folder / 'riposo_compensativo.xlsx'
     credito_ore_file = output_folder / 'credito_ore.xlsx'
@@ -395,8 +408,8 @@ def processa_dati(data_folder: Path) -> None:
     codici_usati.append("OO-DIU")
     scrivi_credito_ore(ce, credito_ore_file)
     vsg = ottieni_visite_specialistiche(cartellino)
-    str = ottieni_straordinari(cartellino)
-    tck = ottieni_ticket(cartellino)
+    stra = ottieni_straordinari(cartellino)
+    tck = ottieni_ticket(cartellino, input_folder)
     tck_stat = tck.copy()
     tck_stat["mese"] = tck_stat["Data"].str[-3:]
     tck_stat = tck_stat[["Stato","mese","Data"]].groupby(["Stato", "mese"]).count().reset_index()
@@ -410,7 +423,7 @@ def processa_dati(data_folder: Path) -> None:
 
     dfs = {
         "visite_specialistiche": vsg,
-        "straordinari": str,
+        "straordinari": stra,
         "ticket": tck,
         "statistica_ticket": tck_stat,
         "malattia": mal,
