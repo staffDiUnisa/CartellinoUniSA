@@ -13,6 +13,8 @@ from model.riposo_compensativo import RiposoCompensativo
 from dotenv import load_dotenv
 from pandas.io.formats import excel
 
+from processor.cartellino import Cartellino
+
 load_dotenv()
 
 codici_usati = []
@@ -379,6 +381,7 @@ def processa_dati(data_folder: Path) -> None:
     credito_ore_file = output_folder / 'credito_ore.xlsx'
     riposi_compensativi_file = output_folder / 'riposi_compensativi.txt'
     cartellino = pd.read_excel(input_file)
+
     cartellino["Voci Base"]=cartellino["Voci Base"].str.split(chr(160)+'&-&'+chr(160))
     cartellino["date"]=cartellino["Data"].apply(lambda x: get_date_from_string(x, current_year))
     cartellino = cartellino.explode("Voci Base")
@@ -442,6 +445,9 @@ def processa_dati(data_folder: Path) -> None:
 
     scrivi_ore_giornaliere(ore_giornaliere(df=cartellino[cartellino["Codice"]=="OO-DIU"]),
                            output_file=output_folder / "ore_giornaliere.xlsx")
+
+    cartellino_out = Cartellino(input_folder=output_folder, min_hours_per_day=5, max_project_hours_per_day=2.5)
+
 
 def run() -> None:
     data_folder = Path('data')
