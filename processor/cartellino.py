@@ -96,7 +96,6 @@ class Cartellino:
                 {'day': "Giorno", 'ore_progetto': "Attività svolta sul progetto CUP: D43C22005040001",
                  'ore_altri_prog': "Attività svolte su altri progetti", 'ore_ordinarie': "Attività ordinaria",
                  'ore_altro': "Altro (Malattia, Ferie..)"})
-            print(mdata["label"])
             if self.output_folder is not None:
                 month_name = month_names[int(month) - 1]
                 output_folder = self.output_folder / 'ore_svolte_per_giorno'
