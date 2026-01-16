@@ -27,7 +27,7 @@ def ottieni_cartellino(data_folder:Path) -> None:
     current_year = int(os.getenv("CURRENT_YEAR"))
     start_date = datetime(year=current_year, month=1, day=1)
     end_date = datetime(year=current_year, month=12, day=31)
-    output_folder = data_folder / 'input'
+    output_folder = data_folder / str(current_year) / 'input'
     if not output_folder.exists():
         output_folder.mkdir(parents=True, exist_ok=True)
     output_file = output_folder / 'cartellino.xlsx'

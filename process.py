@@ -13,7 +13,7 @@ from model.riposo_compensativo import RiposoCompensativo
 from dotenv import load_dotenv
 from pandas.io.formats import excel
 
-from processor.cartellino import Cartellino
+from processor.cartellinoprogetto import CartellinoProgetto
 
 load_dotenv()
 
@@ -446,7 +446,7 @@ def processa_dati(data_folder: Path) -> None:
     scrivi_ore_giornaliere(ore_giornaliere(df=cartellino[cartellino["Codice"]=="OO-DIU"]),
                            output_file=output_folder / "ore_giornaliere.xlsx")
 
-    cartellino_out = Cartellino(input_folder=output_folder, min_hours_per_day=5, max_project_hours_per_day=2.5)
+    cartellino_out = CartellinoProgetto(input_folder=output_folder, min_hours_per_day=5, max_project_hours_per_day=2.5)
 
 
 def run() -> None:

@@ -7,16 +7,20 @@ import pandas as pd
 from processor.utils import write_excel_file
 
 
-class Cartellino:
+class CartellinoProgetto:
     df: pd.DataFrame
     input_folder: Path
     output_folder: Path
     min_hours_per_day: float
     max_project_hours_per_day: float
     max_project_hours: float
+    end_date: datetime
+    start_date: datetime
+    current_year: int
 
     def __init__(self, df: pd.DataFrame = None, input_folder: Path = None, output_folder: Path = None,
-                 min_hours_per_day: float = 6, max_project_hours_per_day: float = None, max_project_hours: float = 400):
+                 min_hours_per_day: float = 6, max_project_hours_per_day: float = None, max_project_hours: float = 400
+                 , current_year:int = 2025, end_date: datetime = None, start_date: datetime = None):
         if df is None:
             if not input_folder is None:
                 self.df = pd.read_excel(input_folder / 'cartellino.xlsx')
@@ -32,6 +36,15 @@ class Cartellino:
         self.min_hours_per_day = min_hours_per_day
         self.max_project_hours_per_day = max_project_hours_per_day
         self.max_project_hours = max_project_hours
+
+        self.current_year = current_year
+
+        end_date = end_date if end_date else datetime(current_year, 12, 31)
+        start_date = start_date if start_date else datetime(current_year, 1, 1)
+        self.end_date = end_date
+        self.start_date = start_date
+
+        self.df = self.df[(self.df.date <= end_date) & (self.df.date >= start_date)]
 
     def splitta_ore(self, ore: float, hours_in_month: int, days_in_month: int = 20):
         if ore < self.min_hours_per_day:
@@ -51,15 +64,13 @@ class Cartellino:
     def print_columns(self):
         print(self.df.columns)
 
-    def ottieni_ore_svolte_per_giorno(self, current_year=2025) -> pd.DataFrame:
+    def ottieni_ore_svolte_per_giorno_per_progetto(self) -> pd.DataFrame:
         data = self.df[(self.df.Codice == 'OO-DIU')][["date", "Codice", "Svolte"]]
 
         date_in_anno = []
+        current_date = self.start_date
 
-        current_date = datetime(current_year, 1, 1)
-        end_date = datetime(current_year, 12, 31)
-
-        while current_date <= end_date:
+        while current_date <= self.end_date:
             date_in_anno.append(current_date)
             current_date += timedelta(days=1)
 
