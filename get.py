@@ -1,19 +1,17 @@
-import time
 import os
-import shutil
+import time
 from datetime import datetime
-
-import pandas as pd
-
-from selenium import webdriver
-from selenium.common import TimeoutException
-from selenium.webdriver.common.by import By
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support.ui import Select
-from selenium.webdriver.support import expected_conditions as EC
-from dotenv import load_dotenv
 from io import StringIO
 from pathlib import Path
+
+import pandas as pd
+from dotenv import load_dotenv
+from selenium import webdriver
+from selenium.common import TimeoutException
+from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.support.ui import WebDriverWait
 
 load_dotenv()
 
@@ -28,12 +26,21 @@ def ottieni_cartellino(data_folder:Path) -> None:
     start_date = datetime(year=current_year, month=1, day=1)
     end_date = datetime(year=current_year, month=12, day=31)
     output_folder = data_folder / str(current_year) / 'input'
+    headless = os.getenv("HEADLESS") == "True"
     if not output_folder.exists():
         output_folder.mkdir(parents=True, exist_ok=True)
     output_file = output_folder / 'cartellino.xlsx'
     # https://presenze.unisa.it/
-    driver = webdriver.Firefox()
+    # driver = webdriver.Firefox()
     # driver = webdriver.Chrome()
+    WINDOW_SIZE = "800,600"
+    chrome_options = Options()
+    if headless:
+        chrome_options.add_argument("--headless")
+        chrome_options.add_argument("--window-size=%s" % WINDOW_SIZE)
+    # chrome_options.binary_location = '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome'
+    chrome_options.binary_location = '/Applications/Google Chrome Beta.app/Contents/MacOS/Google Chrome Beta'
+    driver = webdriver.Chrome(options=chrome_options)
 
     try:
         driver.get("https://presenze.unisa.it/")
