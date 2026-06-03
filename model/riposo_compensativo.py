@@ -9,7 +9,7 @@ class RiposoCompensativo(BaseModel):
     id : Annotated[int, Field(description="ID del riposo compensativo")]
     data : Annotated[str, Field(description="Data del riposo compensativo in formato YYYY-MM-DD", default=None)]
     ore_necessarie : Annotated[timedelta, Field(description="Ore necessarie per il riposo compensativo", default=timedelta(hours=7, minutes=12))]
-    ore_inserite : list[Annotated[OreInserite, Field(description="Ore inserite per il riposo compensativo", default_factory=list)]] = Field(default_factory=list)
+    ore_inserite: list[OreInserite] = Field(default_factory=list, description="Ore inserite per il riposo compensativo")
 
     def ore_mancanti(self) -> timedelta:
         """

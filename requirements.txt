@@ -24,6 +24,7 @@ python-dotenv
 pytz
 rich
 selenium
+webdriver-manager
 shellingham
 six
 sniffio
