@@ -12,7 +12,7 @@ def main(aggiorna_cartellino: Annotated[
         typer.Option(prompt="Vuoi aggiornare i dati del cartellino (L'aggiornamento funziona solo dalla rete "
                             "universitaria.)?",
                      help="Aggiorna i dati da https://presenze.unisa.it. Di default usa solo i dati già scaricati in "
-                          "data/input/cartellino.xlsx. L'aggiornamento funziona solo dalla rete universitaria.")]
+                          "data/input/cartellino.xlsx.")]
          = False) -> None:
 
 

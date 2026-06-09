@@ -23,6 +23,18 @@ def multiselect_set_selections(driver, element_name, labels) -> None:
         if option.text in labels:
             option.click()
 
+METODI_AUTENTICAZIONE = ["Credenziali UNISA", "SPID", "CIE"]
+
+def scegli_metodo_autenticazione() -> str:
+    print("\nScegli il metodo di autenticazione:")
+    for i, metodo in enumerate(METODI_AUTENTICAZIONE, 1):
+        print(f"  {i}. {metodo}")
+    while True:
+        scelta = input(f"Inserisci il numero (1-{len(METODI_AUTENTICAZIONE)}): ").strip()
+        if scelta.isdigit() and 1 <= int(scelta) <= len(METODI_AUTENTICAZIONE):
+            return METODI_AUTENTICAZIONE[int(scelta) - 1]
+        print("Scelta non valida, riprova.")
+
 def ottieni_cartellino(data_folder:Path) -> None:
     current_year = int(os.environ["CURRENT_YEAR"])
     start_date = datetime(year=current_year, month=1, day=1)
@@ -32,27 +44,36 @@ def ottieni_cartellino(data_folder:Path) -> None:
     if not output_folder.exists():
         output_folder.mkdir(parents=True, exist_ok=True)
     output_file = output_folder / 'cartellino.xlsx'
-    # https://presenze.unisa.it/
-    # driver = webdriver.Firefox()
-    # driver = webdriver.Chrome()
+
+    metodo = scegli_metodo_autenticazione()
+
     WINDOW_SIZE = "800,600"
     chrome_options = Options()
-    if headless:
+    if headless and metodo == "Credenziali UNISA":
         chrome_options.add_argument("--headless")
         chrome_options.add_argument("--window-size=%s" % WINDOW_SIZE)
     driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=chrome_options)
 
     try:
         driver.get("https://presenze.unisa.it/")
-        driver.find_element(By.LINK_TEXT, "Credenziali UNISA").click()
-        time.sleep(1)
-        username = driver.find_element(By.ID, "_username")
-        username.send_keys(os.environ["USERNAME"])
-        password = driver.find_element(By.ID, "password")
-        password.send_keys(os.environ["PASSWORD"])
-        driver.find_element(By.NAME, "_eventId_proceed").click()
-        # WebDriverWait(driver, 100).until(EC.text_to_be_present_in_element((By.XPATH,"//title"), "Start Web"))
-        time.sleep(10)
+
+        if metodo == "Credenziali UNISA":
+            driver.find_element(By.LINK_TEXT, "Credenziali UNISA").click()
+            time.sleep(1)
+            username = driver.find_element(By.ID, "_username")
+            username.send_keys(os.environ["USERNAME"])
+            password = driver.find_element(By.ID, "password")
+            password.send_keys(os.environ["PASSWORD"])
+            driver.find_element(By.NAME, "_eventId_proceed").click()
+            time.sleep(10)
+        else:
+            driver.find_element(By.LINK_TEXT, metodo).click()
+            print(f"\nAutenticazione {metodo}: completa il login nel browser, poi attendi.")
+            print("Selenium riprenderà il controllo automaticamente quando sarà raggiunta la pagina principale.\n")
+            # Attendi fino a 10 minuti che l'utente completi il login
+            WebDriverWait(driver, 600).until(
+                EC.url_contains("presenze.unisa.it/default.aspx")
+            )
         dtinizio=int(start_date.timestamp()*1000)
         dtfine=int(end_date.timestamp()*1000)
         driver.get(f"https://presenze.unisa.it/default.aspx?page=cartellino#dtfine={dtfine}&dtinizio={dtinizio}&iddip=146187&view=full")
