@@ -1,4 +1,5 @@
 import os
+import socket
 import time
 from datetime import datetime
 from io import StringIO
@@ -25,14 +26,26 @@ def multiselect_set_selections(driver, element_name, labels) -> None:
 
 METODI_AUTENTICAZIONE = ["Credenziali UNISA", "SPID", "CIE"]
 
+def is_on_unisa_network(host: str = "172.16.19.250", port: int = 22, timeout: float = 2.0) -> bool:
+    try:
+        with socket.create_connection((host, port), timeout=timeout):
+            return True
+    except (socket.timeout, OSError):
+        return False
+
 def scegli_metodo_autenticazione() -> str:
+    su_rete_unisa = is_on_unisa_network()
+    metodi_disponibili = [m for m in METODI_AUTENTICAZIONE if m != "Credenziali UNISA" or su_rete_unisa]
+
     print("\nScegli il metodo di autenticazione:")
-    for i, metodo in enumerate(METODI_AUTENTICAZIONE, 1):
+    if not su_rete_unisa:
+        print("  (Credenziali UNISA non disponibile: non sei sulla rete universitaria)")
+    for i, metodo in enumerate(metodi_disponibili, 1):
         print(f"  {i}. {metodo}")
     while True:
-        scelta = input(f"Inserisci il numero (1-{len(METODI_AUTENTICAZIONE)}): ").strip()
-        if scelta.isdigit() and 1 <= int(scelta) <= len(METODI_AUTENTICAZIONE):
-            return METODI_AUTENTICAZIONE[int(scelta) - 1]
+        scelta = input(f"Inserisci il numero (1-{len(metodi_disponibili)}): ").strip()
+        if scelta.isdigit() and 1 <= int(scelta) <= len(metodi_disponibili):
+            return metodi_disponibili[int(scelta) - 1]
         print("Scelta non valida, riprova.")
 
 def ottieni_cartellino(data_folder:Path) -> None:
