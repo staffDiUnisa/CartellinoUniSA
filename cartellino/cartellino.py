@@ -123,7 +123,12 @@ class Cartellino:
         return sorted(all_codes - set(self.codici_usati))
 
     def salva(self, output_file: Path) -> None:
-        self.df.to_excel(output_file, index=False)
+        from pandas.io.formats import excel as excel_fmt
+        from cartellino.excel_utils import apply_table_format
+        excel_fmt.ExcelFormatter.header_style = None
+        with pd.ExcelWriter(output_file, engine="xlsxwriter") as writer:
+            self.df.to_excel(writer, index=False, sheet_name="cartellino")
+            apply_table_format(writer.sheets["cartellino"], self.df)
 
     # ------------------------------------------------------------------
     # Convenience

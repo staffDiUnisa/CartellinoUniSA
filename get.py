@@ -116,7 +116,19 @@ def ottieni_cartellino(data_folder:Path) -> None:
             table = StringIO(table)
             df.extend(pd.read_html(table))
         df = pd.concat(df, ignore_index=True)
-        df.to_excel(output_file, index=False)
+        with pd.ExcelWriter(output_file, engine="xlsxwriter") as writer:
+            df.to_excel(writer, index=False, sheet_name="Sheet1")
+            worksheet = writer.sheets["Sheet1"]
+            for i, col in enumerate(df.columns):
+                series = df[col].astype(str)
+                data_max = int(series.str.len().fillna(0).max()) if len(series) > 0 else 0
+                worksheet.set_column(i, i, max(data_max, len(str(col))) + 2)
+            n_rows, n_cols = df.shape
+            if n_rows > 0 and n_cols > 0:
+                worksheet.add_table(
+                    0, 0, n_rows, n_cols - 1,
+                    {"columns": [{"header": str(c)} for c in df.columns], "style": "Table Style Medium 9"},
+                )
     except TimeoutException as e:
         print(f"Timeout {e}")
     finally:

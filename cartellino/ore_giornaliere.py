@@ -25,6 +25,7 @@ class OreGiornaliere:
         mesi = sorted(data.keys(), key=lambda x: _MONTH_ORDER[x])
         print(f"Scrivo ore giornaliere su {output_file}")
 
+        from cartellino.excel_utils import apply_table_format
         excel.ExcelFormatter.header_style = None
         writer = pd.ExcelWriter(
             output_file,
@@ -35,11 +36,7 @@ class OreGiornaliere:
         for mese in mesi:
             df = data[mese]
             df.to_excel(writer, sheet_name=mese, index=False)
-            worksheet = writer.sheets[mese]
-            for idx, col in enumerate(df):
-                series = df[col]
-                max_len = max(series.astype(str).map(len).max(), len(str(series.name))) + 1
-                worksheet.set_column(idx, idx, max_len)
+            apply_table_format(writer.sheets[mese], df)
         writer.close()
 
     # ------------------------------------------------------------------

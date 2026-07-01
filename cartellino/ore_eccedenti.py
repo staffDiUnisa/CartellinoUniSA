@@ -47,16 +47,18 @@ class OreEccedenti:
         riassunto["OE"] = riassunto["ore eccedenti"] + (riassunto["minuti eccedenti"] // 60)
         riassunto["ME"] = riassunto["minuti eccedenti"] % 60
 
+        from cartellino.excel_utils import apply_table_format
+        cols = ["Stato", "Data", "Voci Base", "ore eccedenti", "minuti eccedenti", "intervallo"]
         with pd.ExcelWriter(output_file, engine="xlsxwriter") as writer:
-            df[["Stato", "Data", "Voci Base", "ore eccedenti", "minuti eccedenti", "intervallo"]].to_excel(
-                writer, sheet_name="dettaglio", index=False
-            )
+            df[cols].to_excel(writer, sheet_name="dettaglio", index=False)
             workbook = writer.book
             worksheet = writer.sheets["dettaglio"]
             time_format = workbook.add_format({"num_format": "hh:mm"})
             for row_num, value in enumerate(df["intervallo"], 1):
                 worksheet.write_datetime(row_num, 5, value, time_format)
+            apply_table_format(worksheet, df[cols])
             riassunto.to_excel(writer, index=False, sheet_name="riassunto")
+            apply_table_format(writer.sheets["riassunto"], riassunto)
 
     def salva_testo(self, riposi: list[RiposoCompensativo], output_file: Path) -> None:
         print(f"Scrivo riposi compensativi su {output_file}")

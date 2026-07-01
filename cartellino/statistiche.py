@@ -40,9 +40,11 @@ class Statistiche:
     def salva(self, output_file: Path) -> None:
         sheets = self.calcola()
         print(f"Scrivo le statistiche ottenute su {output_file}")
+        from cartellino.excel_utils import apply_table_format
         with pd.ExcelWriter(output_file, engine="xlsxwriter") as writer:
             for sheet_name, df in sheets.items():
                 df.to_excel(writer, sheet_name=sheet_name, index=False)
+                apply_table_format(writer.sheets[sheet_name], df)
 
     # ------------------------------------------------------------------
 

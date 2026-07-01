@@ -27,7 +27,8 @@ class CreditoOre:
     def salva(self, output_file: Path) -> None:
         df = self.calcola()
         print(f"Scrivo credito ore su {output_file}")
-        (
+        from cartellino.excel_utils import apply_table_format
+        renamed = (
             df[["Stato", "mese", "credito", "credito_ore_residuo"]]
             .rename(columns={
                 "Stato": "Stato elaborazione mese",
@@ -35,8 +36,10 @@ class CreditoOre:
                 "credito": "Credito ore",
                 "credito_ore_residuo": "Credito ore al netto dei riposi maturati",
             })
-            .to_excel(output_file, index=False, sheet_name="credito_ore")
         )
+        with pd.ExcelWriter(output_file, engine="xlsxwriter") as writer:
+            renamed.to_excel(writer, index=False, sheet_name="credito_ore")
+            apply_table_format(writer.sheets["credito_ore"], renamed)
 
     # ------------------------------------------------------------------
 

@@ -17,6 +17,25 @@ from processor.cartellinoprogetto import CartellinoProgetto
 
 load_dotenv()
 
+
+def _apply_table_format(worksheet, df: pd.DataFrame, startrow: int = 0, index: bool = False) -> None:
+    col_headers = ([df.index.name or ""] if index else []) + [str(c) for c in df.columns]
+    n_rows = len(df)
+    n_cols = len(col_headers)
+    for i, header in enumerate(col_headers):
+        if index and i == 0:
+            series = df.index.astype(str)
+        else:
+            series = df.iloc[:, i - (1 if index else 0)].astype(str)
+        data_max = int(series.str.len().fillna(0).max()) if n_rows > 0 else 0
+        worksheet.set_column(i, i, max(data_max, len(header)) + 2)
+    if n_rows > 0 and n_cols > 0:
+        worksheet.add_table(
+            startrow, 0, startrow + n_rows, n_cols - 1,
+            {"columns": [{"header": h} for h in col_headers], "style": "Table Style Medium 9"},
+        )
+
+
 codici_usati = []
 
 current_year=2025
@@ -34,6 +53,7 @@ def scrivi_dataframe(dfs: Dict[str, pd.DataFrame], output_file: Path) -> None:
     with pd.ExcelWriter(output_file, engine='xlsxwriter') as writer:
         for sheet_name, df in dfs.items():
             df.to_excel(writer, sheet_name=sheet_name, index=False)
+            _apply_table_format(writer.sheets[sheet_name], df)
 
 def scrivi_riposo_compensativo(df: pd.DataFrame, output_file: Path) -> None:
     print(f"Scrivo riposi compensativo su {output_file}")
@@ -44,26 +64,29 @@ def scrivi_riposo_compensativo(df: pd.DataFrame, output_file: Path) -> None:
         "Stato").sort_index(ascending=False)
     riassunto["OE"] = riassunto["ore eccedenti"] + (riassunto["minuti eccedenti"] // 60)
     riassunto["ME"] = riassunto["minuti eccedenti"] % 60
+    cols = ["Stato", "Data", "Voci Base", "ore eccedenti", "minuti eccedenti", "intervallo"]
     with pd.ExcelWriter(output_file, engine='xlsxwriter') as writer:
-        df[["Stato", "Data", "Voci Base", "ore eccedenti", "minuti eccedenti", "intervallo"]].to_excel(writer, sheet_name='dettaglio', index=False)
-        # Get the workbook and worksheet
+        df[cols].to_excel(writer, sheet_name='dettaglio', index=False)
         workbook = writer.book
         worksheet = writer.sheets['dettaglio']
-
-        # Format the time column
         time_format = workbook.add_format({'num_format': 'hh:mm'})
-
-        # Write the time column with proper formatting
         for row_num, value in enumerate(df['intervallo'], 1):
-            worksheet.write_datetime(row_num, 5, value, time_format)  # Column index 5 for column F
+            worksheet.write_datetime(row_num, 5, value, time_format)
+        _apply_table_format(worksheet, df[cols])
         riassunto.to_excel(writer, index=False, sheet_name='riassunto')
+        _apply_table_format(writer.sheets['riassunto'], riassunto)
 
 def scrivi_credito_ore(df: pd.DataFrame, output_file: Path) -> None:
     print(f"Scrivo credito ore su {output_file}")
-    df[["Stato", "mese", "credito","credito_ore_residuo"]].rename(columns={"Stato":"Stato elaborazione mese",
-             "mese":"Mese",
-             "credito": "Credito ore",
-             "credito_ore_residuo": "Credito ore al netto dei riposi maturati"}).to_excel(output_file, index=False, sheet_name='credito_ore')
+    renamed = df[["Stato", "mese", "credito","credito_ore_residuo"]].rename(columns={
+        "Stato": "Stato elaborazione mese",
+        "mese": "Mese",
+        "credito": "Credito ore",
+        "credito_ore_residuo": "Credito ore al netto dei riposi maturati",
+    })
+    with pd.ExcelWriter(output_file, engine='xlsxwriter') as writer:
+        renamed.to_excel(writer, index=False, sheet_name='credito_ore')
+        _apply_table_format(writer.sheets['credito_ore'], renamed)
 
 def scrivi_riposi_compensativi(riposi_compensativi: List[RiposoCompensativo], output_file: Path) -> None:
     print(f"Scrivo riposi compensativi su {output_file}")
@@ -95,19 +118,9 @@ def scrivi_ore_giornaliere(og: Dict[str, pd.DataFrame], output_file: Path) -> No
                             datetime_format="dd/mm/yyyy",
                             date_format="dd/mm/yyyy")
     for mese in mesi:
-        sheetname = mese
         df = og[mese]
-        df.to_excel(writer,
-                    sheet_name=sheetname,
-                    index=False)
-        worksheet = writer.sheets[sheetname]
-        for idx, col in enumerate(df):
-            series = df[col]
-            max_len = max((
-                series.astype(str).map(len).max(),
-                len(str(series.name))
-            )) + 1
-            worksheet.set_column(idx, idx, max_len)
+        df.to_excel(writer, sheet_name=mese, index=False)
+        _apply_table_format(writer.sheets[mese], df)
     writer.close()
 
 def elabora_ore_eccedenti(df: pd.DataFrame, excluded_dates_file: Path) -> pd.DataFrame:
@@ -388,7 +401,9 @@ def processa_dati(data_folder: Path) -> None:
     cartellino["Voci Base"]=cartellino["Voci Base"].fillna("____")
     cartellino["Codice"]=cartellino["Voci Base"].apply(lambda x: extract_codice(x))
     # print(cartellino["Codice"].unique())
-    cartellino.to_excel(output_folder / 'cartellino.xlsx', index=False)
+    with pd.ExcelWriter(output_folder / 'cartellino.xlsx', engine='xlsxwriter') as _w:
+        cartellino.to_excel(_w, index=False, sheet_name='cartellino')
+        _apply_table_format(_w.sheets['cartellino'], cartellino)
     oe = elabora_ore_eccedenti(
         cartellino[cartellino["Codice"]=="OE-DIU"],
         excluded_dates_file)
