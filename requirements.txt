@@ -20,6 +20,7 @@ pydantic_core
 Pygments
 PySocks
 python-dateutil
+PyYAML
 python-dotenv
 pytz
 rich

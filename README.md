@@ -5,173 +5,354 @@
 ![Selenium](https://img.shields.io/badge/Selenium-43B02A?style=for-the-badge&logo=selenium&logoColor=white)
 ![Pandas](https://img.shields.io/badge/Pandas-150458?style=for-the-badge&logo=pandas&logoColor=white)
 
-Applicazione Python per l'estrazione automatica e l'elaborazione dei dati dal cartellino presenze UniSA, con calcolo automatico di ore eccedenti e riposi compensativi.
+Strumento Python per il download automatico e l'elaborazione del cartellino presenze da [presenze.unisa.it](https://presenze.unisa.it). Calcola ore eccedenti, riposi compensativi, credito ore mensile e genera timesheet per progetti di ricerca.
 
-## 🎯 Funzionalità Principali
+## 🎯 Funzionalità
 
-- **Download automatico** del cartellino presenze da https://presenze.unisa.it
-- **Calcolo ore eccedenti** (OE-DIU) con esclusione date configurabili
-- **Gestione riposi compensativi** con raggruppamento automatico (7h 12m per riposo)
-- **Calcolo credito ore** mensile (OO-DIU)
-- **Export dati** in Excel e file di testo formattati
+- **Download automatico** del cartellino da `presenze.unisa.it` tramite Selenium
+- **Autenticazione** con Credenziali UNISA, SPID o CIE
+- **Ore eccedenti** (OE-DIU): calcolo con esclusione date configurabili, anche con sottrazione parziale
+- **Riposi compensativi**: raggruppamento automatico (soglia: 7h 12m per riposo) e correlazione con i riposi già fruiti
+- **Credito ore** mensile per stato di elaborazione (OO-DIU)
+- **Statistiche** multi-foglio: ticket mensa, visite specialistiche, straordinari, malattia, ferie, vigilanza concorsi, permessi gravi motivi, entrata in ritardo
+- **Ore giornaliere** lavorate per mese
+- **Timesheet di progetto**: distribuzione configurabile delle ore su mesi selezionati, con giorni interi e ore fisse, output in Excel mensile per subfolder di progetto
+- **Rendiconto formale**: compilazione automatica del template Excel istituzionale (`TS_*.xlsx`) con dati anagrafici, ore per giorno, colori weekend aggiornati all'anno corretto e aggiornamento dei riferimenti nel foglio Riassuntivo
 
 ## 📋 Prerequisiti
 
-- Python >= 3.12
-- Connessione alla rete universitaria (solo per il download del cartellino)
-- Browser Firefox installato
+- Python ≥ 3.12
+- Google Chrome installato (ChromeDriver gestito automaticamente)
+- Connessione alla rete universitaria **solo** per il metodo "Credenziali UNISA" (SPID e CIE funzionano anche da fuori rete)
 - Account UniSA valido
 
 ## 🚀 Installazione
 
-### 1. Clonazione del repository
 ```bash
 git clone https://github.com/staffDiUnisa/CartellinoUniSA.git
-cd elaborazione-cartellino-unisa
-```
+cd CartellinoUniSA
 
-### 2. Creazione ambiente virtuale
-```bash
 python3 -m venv .venv
-source .venv/bin/activate  # Linux/macOS
+source .venv/bin/activate   # Linux/macOS
 # oppure
-.venv\Scripts\activate  # Windows
-```
+.venv\Scripts\activate      # Windows
 
-### 3. Installazione dipendenze
-```bash
 pip install -r requirements.txt
 ```
 
-### 4. Configurazione credenziali
+## ⚙️ Configurazione
+
 ```bash
 cp env.template .env
 ```
 
-Modifica il file `.env` con i tuoi dati:
+Modifica `.env`:
+
 ```env
-USERNAME=mario.rossi@unisa.it
-PASSWORD=TuaPasswordSicura
-CURRENT_YEAR=2025
-MIN_DATE_RIPOSI_USATI=01-01  # Formato MM-DD
+USERNAME=mario.rossi@unisa.it    # credenziali per login "Credenziali UNISA"
+PASSWORD=TuaPassword
+CURRENT_YEAR=2025                 # anno da elaborare
+MIN_DATE_RIPOSI_USATI=01-01       # data (MM-DD) da cui considerare i riposi SRC nel cartellino
+HEADLESS=False                    # True per browser invisibile (solo con Credenziali UNISA)
 ```
 
-## 📁 Struttura delle Directory
-
-```
-elaborazione-cartellino-unisa/
-├── data/
-│   ├── input/
-│   │   ├── cartellino.xlsx        # Dati scaricati dal portale
-│   │   ├── date_escluse.txt       # Date da escludere dal calcolo
-│   │   └── riposi_usati.txt       # Riposi già utilizzati
-│   └── output/
-│       ├── cartellino.xlsx         # Cartellino elaborato
-│       ├── riposo_compensativo.xlsx # Dettaglio ore eccedenti
-│       ├── credito_ore.xlsx        # Credito ore mensile
-│       └── riposi_compensativi.txt # Riepilogo riposi
-├── model/
-│   ├── ore_inserite.py
-│   └── riposo_compensativo.py
-├── main.py                         # Entry point principale
-├── get.py                          # Modulo download cartellino
-└── process.py                      # Modulo elaborazione dati
-```
+| Variabile | Obbligatoria | Descrizione |
+|-----------|:---:|---------|
+| `CURRENT_YEAR` | ✅ | Anno di elaborazione |
+| `MIN_DATE_RIPOSI_USATI` | ✅ | Data minima (MM-DD) per contare i riposi SRC già fruiti. Se mancante viene usato `riposi_usati.txt` |
+| `USERNAME` | Solo con Credenziali UNISA | Email UniSA |
+| `PASSWORD` | Solo con Credenziali UNISA | Password account UniSA |
+| `HEADLESS` | ❌ | `True` per avviare Chrome in modalità headless (solo con Credenziali UNISA) |
 
 ## 💻 Utilizzo
 
-### Esecuzione con download cartellino (solo rete UniSA)
-```bash
-python main.py
+### `cartellino_v2.py` — versione corrente (consigliata)
 
-# Output:
-Esegue lo script per l'estrazione dei dati dal cartellino.
-Se scegli di non aggiornare i dati, salterà il processo di aggiornamento i dati da https://presenze.unisa.it.
-Vuoi aggiornare i dati del cartellino (L'aggiornamento funziona solo dalla rete universitaria.)? [y/N]: y
-Processing page 1
-Processing page 2
-Processing page 3
-Processing page 4
-Data da cui verranno considerati i Riposi Compensativi Usati: 01-01-2025
-Scrivo riposi compensativo su data/output/riposo_compensativo.xlsx
-Scrivo riposi compensativi su data/output/riposi_compensativi.txt
-Scrivo credito ore su data/output/credito_ore.xlsx
+Dati salvati in `data/v2/{anno}/`.
+
+```bash
+python cartellino_v2.py
 ```
 
-### Esecuzione solo elaborazione (senza download)
-```bash
-python main.py
+All'avvio viene chiesto se scaricare il cartellino aggiornato. Se si sceglie il download, viene poi chiesto il metodo di autenticazione:
 
-# Rispondere 'n' al prompt per elaborare solo i dati già scaricati
-Vuoi aggiornare i dati del cartellino? [y/N]: n
+```
+Scegli il metodo di autenticazione:
+  1. Credenziali UNISA   ← disponibile solo sulla rete universitaria
+  2. SPID
+  3. CIE
 ```
 
-## 📝 Configurazione File di Input
+Per SPID e CIE il browser si apre e attende che l'utente completi manualmente il login (timeout 10 minuti).
+
+**Opzioni disponibili:**
+
+```bash
+# Salta il download e usa i dati già presenti
+python cartellino_v2.py --no-aggiorna-cartellino
+
+# Genera anche il timesheet di progetto (vedi sezione dedicata)
+python cartellino_v2.py --no-aggiorna-cartellino --timesheet-progetto mio_progetto.yaml
+```
+
+### `main.py` — versione legacy
+
+Dati salvati in `data/{anno}/`. Stessa logica di download, ma pipeline di elaborazione precedente (senza statistiche e ore giornaliere).
+
+```bash
+python main.py
+python main.py --no-aggiorna-cartellino
+```
+
+## 📁 Struttura dati (versione corrente)
+
+```
+CartellinoUniSA/
+├── templates/
+│   └── timesheet_progetto_template.yaml  ← template per il timesheet di progetto
+├── timesheet/                            ← YAML personali (ignorati da git)
+│   └── mio_progetto.yaml                 ← copia e adatta dal template
+└── data/v2/
+    └── {anno}/
+        ├── input/
+        │   ├── cartellino.xlsx        ← scaricato da get.py
+        │   ├── date_escluse.txt       ← date da escludere/ridurre dal calcolo OE
+        │   ├── riposi_usati.txt       ← fallback per riposi già fruiti (se no MIN_DATE)
+        │   └── data_ticket.txt        ← data da cui i ticket sono stati pagati
+        └── output/
+            ├── cartellino.xlsx               ← cartellino con colonna Codice aggiunta
+            ├── riposo_compensativo.xlsx      ← dettaglio e riassunto ore eccedenti
+            ├── riposi_compensativi.txt       ← riepilogo testuale riposi
+            ├── credito_ore.xlsx              ← credito ore mensile
+            ├── statistiche.xlsx              ← più fogli (ticket, ferie, malattia, ...)
+            ├── ore_giornaliere.xlsx          ← ore OO-DIU per giorno, per mese
+            └── ore_svolte_per_giorno/
+                └── {nome_progetto}/          ← generato dal timesheet di progetto
+                    ├── 01_gennaio.xlsx
+                    ├── 02_febbraio.xlsx
+                    └── ...
+```
+
+## 📝 File di input
 
 ### `date_escluse.txt`
-Contiene le date da escludere dal calcolo ore eccedenti (es. straordinari):
+
+Date da escludere dal calcolo delle ore eccedenti. Due formati supportati:
+
 ```
-gio 16 gen
-ven 17 gen
-lun 20 gen
+# Esclusione completa della giornata (DD-MM-YYYY)
+16-01-2025
+17-01-2025
+
+# Sottrazione parziale: sottrae HH:MM dalle ore eccedenti di quel giorno
+20-01-2025 03:30
 ```
 
-### `riposi_usati.txt` (opzionale)
-Usato solo se `MIN_DATE_RIPOSI_USATI` non è configurato:
+### `riposi_usati.txt` *(opzionale)*
+
+Usato solo se `MIN_DATE_RIPOSI_USATI` non è impostato nel `.env`. Elenco delle date in cui sono stati fruiti riposi compensativi:
+
 ```
 2025-06-26
 2025-06-27
 2025-07-15
 ```
 
-## 📊 Output Generati
+### `data_ticket.txt`
 
-### 1. `riposo_compensativo.xlsx`
-Excel con due fogli:
-- **dettaglio**: Elenco completo ore eccedenti giornaliere
-- **riassunto**: Riepilogo per stato (ELAB GG, etc.)
+Data da cui il ticket mensa viene pagato dall'ente (formato `DD-MM-YYYY`). Usato per distinguere i ticket già ricevuti da quelli ancora da ricevere:
 
-### 2. `riposi_compensativi.txt`
-Riepilogo testuale dei riposi compensativi:
+```
+01-01-2025
+```
+
+## 📊 Output generati
+
+### `riposo_compensativo.xlsx`
+Due fogli:
+- **dettaglio**: ore eccedenti giornaliere con stato, data, voce base e intervallo (hh:mm)
+- **riassunto**: totale ore/minuti eccedenti raggruppati per stato di elaborazione
+
+### `riposi_compensativi.txt`
+Riepilogo testuale dei riposi compensativi maturati, con indicazione delle date utilizzate e delle ore mancanti al completamento:
+
 ```
 _________________________________________________
 Riposo compensativo 1: - usato per il 26-06-2025
 _________________________________________________
-	- mer 01 gen -> 2:30 [ELAB GG]
-	- gio 02 gen -> 1:45 [ELAB GG]
-	- ven 03 gen -> 2:57 [ELAB GG]
+    - 01-01-2025 -> 02:30 [OK]
+    - 02-01-2025 -> 01:45 [OK]
+    ...
 _________________________________________________
 Riposo compensativo 2: - ore necessarie al completamento: 5:42
 _________________________________________________
-	- lun 06 gen -> 1:30 [ELAB GG]
+    - 06-01-2025 -> 01:30 [OK]
 _________________________________________________
 ```
 
-### 3. `credito_ore.xlsx`
-Credito ore mensile aggregato per stato e mese.
+### `credito_ore.xlsx`
+Credito ore mensile per stato di elaborazione, con e al netto dei riposi maturati.
 
-## ⚙️ Variabili d'Ambiente
+### `statistiche.xlsx`
+File multi-foglio con:
+| Foglio | Contenuto |
+|--------|-----------|
+| `ticket` | Giorni con ticket mensa, valore maturato e da ricevere |
+| `statistica_ticket` | Conteggio ticket per mese e stato |
+| `visite_specialistiche` | Giornate con visita specialistica (VSG) |
+| `straordinari` | Giornate con straordinario (STRSOS, FSTLAV, OS-FSD) |
+| `malattia` | Giornate di malattia/ricovero (MAL, RIC) |
+| `ferie` | Giornate di ferie/festività (FER, FEV, FST) |
+| `vigilanza_concorsi` | Giornate di vigilanza concorsi (VIG) |
+| `permessi_gravi_motivi` | Permessi per gravi motivi (PMF) |
+| `entrata_ritardo` | Giornate con entrata in ritardo (ERIT) |
 
-| Variabile | Descrizione | Esempio |
-|-----------|-------------|---------|
-| `USERNAME` | Email UniSA | mario.rossi@unisa.it |
-| `PASSWORD` | Password account UniSA | ******** |
-| `CURRENT_YEAR` | Anno di elaborazione | 2025 |
-| `MIN_DATE_RIPOSI_USATI` | Data minima riposi (MM-DD) | 01-01 |
+### `ore_giornaliere.xlsx`
+Ore OO-DIU (ore ordinarie) per ogni giornata lavorativa, organizzate per mese in fogli separati.
+
+## 📐 Timesheet e rendiconto di progetto
+
+Genera i fogli di rendicontazione mensile del progetto a partire dal cartellino elaborato. Produce due tipologie di output nella cartella `data/v2/{anno}/output/ore_svolte_per_giorno/{nome_progetto}/`:
+
+| File | Descrizione |
+|------|-------------|
+| `{MM}_{mese}.xlsx` | Fogli mensili semplificati (uno per mese) |
+| `TS_{nome}_{anno}_{Cognome}_{Nome}.xlsx` | Rendiconto formale compilato dal template istituzionale |
+
+Il rendiconto formale è opzionale: viene generato solo se si specifica `template_rendiconto` nella configurazione YAML.
+
+### 1. Configurazione YAML
+
+Copia il template nella cartella `timesheet/` e adattalo:
+
+```bash
+cp templates/timesheet_progetto_template.yaml timesheet/mio_progetto.yaml
+```
+
+I file nella cartella `timesheet/` sono ignorati da git (dati personali). Il template in `templates/` è invece versionato.
+
+Struttura completa del file YAML:
+
+```yaml
+progetto:
+  nome: "NOME_PROGETTO"           # nome della sottocartella di output
+  cup: "D43C22005040001"          # CUP del progetto
+  codice: "PNC-E3-2022-23683267"  # codice identificativo del progetto
+  anno: 2025                      # anno da elaborare (deve coincidere con CURRENT_YEAR)
+
+  # (opzionale) Template Excel istituzionale per il rendiconto formale.
+  # Se presente, genera anche TS_{nome}_{anno}_{Cognome}_{Nome}.xlsx
+  template_rendiconto: "templates/TS_DHEAL_COM_2025_Nome_Cognome.xlsx"
+
+  # (opzionale) Dati anagrafici del dipendente per il rendiconto
+  persona:
+    figura_professionale: "Personale Tecnico Amministrativo (PTA)"
+    nome: "Mario"
+    cognome: "Rossi"
+    codice_fiscale: "RSSMRA80A01F839X"
+
+mesi:                        # mesi da includere (1-12)
+  - 1
+  - 2
+  - 3
+
+ore_totali: 100.0            # ore totali da distribuire
+
+# (opzionale) Intervalli di giorni in cui TUTTE le ore lavorate vanno al progetto
+giorni_interi:
+  - da: "2025-01-15"
+    a:  "2025-01-17"         # 15, 16, 17 gennaio: ore_progetto = ore_svolte
+  - da: "2025-03-10"
+    a:  "2025-03-10"         # singolo giorno
+
+# (opzionale) Ore fisse su singole giornate
+ore_fisse:
+  - data: "2025-05-05"
+    ore: 3.0                 # 3 ore esatte il 5 maggio
+  - data: "2025-06-20"
+    ore: 2.5
+```
+
+### 2. Esecuzione
+
+```bash
+# Passa solo il nome del file: viene cercato automaticamente in timesheet/
+python cartellino_v2.py --no-aggiorna-cartellino --timesheet-progetto mio_progetto.yaml
+
+# Oppure passa un percorso completo o relativo
+python cartellino_v2.py --no-aggiorna-cartellino --timesheet-progetto /percorso/assoluto/config.yaml
+```
+
+### 3. Regole di distribuzione delle ore
+
+1. Le ore dei `giorni_interi` (= ore effettivamente lavorate quel giorno) e delle `ore_fisse` vengono sommate e sottratte da `ore_totali` per ottenere le **ore residue**.
+2. Le ore residue vengono spalmate equamente sulle giornate con **almeno 5 ore lavorate** che non rientrano nei punti precedenti, arrotondando alla **mezz'ora inferiore**.
+3. L'eventuale resto viene sommato all'ultimo giorno idoneo in modo che il totale sia esattamente uguale a `ore_totali`.
+
+### 4. Output: fogli mensili semplificati
+
+Ogni file `{MM}_{mese}.xlsx` ha il formato:
+
+| | 01 | 02 | 03 | ... |
+|---|---|---|---|---|
+| **Giorno** | 01 | 02 | 03 | ... |
+| **Attività svolta sul progetto CUP: …** | 2.0 | 2.0 | 0 | ... |
+| **Attività svolte su altri progetti** | 0 | 0 | 0 | ... |
+| **Attività ordinaria** | 6.15 | 7.0 | 0 | ... |
+| **Altro (Malattia, Ferie..)** | 0 | 0 | 0 | ... |
+
+### 5. Output: rendiconto formale (opzionale)
+
+Se `template_rendiconto` è impostato, viene generato `TS_{nome}_{anno}_{Cognome}_{Nome}.xlsx` a partire dal template istituzionale `.xlsx`. Il file viene adattato all'anno di riferimento e compilato automaticamente:
+
+| Cella | Contenuto |
+|-------|-----------|
+| N12 | Nome del mese in maiuscolo (es. `FEBBRAIO`) |
+| AG12 | Anno |
+| C15 | CUP del progetto |
+| C16 | Codice del progetto |
+| C18 | Figura professionale |
+| C19 | Nome |
+| Y19 | Cognome |
+| C20 | Codice fiscale |
+| Y20 | Ore totali rendicontate nel mese |
+| C22 | `Mese di Febbraio 2026` |
+| Righe 24–27 | Ore progetto/ordinarie per ogni giorno del mese |
+
+Vengono inoltre corretti automaticamente:
+- **Colori weekend**: sabati e domeniche colorati con il grigio del template, lunedì–venerdì senza colore, in base al calendario effettivo dell'anno (non del template originale)
+- **Fogli Riassuntivo**: i riferimenti formula ai fogli mensili vengono aggiornati con i nuovi nomi — il layout e la logica del Riassuntivo non vengono modificati
 
 ## 🔧 Troubleshooting
 
-### Errore di connessione
-- Verificare di essere connessi alla rete universitaria
-- Controllare le credenziali nel file `.env`
+**Chrome non si avvia / ChromeDriver non trovato**
+- Assicurarsi che Google Chrome sia installato
+- Il driver viene scaricato automaticamente da `webdriver_manager`; verificare la connessione internet al primo avvio
 
-### Firefox non si apre
-- Installare Firefox: `sudo apt install firefox` (Linux)
-- Verificare geckodriver: `pip install --upgrade selenium`
+**Timeout durante il login con SPID o CIE**
+- Il browser rimane aperto per 10 minuti in attesa del completamento del login; completare l'autenticazione entro quel tempo
 
-### Date non riconosciute
-- Verificare il formato in `date_escluse.txt`: `ggg DD mmm`
-- Controllare che l'anno in `.env` sia corretto
+**"Credenziali UNISA" non disponibile**
+- L'opzione compare solo se si è connessi alla rete universitaria (VPN compresa)
+
+**Date non riconosciute in `date_escluse.txt`**
+- Verificare il formato: `DD-MM-YYYY` oppure `DD-MM-YYYY HH:MM`
+
+**`MIN_DATE_RIPOSI_USATI` non riconosciuta**
+- Il formato è `MM-DD` (mese-giorno), es. `06-01` per il 1° giugno
+- In caso di errore, lo script userà automaticamente `riposi_usati.txt`
+
+**Totale timesheet non corrisponde**
+- Se le ore dei `giorni_interi` e `ore_fisse` superano `ore_totali`, viene stampato un avviso e le ore residue sono azzerate
+- Se il resto da aggiungere all'ultimo giorno è ≥ 30 min, viene stampato un avviso (il totale è comunque corretto)
+
+**Il rendiconto non viene generato**
+- Verificare che `template_rendiconto` sia presente nel YAML e che il file `.xlsx` esista al percorso indicato
+- Il template deve essere un file `.xlsx` (non `.xlsm`) con i fogli mensili rinominati nel formato `{Mese} {anno}` (es. `Gennaio 2025`)
+
+**Errori `#REF!` nel foglio Riassuntivo**
+- Non si verifica con i file generati dallo script, che aggiorna automaticamente i riferimenti formula
+- Può accadere se si rinominano manualmente i fogli mensili senza aggiornare il Riassuntivo
 
 ## 🤝 Contribuire
 
@@ -183,12 +364,12 @@ Credito ore mensile aggregato per stato e mese.
 
 ## 📄 Licenza
 
-Questo progetto è distribuito sotto licenza GPL 3.0. Vedi il file [LICENSE](LICENSE) per maggiori dettagli.
+Distribuito sotto licenza GPL 3.0. Vedi [LICENSE](LICENSE) per i dettagli.
 
 ## ⚠️ Disclaimer
 
-Questo software è fornito "così com'è", senza garanzie di alcun tipo. L'uso è a proprio rischio e responsabilità. Gli autori non sono responsabili per eventuali errori nei calcoli o nell'interpretazione dei dati.
+Questo software è fornito "così com'è", senza garanzie di alcun tipo. Gli autori non sono responsabili per eventuali errori nei calcoli o nell'interpretazione dei dati. Verificare sempre i risultati con i dati ufficiali.
 
 ---
 
-**Nota**: Per motivi di sicurezza, non condividere mai il file `.env` contenente le tue credenziali!
+> **Sicurezza**: non condividere mai il file `.env` contenente le credenziali.

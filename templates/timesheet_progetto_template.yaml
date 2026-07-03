@@ -1,0 +1,80 @@
+# Template di configurazione per il timesheet di progetto.
+# Copia questo file, rinominalo (es. timesheet_mio_progetto.yaml) e adattalo.
+# Poi passalo a cartellino_v2.py con:
+#   python cartellino_v2.py --timesheet-progetto timesheet_mio_progetto.yaml
+
+progetto:
+  # Nome del progetto: usato come nome della sottocartella di output
+  # (data/{anno}/output/ore_svolte_per_giorno/{nome}/)
+  nome: "NOME_PROGETTO"
+
+  # Codice CUP del progetto.
+  # Appare nella riga "Attività svolta sul progetto CUP: ..." del foglio Excel
+  # e nella cella C15 del rendiconto.
+  cup: "D43C22005040001"
+
+  # Codice identificativo del progetto (cella C16 del rendiconto).
+  codice: "PNC-E3-2022-23683267"
+
+  # Anno di riferimento (deve corrispondere a CURRENT_YEAR nel .env)
+  anno: 2025
+
+  # (Opzionale) Percorso del template Excel per il rendiconto formale.
+  # Se presente, genera il file TS_{nome}_{anno}_{cognome}_{nome}.xlsx
+  # nella stessa cartella dei fogli mensili.
+  template_rendiconto: "templates/TS_DHEAL_COM_2025_Nome_Cognome.xlsx"
+
+  # Dati anagrafici del dipendente (usati nel rendiconto Excel).
+  persona:
+    figura_professionale: "Personale Tecnico Amministrativo (PTA)"
+    nome: "NOME PERSONA"
+    cognome: "COGNOME PERSONA"
+    codice_fiscale: "CODICE FISCALE PERSONA"
+
+# Mesi da includere nel timesheet (lista di numeri 1–12).
+# Puoi specificare mesi non consecutivi.
+mesi:
+  - 1   # gennaio
+  - 2   # febbraio
+  - 3   # marzo
+  - 4   # aprile
+  - 5   # maggio
+  - 6   # giugno
+
+# Totale delle ore di progetto da spalmare sui mesi selezionati.
+# Deve essere un numero decimale (es. 100.0).
+ore_totali: 100.0
+
+# (Opzionale) Intervalli di giorni in cui TUTTE le ore lavorate vanno al progetto.
+# Le ore progetto di questi giorni sono prese direttamente dal cartellino (OO-DIU),
+# quindi non rientrano nella distribuzione equa delle ore residue.
+# Formato date: YYYY-MM-DD
+giorni_interi:
+  - da: "2025-01-15"
+    a:  "2025-01-17"   # 3 giorni interi (15, 16, 17 gennaio)
+  - da: "2025-03-10"
+    a:  "2025-03-10"   # singolo giorno (10 marzo)
+
+# (Opzionale) Ore fisse su singole giornate specifiche.
+# Queste ore sono assegnate direttamente, indipendentemente da quante ore
+# sono state lavorate quel giorno, e non rientrano nella distribuzione equa.
+# Possono essere usate per giornate con <5h di lavoro (che altrimenti
+# sarebbero escluse dalla distribuzione automatica).
+ore_fisse:
+  - data: "2025-05-05"
+    ore: 3.0   # 3 ore esatte dedicate al progetto il 5 maggio
+  - data: "2025-06-20"
+    ore: 2.5   # 2 ore e 30 minuti il 20 giugno
+
+# ---
+# REGOLE DI DISTRIBUZIONE (riepilogo):
+#
+# 1. Le ore dei "giorni_interi" e delle "ore_fisse" vengono sottratte
+#    da "ore_totali" per calcolare le ore residue da distribuire.
+#
+# 2. Le ore residue vengono spalmate equamente sulle giornate lavorative
+#    (≥ 5 ore lavorate in cartellino) che NON rientrano nei punti
+#    "giorni_interi" o "ore_fisse", arrotondando alla mezz'ora inferiore.
+#
+# 3. L'eventuale resto (< 30 min) viene sommato all'ultimo giorno idoneo,
+#    garantendo che il totale sia esattamente uguale a "ore_totali".

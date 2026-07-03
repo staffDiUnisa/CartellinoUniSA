@@ -302,3 +302,7 @@ test*
 test.*
 test*.*
 
+# Configurazioni timesheet personali (la cartella è tracciata, il contenuto no)
+timesheet/*
+!timesheet/.gitkeep
+
