@@ -68,6 +68,11 @@ jobs:
           codesign --verify --deep --strict --verbose=2 dist/cartellino-unisa/cartellino-unisa
 
       - name: Notarizza presso Apple (solo macOS)
+        # `notarytool submit --wait` esce con codice 0 anche se Apple rifiuta la
+        # richiesta (status "Invalid") — riflette solo "l'operazione CLI è
+        # andata a buon fine", non l'esito della notarizzazione. Va controllato
+        # esplicitamente lo status nel JSON, altrimenti uno step "verde" può
+        # nascondere un binario NON notarizzato.
         if: matrix.os == 'macos-latest'
         env:
           APPLE_ID: ${{ secrets.APPLE_ID }}
@@ -79,8 +84,21 @@ jobs:
             --apple-id "$APPLE_ID" \
             --password "$APPLE_ID_PASSWORD" \
             --team-id "$APPLE_TEAM_ID" \
-            --wait
-          rm -f notarize.zip
+            --wait \
+            --output-format json | tee notarize_result.json
+          submission_id=$(jq -r '.id' notarize_result.json)
+          status=$(jq -r '.status' notarize_result.json)
+          echo "Notarizzazione: status=$status id=$submission_id"
+          echo "--- Log dettagliato Apple (xcrun notarytool log) ---"
+          xcrun notarytool log "$submission_id" \
+            --apple-id "$APPLE_ID" \
+            --password "$APPLE_ID_PASSWORD" \
+            --team-id "$APPLE_TEAM_ID" || true
+          rm -f notarize.zip notarize_result.json
+          if [ "$status" != "Accepted" ]; then
+            echo "::error::Notarizzazione non accettata da Apple (status: $status) — vedi il log sopra"
+            exit 1
+          fi
 
       - name: Staple il ticket di notarizzazione (solo macOS)
         # Best-effort: se lo stapling su un eseguibile "sciolto" (non un .app/.pkg/.dmg)
