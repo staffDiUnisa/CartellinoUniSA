@@ -159,7 +159,7 @@ Nuovo entrypoint `cartellino_tui.py` (Textual `App`). File principali:
 Estensioni future non incluse in questa fase: wizard di creazione guidata di un nuovo YAML di
 timesheet progetto direttamente dalla TUI (oggi resta un'operazione manuale sul filesystem).
 
-## Fase 5 — Parità funzionale CLI non interattiva (parziale)
+## Fase 5 — Parità funzionale CLI non interattiva ✅
 
 - [x] Entrypoint CLI (Typer) con flag equivalenti (`--no-aggiorna-cartellino`,
       `--timesheet-progetto`, `--auth-method {unisa,spid,cie}`, `--export-format {xlsx,csv}`)
@@ -167,10 +167,12 @@ timesheet progetto direttamente dalla TUI (oggi resta un'operazione manuale sul 
       credenziali/config/dati (Fasi 2-3) — `timesheet_runner.py`/`export_utils.py` (Fase 4) già
       usati da entrambe; `CartellinoProcessor.run()` ora passa `cfg.export_format` ai 4 report
       configurabili (prima lo ignorava, sempre xlsx indipendentemente dalla config)
-- [ ] Rimuovere/sostituire `cartellino_v2.py` legacy con entrypoint unico non interattivo
-      + entrypoint TUI separato — non fatto: è una scelta architetturale (elimina un
-      entrypoint pubblico) da confermare esplicitamente prima di procedere, non contestuale a
-      questa sessione
+- [x] **Deciso di non unificare**: `cartellino_v2.py` (CLI non interattiva) e `cartellino_tui.py`
+      (TUI) restano due entrypoint separati — `cartellino_v2.py` non è legacy nel senso di
+      "superato/da rimuovere" ma il percorso non interattivo/scriptabile voluto accanto alla
+      TUI, entrambi sullo stesso layer di dominio condiviso. Nessun lavoro di rimozione/merge
+      previsto per la Fase 6 (packaging): PyInstaller impacchetta l'entrypoint TUI, `main.py`/
+      `process.py` restano il percorso legacy pre-v2 non toccato da questa roadmap.
 
 ## Fase 6 — Packaging multipiattaforma (PyInstaller + GitHub Actions)
 
