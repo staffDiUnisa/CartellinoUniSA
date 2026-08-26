@@ -1,5 +1,6 @@
 import logging
 
+from rich.markup import escape
 from textual.app import App
 from textual.widgets import RichLog
 
@@ -23,6 +24,10 @@ class RichLogHandler(logging.Handler):
         except Exception:
             self.handleError(record)
             return
+        # Il testo del log è arbitrario (path, messaggi di librerie terze come
+        # Selenium/webdriver-manager) e può contenere '[...]' che il RichLog
+        # (markup=True) interpreterebbe come tag Rich non validi: va escapato.
+        msg = escape(msg)
         try:
             self._app.call_from_thread(self._richlog.write, msg)
         except RuntimeError:
