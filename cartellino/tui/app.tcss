@@ -47,9 +47,66 @@ Button:focus {
     background: orange;
 }
 
+#btn-statistiche-nav {
+    background: teal;
+}
+#btn-statistiche-nav:hover {
+    background: darkcyan;
+}
+
 #btn-impostazioni {
     background: purple;
 }
 #btn-impostazioni:hover {
     background: mediumpurple;
+}
+
+/* Schermata Statistiche: un colore diverso per categoria */
+#btn-stat-ticket {
+    background: darkgoldenrod;
+}
+#btn-stat-ticket:hover {
+    background: goldenrod;
+}
+
+#btn-stat-ferie {
+    background: darkgreen;
+}
+#btn-stat-ferie:hover {
+    background: green;
+}
+
+#btn-stat-pmf {
+    background: darkorange;
+}
+#btn-stat-pmf:hover {
+    background: orange;
+}
+
+#btn-stat-erit {
+    background: purple;
+}
+#btn-stat-erit:hover {
+    background: mediumpurple;
+}
+
+#btn-stat-straordinari {
+    background: crimson;
+}
+#btn-stat-straordinari:hover {
+    background: indianred;
+}
+
+#btn-stat-vsg {
+    background: darkslateblue;
+}
+#btn-stat-vsg:hover {
+    background: slateblue;
+}
+
+#btn-stat-malattia {
+    background: saddlebrown;
+}
+#btn-stat-malattia:hover {
+    background: sienna;
 }

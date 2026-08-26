@@ -9,6 +9,7 @@ from textual.widgets import Button, Footer, Header, Static
 from cartellino.cartellino import Cartellino
 from cartellino.ore_eccedenti import OreEccedenti
 from cartellino.ore_helpers import somma_ore_per_codici
+from cartellino.statistiche import Statistiche
 
 log = logging.getLogger(__name__)
 
@@ -33,6 +34,7 @@ class DashboardScreen(Screen):
         ("r", "aggiorna_cartellino", "Aggiorna cartellino"),
         ("t", "apri_timesheet", "Timesheet progetto"),
         ("p", "apri_report", "Report"),
+        ("v", "apri_statistiche", "Statistiche"),
         ("s", "apri_impostazioni", "Impostazioni"),
     ]
 
@@ -87,6 +89,7 @@ class DashboardScreen(Screen):
             ("Saldo mensile", lambda: self._sezione_saldo(cartellino, config, now)),
             ("Riposi compensativi", lambda: self._sezione_riposi(cartellino, config)),
             ("Ferie/PMF", lambda: self._sezione_ferie_pmf(cartellino)),
+            ("Ticket da ricevere", lambda: self._sezione_ticket(cartellino, config)),
             ("Ultimo aggiornamento", lambda: self._sezione_aggiornamento(feather_path)),
         ]
 
@@ -105,6 +108,7 @@ class DashboardScreen(Screen):
                 Button("Aggiorna cartellino [r]", id="btn-aggiorna"),
                 Button("Genera report [p]", id="btn-report"),
                 Button("Genera timesheet [t]", id="btn-timesheet"),
+                Button("Statistiche [v]", id="btn-statistiche-nav"),
                 Button("Impostazioni [s]", id="btn-impostazioni"),
                 classes="button-row",
             ),
@@ -164,6 +168,21 @@ class DashboardScreen(Screen):
         )
 
     @staticmethod
+    def _sezione_ticket(cartellino: Cartellino, config) -> str:
+        sheets = Statistiche(cartellino=cartellino, config=config).calcola()
+        ticket_df = sheets.get("ticket")
+        if ticket_df is None:
+            return (
+                "[b]Ticket da ricevere[/b]\n"
+                "  data ticket non impostata (Impostazioni → Buoni pasto accreditati fino al)"
+            )
+        da_ricevere = ticket_df[ticket_df["Da ricevere"] == 1]
+        if da_ricevere.empty:
+            return "[b]Ticket da ricevere[/b]\n  nessuno"
+        valore = da_ricevere["Valore da ricevere"].sum()
+        return f"[b]Ticket da ricevere[/b]\n  {len(da_ricevere)} (valore: {valore:.2f}€)"
+
+    @staticmethod
     def _sezione_aggiornamento(feather_path) -> str:
         mtime = datetime.fromtimestamp(feather_path.stat().st_mtime)
         return f"[b]Ultimo aggiornamento[/b]\n  {mtime.strftime('%d/%m/%Y %H:%M')}"
@@ -175,6 +194,7 @@ class DashboardScreen(Screen):
             "btn-aggiorna": self.action_aggiorna_cartellino,
             "btn-report": self.action_apri_report,
             "btn-timesheet": self.action_apri_timesheet,
+            "btn-statistiche-nav": self.action_apri_statistiche,
             "btn-impostazioni": self.action_apri_impostazioni,
         }
         action = actions.get(event.button.id)
@@ -192,6 +212,10 @@ class DashboardScreen(Screen):
     def action_apri_timesheet(self) -> None:
         from cartellino.tui.screens.timesheet import TimesheetScreen
         self.app.push_screen(TimesheetScreen())
+
+    def action_apri_statistiche(self) -> None:
+        from cartellino.tui.screens.statistiche import StatisticheScreen
+        self.app.push_screen(StatisticheScreen())
 
     def action_apri_impostazioni(self) -> None:
         from cartellino.tui.screens.settings import SettingsScreen

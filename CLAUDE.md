@@ -134,8 +134,8 @@ timesheet di progetto. Usa lo stesso storage di `cartellino_v2.py`
     escapato (`rich.markup.escape`) perché può contenere `[...]` (es. path chromedriver) che
     romperebbero il parsing markup del `RichLog`.
   - `screens/onboarding.py`, `dashboard.py`, `update.py`, `settings.py`, `reports.py`,
-    `timesheet.py`, `folder_picker.py`, `date_escluse.py`, `credentials.py` — una schermata per
-    ciascuna voce del
+    `timesheet.py`, `folder_picker.py`, `date_escluse.py`, `credentials.py`, `statistiche.py` —
+    una schermata per ciascuna voce del
     TODO Fase 4 (più `folder_picker.py`, modale `DirectoryTree` riusata da Impostazioni per
     scegliere cartella dati/output); costruite sul layer di dominio esistente (`Cartellino`,
     `OreEccedenti`, `CreditoOre`, `Statistiche`, `OreGiornaliere`, `TimesheetProgetto`) senza
@@ -151,6 +151,16 @@ timesheet di progetto. Usa lo stesso storage di `cartellino_v2.py`
     Impostazioni) isola username/password in una schermata separata invece di campi inline;
     ritorna `True`/`False` via `Screen.dismiss()` + callback così Impostazioni sa quando
     aggiornare la riga di stato "Credenziali UniSA: impostate (username: ...)".
+    `statistiche.py` (`StatisticheScreen`, raggiunta dal pulsante "Statistiche" della
+    Dashboard) mostra a schermo (in una `DataTable`, senza scrivere file) le stesse 7 categorie
+    di `Statistiche.calcola()` di `statistiche.xlsx` (`statistica_ticket` → "Buoni pasto",
+    `ferie`, `permessi_gravi_motivi`, `entrata_ritardo`, `straordinari`,
+    `visite_specialistiche`, `malattia`), un pulsante colorato diversamente per categoria,
+    disabilitato se il relativo DataFrame è vuoto. `Statistiche.calcola()` non solleva più
+    `FileNotFoundError` se manca `data_ticket.txt`: salta solo i fogli `ticket`/
+    `statistica_ticket` (con un `log.warning`), lasciando le altre categorie utilizzabili — la
+    Dashboard mostra anche una sezione "Ticket da ricevere" (righe di `ticket` con
+    `Da ricevere == 1`, dalla stessa `Statistiche`).
   - Nota implementativa: `DashboardScreen.on_screen_resume`/`_build_body` ricostruiscono i
     widget con `Vertical(*children)` (costruttore diretto), non con `with Vertical(): yield ...`
     — quel pattern di composizione funziona solo dentro una vera chiamata a `compose()` (si

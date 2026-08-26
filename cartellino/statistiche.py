@@ -25,19 +25,24 @@ class Statistiche:
         if self._sheets is not None:
             return self._sheets
         c = self._cartellino
-        tck = self._elabora_ticket(c.tck)
-        tck_stat = self._stat_ticket(tck)
         self._sheets = {
             "visite_specialistiche": c.vsg[["Stato", "Data", "Voci Base"]],
             "straordinari": c.straordinari[["Stato", "Data", "Voci Base"]],
-            "ticket": tck,
-            "statistica_ticket": tck_stat,
             "malattia": c.malattia[["Stato", "Data", "Voci Base"]],
             "ferie": c.ferie[["Stato", "Data", "Voci Base"]],
             "vigilanza_concorsi": c.vigilanza_concorsi[["Stato", "Data", "Voci Base"]],
             "permessi_gravi_motivi": c.permesso_gravi_motivi[["Stato", "Data", "Voci Base"]],
             "entrata_ritardo": c.entrata_ritardo[["Stato", "Data", "Voci Base"]],
         }
+        try:
+            tck = self._elabora_ticket(c.tck)
+            self._sheets["ticket"] = tck
+            self._sheets["statistica_ticket"] = self._stat_ticket(tck)
+        except FileNotFoundError:
+            log.warning(
+                f"'{self._config.data_ticket_file}' non trovato: salto le statistiche sui "
+                "ticket (impostabile in Impostazioni)."
+            )
         return self._sheets
 
     def salva(self, output_file: Path, fmt: str = "xlsx") -> None:
