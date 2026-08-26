@@ -37,6 +37,10 @@ class UserConfig:
     TUI/CLI v2)."""
     output_folder: str | None = None
     """Cartella di output dei report, se diversa da `{data_folder}/{anno}/output` (default)."""
+    theme: str | None = None
+    """Nome del tema Textual (es. `"nord"`, `"gruvbox"`) scelto dalla palette comandi
+    (`^p` -> Theme) e persistito da `CartellinoApp`. `None` = tema di default di Textual,
+    non ancora personalizzato dall'utente."""
 
     @classmethod
     def load(cls, path: Path | None = None) -> "UserConfig | None":
@@ -58,6 +62,7 @@ class UserConfig:
             ),
             data_folder=data.get("data_folder"),
             output_folder=data.get("output_folder"),
+            theme=data.get("theme"),
         )
 
     def save(self, path: Path | None = None) -> None:

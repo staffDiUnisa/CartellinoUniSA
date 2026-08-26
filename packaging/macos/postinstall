@@ -3,6 +3,10 @@
 # /usr/local/cartellino-unisa: crea un symlink in /usr/local/bin così
 # `cartellino-unisa` è lanciabile da Terminale senza conoscere il percorso
 # di installazione.
+# Nota: pkgbuild usa un root sintetizzato (pkgroot/) con --install-location /
+# per poter installare anche il launcher .app in /Applications nello stesso
+# pacchetto — questo script usa comunque path assoluti, indipendenti da
+# --install-location, quindi non richiede modifiche.
 set -e
 
 mkdir -p /usr/local/bin

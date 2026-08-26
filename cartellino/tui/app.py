@@ -62,7 +62,32 @@ class CartellinoApp(App):
         self.config: Config | None = None
 
     def on_mount(self) -> None:
+        self._load_saved_theme()
+        self.theme_changed_signal.subscribe(self, self._save_theme)
         self.reload_config_and_route()
+
+    def _load_saved_theme(self) -> None:
+        """Applica il tema salvato in `config.toml`, se presente (palette comandi -> Theme)."""
+        from cartellino.user_config import UserConfig
+
+        user_config = UserConfig.load()
+        if user_config and user_config.theme and user_config.theme in self.available_themes:
+            self.theme = user_config.theme
+
+    def _save_theme(self, theme) -> None:
+        """Persiste in `config.toml` il tema scelto dalla palette comandi (^p -> Theme).
+
+        Nessun effetto prima del completamento dell'Onboarding (config.toml non esiste
+        ancora, `UserConfig.load()` ritorna `None`): il tema verrà salvato a partire dalla
+        prossima modifica una volta che `current_year` è noto.
+        """
+        from cartellino.user_config import UserConfig
+
+        user_config = UserConfig.load()
+        if user_config is None or user_config.theme == theme.name:
+            return
+        user_config.theme = theme.name
+        user_config.save()
 
     def reload_config_and_route(self) -> None:
         """Ricarica `Config` da disco e mostra la schermata iniziale corretta.

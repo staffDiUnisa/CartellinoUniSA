@@ -86,6 +86,73 @@ jobs:
             dist/cartellino-unisa/cartellino-unisa
           codesign --verify --deep --strict --verbose=2 dist/cartellino-unisa/cartellino-unisa
 
+      - name: Genera e firma il launcher .app (solo macOS)
+        # Compilato da un sorgente AppleScript versionato (non committiamo un
+        # .app binario: diff illeggibili, specifico della versione Xcode/OS
+        # del runner). `osacompile` produce un vero Mach-O
+        # (Contents/MacOS/applet), firmabile con lo stesso comando `codesign`
+        # già usato per la CLI. L'Info.plist di default di osacompile ha un
+        # identifier generico (com.apple.ScriptEditor.id.*) e nessuna
+        # versione: va patchato con PlistBuddy prima della firma, dato che
+        # pkgbuild non firma il payload, solo l'installer package.
+        if: matrix.os == 'macos-latest'
+        run: |
+          osacompile -o "build/Cartellino UniSA.app" packaging/macos/launcher.applescript
+
+          PLIST="build/Cartellino UniSA.app/Contents/Info.plist"
+          /usr/libexec/PlistBuddy -c "Set :CFBundleIdentifier org.antaresnet.cartellino-unisa.launcher" "$PLIST" \
+            || /usr/libexec/PlistBuddy -c "Add :CFBundleIdentifier string org.antaresnet.cartellino-unisa.launcher" "$PLIST"
+          /usr/libexec/PlistBuddy -c "Set :CFBundleName Cartellino UniSA" "$PLIST" \
+            || /usr/libexec/PlistBuddy -c "Add :CFBundleName string Cartellino UniSA" "$PLIST"
+          /usr/libexec/PlistBuddy -c "Set :CFBundleDisplayName Cartellino UniSA" "$PLIST" \
+            || /usr/libexec/PlistBuddy -c "Add :CFBundleDisplayName string Cartellino UniSA" "$PLIST"
+          /usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString ${{ steps.version.outputs.value }}" "$PLIST" \
+            || /usr/libexec/PlistBuddy -c "Add :CFBundleShortVersionString string ${{ steps.version.outputs.value }}" "$PLIST"
+          /usr/libexec/PlistBuddy -c "Set :CFBundleVersion ${{ steps.version.outputs.value }}" "$PLIST" \
+            || /usr/libexec/PlistBuddy -c "Add :CFBundleVersion string ${{ steps.version.outputs.value }}" "$PLIST"
+
+          codesign --force --timestamp --options runtime \
+            --entitlements packaging/entitlements.plist \
+            --sign "Developer ID Application" \
+            "build/Cartellino UniSA.app"
+          codesign --verify --deep --strict --verbose=2 "build/Cartellino UniSA.app"
+
+      - name: Notarizza e staple il launcher .app (solo macOS)
+        # A differenza dell'eseguibile CLI sciolto (non staplabile), l'.app È
+        # un formato supportato dallo stapler: un'app avviata con doppio
+        # click da Finder non ha un contesto terminale che mostrerebbe un
+        # eventuale errore di verifica online, va quindi resa verificabile
+        # offline fin dal primo lancio — stessa ragione per cui il .pkg
+        # stesso viene staplato più sotto.
+        if: matrix.os == 'macos-latest'
+        env:
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_ID_PASSWORD: ${{ secrets.APPLE_ID_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: |
+          ditto -c -k --keepParent "build/Cartellino UniSA.app" notarize_app.zip
+          xcrun notarytool submit notarize_app.zip \
+            --apple-id "$APPLE_ID" \
+            --password "$APPLE_ID_PASSWORD" \
+            --team-id "$APPLE_TEAM_ID" \
+            --wait \
+            --output-format json | tee notarize_app_result.json
+          submission_id=$(jq -r '.id' notarize_app_result.json)
+          status=$(jq -r '.status' notarize_app_result.json)
+          echo "Notarizzazione .app: status=$status id=$submission_id"
+          if [ "$status" != "Accepted" ]; then
+            echo "--- Log dettagliato Apple (xcrun notarytool log) ---"
+            xcrun notarytool log "$submission_id" \
+              --apple-id "$APPLE_ID" \
+              --password "$APPLE_ID_PASSWORD" \
+              --team-id "$APPLE_TEAM_ID" || true
+            echo "::error::Notarizzazione .app non accettata da Apple (status: $status) — vedi il log sopra"
+            exit 1
+          fi
+          rm -f notarize_app.zip notarize_app_result.json
+
+          xcrun stapler staple "build/Cartellino UniSA.app"
+
       - name: Notarizza presso Apple (solo macOS)
         # `notarytool submit --wait` esce con codice 0 anche se Apple rifiuta la
         # richiesta (status "Invalid") — riflette solo "l'operazione CLI è
@@ -152,9 +219,20 @@ jobs:
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
         run: |
           chmod +x packaging/macos/postinstall
+
+          # Root sintetizzato: pkgbuild accetta una sola coppia
+          # --root/--install-location, quindi CLI e launcher .app vengono
+          # staged qui insieme per finire nello stesso .pkg (installazione
+          # sempre congiunta, nessuno scenario di install indipendente che
+          # giustifichi due componenti + productbuild).
+          mkdir -p pkgroot/usr/local/cartellino-unisa
+          mkdir -p pkgroot/Applications
+          cp -R dist/cartellino-unisa/. pkgroot/usr/local/cartellino-unisa/
+          cp -R "build/Cartellino UniSA.app" "pkgroot/Applications/Cartellino UniSA.app"
+
           pkgbuild \
-            --root dist/cartellino-unisa \
-            --install-location /usr/local/cartellino-unisa \
+            --root pkgroot \
+            --install-location / \
             --scripts packaging/macos \
             --identifier org.antaresnet.cartellino-unisa \
             --version "${{ steps.version.outputs.value }}" \

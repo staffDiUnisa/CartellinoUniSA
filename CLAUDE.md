@@ -185,7 +185,9 @@ uv run pyinstaller packaging/cartellino.spec --noconfirm
   l'avviso, documentato in README.md.
 - **Installer nativi per OS** (job `build`, oltre agli zip onedir storici — vedi README.md §
   "Eseguibili standalone" per le istruzioni utente finale):
-  - **macOS `.pkg`**: `pkgbuild --root dist/cartellino-unisa --scripts packaging/macos ...`, firmato
+  - **macOS `.pkg`**: `pkgbuild --root pkgroot --install-location / --scripts packaging/macos ...`
+    (root sintetizzato in CI, vedi launcher `.app` sotto — prima della v2.0.2 era
+    `--root dist/cartellino-unisa --install-location /usr/local/cartellino-unisa`), firmato
     con un **secondo certificato**, "Developer ID Installer" (distinto da "Developer ID
     Application" usato per l'eseguibile — stessa Apple Developer membership, procedura per
     generarlo al punto 5 di `ignored/signed_macos.md`; secrets `MACOS_INSTALLER_CERTIFICATE`/
@@ -195,6 +197,42 @@ uv run pyinstaller packaging/cartellino.spec --noconfirm
     `packaging/macos/postinstall` crea un symlink `/usr/local/bin/cartellino-unisa` verso
     l'installazione in `/usr/local/cartellino-unisa`. Verificato con una build reale (tag di
     prova `v2.0.1-rc1`, poi eliminato) e pubblicato in `v2.0.1`.
+    - **Launcher `.app` per macOS** (incluso dentro lo stesso `.pkg`, non un artifact separato —
+      un solo download per l'utente finale): `packaging/macos/launcher.applescript`, sorgente
+      AppleScript versionato (non un `.app` compilato committato — binario, diff illeggibili,
+      specifico della versione Xcode/OS del runner), compilato in CI con
+      `osacompile -o "Cartellino UniSA.app" packaging/macos/launcher.applescript`. Preferito a
+      uno script di shell scritto a mano come `Contents/MacOS/<eseguibile>`: `osacompile` produce
+      un vero Mach-O (`Contents/MacOS/applet`), firmabile/notarizzabile con lo **stesso comando
+      `codesign`** già usato per la CLI (stessa `entitlements.plist`, stessa identity Developer ID
+      Application). L'AppleScript apre Terminale e lancia il **percorso assoluto**
+      `/usr/local/cartellino-unisa/cartellino-unisa`, non il comando `cartellino-unisa` dal
+      `PATH`: un Terminale aperto da Finder subito dopo l'installazione potrebbe non avere ancora
+      un `PATH` aggiornato (stesso problema di profili shell che sovrascrivono `PATH` documentato
+      in README.md per l'uso manuale). L'Info.plist di default di `osacompile` (identifier
+      generico `com.apple.ScriptEditor.id.*`, nessuna versione) viene patchato con
+      `/usr/libexec/PlistBuddy` (`CFBundleIdentifier` → `org.antaresnet.cartellino-unisa.launcher`,
+      nome/versione) **prima** della firma — pkgbuild non firma il payload, solo l'installer
+      package.
+      - **Notarizzazione e stapling separati per l'app**: a differenza dell'eseguibile CLI sciolto
+        (nessuno stapling, verifica online al primo avvio), l'app viene notarizzata (stesso
+        pattern `ditto` + `notarytool submit --wait` con controllo esplicito dello status) **e**
+        staplata (`xcrun stapler staple`, formato `.app` supportato): un'app avviata con doppio
+        click da Finder non ha un contesto terminale che mostrerebbe un eventuale errore di
+        verifica online, va quindi resa verificabile offline fin dal primo lancio.
+      - **Un solo `.pkg` per CLI + app**: `pkgbuild` accetta una sola coppia
+        `--root`/`--install-location`, quindi CLI e app vengono staged in un unico root
+        sintetizzato in CI (`pkgroot/usr/local/cartellino-unisa/*` +
+        `pkgroot/Applications/Cartellino UniSA.app`) con `pkgbuild --root pkgroot
+        --install-location / ...`. Scartata l'alternativa con due pacchetti componente +
+        `productbuild --package ... --package ...` (Distribution XML): CLI e app si
+        installano/aggiornano sempre insieme, nessuno scenario di installazione indipendente
+        giustifica la complessità aggiuntiva di due identifier/receipt separati.
+        `packaging/macos/postinstall` non ha richiesto modifiche: usa già percorsi assoluti
+        indipendenti da `--install-location`.
+      - **Nessuna icona personalizzata** per ora: nessun asset `.icns`/logo esiste nel repo;
+        l'app usa l'icona di default dell'applet AppleScript compilato (eventuale follow-up,
+        fuori scope).
   - **Windows `.exe`**: Inno Setup (`packaging/windows/installer.iss`, compilato con `ISCC.exe`
     installato via `choco install innosetup`), payload = stessa cartella onedir. **Non firmato**
     per ora — `ignored/signed_windows.md` (non versionato) raccoglie le opzioni valutate
@@ -266,6 +304,14 @@ uv run pyinstaller packaging/cartellino.spec --noconfirm
     `DashboardScreen` normalmente. Versione mostrata in header letta da `pyproject.toml` via
     `tomllib` (il progetto ha `tool.uv.package = false`, quindi non è installato come pacchetto
     e `importlib.metadata.version()` non funzionerebbe).
+    - **Persistenza del tema** (palette comandi Textual, `^p` → Theme): `on_mount` applica
+      `UserConfig.theme` (se presente) a `self.theme` **prima** di iscriversi a
+      `self.theme_changed_signal` — nell'ordine inverso, applicare il tema salvato farebbe
+      scattare subito il salvataggio dello stesso valore appena letto. Ogni cambio successivo
+      dalla palette pubblica sul signal (`App._watch_theme`), gestito da `_save_theme` che
+      ricarica `UserConfig` da disco, aggiorna solo il campo `theme` e salva — nessun effetto
+      prima del completamento dell'Onboarding (`UserConfig.load()` ritorna `None` finché
+      `config.toml` non esiste, dato che richiede `current_year`).
   - `logging_handler.py` — `RichLogHandler`, inoltra i record di `logging` a un widget
     `RichLog` in modo thread-safe (`App.call_from_thread`), usato dalla schermata di
     aggiornamento durante il download Selenium (lanciato con `@work(thread=True)`); il testo va

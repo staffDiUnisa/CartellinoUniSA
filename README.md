@@ -456,14 +456,24 @@ qualunque sia il sistema operativo.
 1. Dalla pagina delle [Release](https://github.com/staffDiUnisa/CartellinoUniSA/releases/latest),
    scarica `cartellino-unisa.pkg`
 2. Doppio click, segui la procedura guidata (installa in `/usr/local/cartellino-unisa`, crea il
-   comando `cartellino-unisa` nel `PATH`)
-3. Apri il Terminale ed esegui semplicemente:
+   comando `cartellino-unisa` nel `PATH`, e aggiunge **Cartellino UniSA** ad `/Applications`)
+3. **Per chi preferisce non usare il Terminale manualmente**: apri **Launchpad** o
+   **Applicazioni** e fai doppio click su **Cartellino UniSA** — si aprirà automaticamente un
+   Terminale con la CLI già avviata.
+
+   > Al primo avvio macOS potrebbe chiedere il permesso di controllare "Terminale"
+   > (**Impostazioni di Sistema → Privacy e Sicurezza → Automazione**): è una richiesta
+   > standard per qualunque app che ne pilota un'altra via AppleScript, necessaria solo la
+   > prima volta — concedila per continuare.
+
+   In alternativa, apri direttamente il Terminale ed esegui:
    ```bash
    cartellino-unisa
    ```
 
-Il `.pkg` è **firmato con certificato Developer ID Installer e notarizzato/staplato da Apple**:
-Gatekeeper non dovrebbe mostrare alcun avviso, nemmeno offline.
+Il `.pkg` (e il launcher **Cartellino UniSA** che contiene) sono **firmati con certificato
+Developer ID e notarizzati/staplati da Apple**: Gatekeeper non dovrebbe mostrare alcun avviso,
+nemmeno offline.
 
 > **Se il comando `cartellino-unisa` non viene trovato** (`command not found`): `/usr/local/bin`
 > è nel `PATH` di default su macOS, ma se il tuo shell profile lo sovrascrive esplicitamente
