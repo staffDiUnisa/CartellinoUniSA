@@ -8,11 +8,21 @@ Python CLI tool that downloads and processes UniSA employee attendance data (car
 
 ## Setup
 
+Il progetto usa `mise` (pin versione Python + tool `uv`) e `uv` (gestione dipendenze/venv)
+al posto di `pip`/`venv`. Dipendenze dichiarate in `pyproject.toml`, risolte in `uv.lock`.
+
 ```bash
-python3 -m venv .venv
-source .venv/bin/activate
-pip install -r requirements.txt
+mise install   # installa Python 3.12 e uv secondo .mise.toml
+mise run install   # equivalente a: uv sync
 cp env.template .env  # then edit with credentials
+```
+
+Per eseguire lo script principale:
+
+```bash
+mise run app        # equivalente a: uv run python cartellino_v2.py
+# oppure direttamente:
+uv run python cartellino_v2.py
 ```
 
 Required `.env` variables:
@@ -23,8 +33,8 @@ Required `.env` variables:
 ## Running
 
 ```bash
-python main.py           # prompts whether to download fresh data
-python main.py --no-aggiorna-cartellino  # skip download, process existing data
+uv run python main.py           # prompts whether to download fresh data
+uv run python main.py --no-aggiorna-cartellino  # skip download, process existing data
 ```
 
 Download requires UniSA network access and Chrome Beta at `/Applications/Google Chrome Beta.app/Contents/MacOS/Google Chrome Beta`. Set `HEADLESS=True` in `.env` for headless mode.

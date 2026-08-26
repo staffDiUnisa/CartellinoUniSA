@@ -1,0 +1,60 @@
+[project]
+name = "cartellino-unisa"
+version = "1.2.0"
+description = "Download ed elaborazione del cartellino presenze UniSA da presenze.unisa.it"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "annotated-types",
+    "attrs",
+    "beautifulsoup4",
+    "certifi",
+    "click",
+    "et_xmlfile",
+    "h11",
+    "html5lib",
+    "idna",
+    "lxml",
+    "markdown-it-py",
+    "mdurl",
+    "numpy",
+    "openpyxl",
+    "outcome",
+    "pandas",
+    "pandas-stubs",
+    "pydantic",
+    "pydantic_core",
+    "pygments",
+    "pysocks",
+    "python-dateutil",
+    "pyyaml",
+    "python-dotenv",
+    "pytz",
+    "rich",
+    "selenium",
+    "webdriver-manager",
+    "shellingham",
+    "six",
+    "sniffio",
+    "sortedcontainers",
+    "soupsieve",
+    "trio",
+    "trio-websocket",
+    "typer",
+    "typing-inspection",
+    "typing_extensions",
+    "tzdata",
+    "urllib3",
+    "webencodings",
+    "websocket-client",
+    "wsproto",
+    "xlsxwriter",
+    # Nuove dipendenze per la v2.0.0 (vedi TODO.md)
+    "textual",
+    "keyring",
+    "platformdirs",
+    "pyarrow",
+]
+
+[tool.uv]
+package = false

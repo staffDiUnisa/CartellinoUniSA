@@ -21,7 +21,8 @@ Strumento Python per il download automatico e l'elaborazione del cartellino pres
 
 ## 📋 Prerequisiti
 
-- Python ≥ 3.12
+- [`mise`](https://mise.jdx.dev/) (gestisce la versione di Python e installa `uv`)
+- [`uv`](https://docs.astral.sh/uv/) (gestione dipendenze e virtualenv) — installato automaticamente da `mise`
 - Google Chrome installato (ChromeDriver gestito automaticamente)
 - Connessione alla rete universitaria **solo** per il metodo "Credenziali UNISA" (SPID e CIE funzionano anche da fuori rete)
 - Account UniSA valido
@@ -32,12 +33,8 @@ Strumento Python per il download automatico e l'elaborazione del cartellino pres
 git clone https://github.com/staffDiUnisa/CartellinoUniSA.git
 cd CartellinoUniSA
 
-python3 -m venv .venv
-source .venv/bin/activate   # Linux/macOS
-# oppure
-.venv\Scripts\activate      # Windows
-
-pip install -r requirements.txt
+mise install       # installa Python 3.12 e uv (versioni pinnate in .mise.toml)
+mise run install   # equivalente a: uv sync (installa le dipendenze da pyproject.toml/uv.lock)
 ```
 
 ## ⚙️ Configurazione
@@ -71,7 +68,9 @@ HEADLESS=False                    # True per browser invisibile (solo con Creden
 Dati salvati in `data/v2/{anno}/`.
 
 ```bash
-python cartellino_v2.py
+mise run app
+# oppure
+uv run python cartellino_v2.py
 ```
 
 All'avvio viene chiesto se scaricare il cartellino aggiornato. Se si sceglie il download, viene poi chiesto il metodo di autenticazione:
@@ -89,10 +88,10 @@ Per SPID e CIE il browser si apre e attende che l'utente completi manualmente il
 
 ```bash
 # Salta il download e usa i dati già presenti
-python cartellino_v2.py --no-aggiorna-cartellino
+uv run python cartellino_v2.py --no-aggiorna-cartellino
 
 # Genera anche il timesheet di progetto (vedi sezione dedicata)
-python cartellino_v2.py --no-aggiorna-cartellino --timesheet-progetto mio_progetto.yaml
+uv run python cartellino_v2.py --no-aggiorna-cartellino --timesheet-progetto mio_progetto.yaml
 ```
 
 ### `main.py` — versione legacy
@@ -100,8 +99,8 @@ python cartellino_v2.py --no-aggiorna-cartellino --timesheet-progetto mio_proget
 Dati salvati in `data/{anno}/`. Stessa logica di download, ma pipeline di elaborazione precedente (senza statistiche e ore giornaliere).
 
 ```bash
-python main.py
-python main.py --no-aggiorna-cartellino
+uv run python main.py
+uv run python main.py --no-aggiorna-cartellino
 ```
 
 ## 📁 Struttura dati (versione corrente)
@@ -277,10 +276,10 @@ ore_fisse:
 
 ```bash
 # Passa solo il nome del file: viene cercato automaticamente in timesheet/
-python cartellino_v2.py --no-aggiorna-cartellino --timesheet-progetto mio_progetto.yaml
+uv run python cartellino_v2.py --no-aggiorna-cartellino --timesheet-progetto mio_progetto.yaml
 
 # Oppure passa un percorso completo o relativo
-python cartellino_v2.py --no-aggiorna-cartellino --timesheet-progetto /percorso/assoluto/config.yaml
+uv run python cartellino_v2.py --no-aggiorna-cartellino --timesheet-progetto /percorso/assoluto/config.yaml
 ```
 
 ### 3. Regole di distribuzione delle ore

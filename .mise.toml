@@ -1,0 +1,11 @@
+[tools]
+python = "3.12"
+uv = "latest"
+
+[tasks.install]
+description = "Installa le dipendenze del progetto"
+run = "uv sync"
+
+[tasks.app]
+description = "Esegue lo script principale (cartellino_v2.py)"
+run = "uv run python cartellino_v2.py"

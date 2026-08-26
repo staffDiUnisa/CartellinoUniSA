@@ -72,16 +72,17 @@ presenti nel cartellino per quei codici — nessuna proiezione futura richiesta.
 
 ---
 
-## Fase 1 — Migrazione ambiente: pip/venv → mise/uv
+## Fase 1 — Migrazione ambiente: pip/venv → mise/uv ✅
 
-- [ ] Creare `pyproject.toml` (metadati progetto, `requires-python = ">=3.12"`, dipendenze da
+- [x] Creare `pyproject.toml` (metadati progetto, `requires-python = ">=3.12"`, dipendenze da
       `requirements.txt` + nuove: `textual`, `keyring`, `platformdirs`, `pyarrow` (per Feather))
-- [ ] Generare `uv.lock` (`uv lock`)
-- [ ] Aggiungere `.mise.toml` (pin versione Python, tool `uv`, task `install`/`app`)
-- [ ] Rimuovere `requirements.txt` (o generarlo da `uv export` solo se serve compatibilità)
-- [ ] Aggiornare `README.md` / `CLAUDE.md` con le nuove istruzioni di setup
-      (`mise install`, `uv sync`, `uv run cartellino`)
-- [ ] Aggiornare eventuale CI esistente per usare `mise`/`uv` invece di `pip`
+- [x] Generare `uv.lock` (`uv lock`)
+- [x] Aggiungere `.mise.toml` (pin versione Python, tool `uv`, task `install`/`app`)
+- [x] Rimuovere `requirements.txt` (nessun bisogno di compatibilità con `pip` legacy)
+- [x] Aggiornare `README.md` / `CLAUDE.md` con le nuove istruzioni di setup
+      (`mise install`, `uv sync`, `uv run ...`)
+- [x] Aggiornare eventuale CI esistente per usare `mise`/`uv` invece di `pip`
+      (nessuna CI esistente nel repo, nulla da migrare)
 
 ## Fase 2 — Credenziali sicure (OS keyring) + config utente
 
