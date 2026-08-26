@@ -1,8 +1,11 @@
+import logging
 from pathlib import Path
 from typing import Optional
 
 import typer
 from typing_extensions import Annotated
+
+logging.basicConfig(level=logging.INFO, format="%(message)s")
 
 DATA_FOLDER = Path("data/v2")
 TIMESHEET_FOLDER = Path("timesheet")
@@ -46,36 +49,14 @@ def main(
     processor.run()
 
     if timesheet_progetto is not None:
-        from cartellino.cartellino import Cartellino
-        from cartellino.timesheet_progetto import ConfigTimesheet, TimesheetProgetto
+        from cartellino.timesheet_runner import esegui_timesheet_progetto, risolvi_percorso_timesheet
 
-        ts_path = Path(timesheet_progetto)
-        if not ts_path.is_absolute() and not ts_path.exists():
-            ts_path = TIMESHEET_FOLDER / ts_path
-        if not ts_path.exists():
-            raise typer.BadParameter(
-                f"File non trovato: '{timesheet_progetto}' "
-                f"(cercato anche in '{TIMESHEET_FOLDER / timesheet_progetto}')",
-                param_hint="--timesheet-progetto",
-            )
+        try:
+            ts_path = risolvi_percorso_timesheet(timesheet_progetto, TIMESHEET_FOLDER)
+        except FileNotFoundError as e:
+            raise typer.BadParameter(str(e), param_hint="--timesheet-progetto")
 
-        cfg = processor.config
-        cartellino = Cartellino.from_config(cfg)
-        ts_config = ConfigTimesheet.from_yaml(ts_path)
-        ts = TimesheetProgetto(
-            oo_diu=cartellino.oo_diu,
-            config=ts_config,
-            output_folder=cfg.output_folder,
-        )
-        ts.salva()
-
-        if ts_config.template_rendiconto is not None:
-            from cartellino.rendiconto_excel import RendicontoExcel
-            RendicontoExcel(
-                config=ts_config,
-                monthly_data=ts.calcola(),
-                output_folder=cfg.output_folder,
-            ).genera()
+        esegui_timesheet_progetto(processor.config, ts_path)
 
 
 if __name__ == "__main__":

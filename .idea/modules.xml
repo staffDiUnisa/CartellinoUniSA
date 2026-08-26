@@ -2,7 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/.idea/CatturaCartellino.iml" filepath="$PROJECT_DIR$/.idea/CatturaCartellino.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/cartellino-unisa.iml" filepath="$PROJECT_DIR$/.idea/cartellino-unisa.iml" />
     </modules>
   </component>
 </project>

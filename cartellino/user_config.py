@@ -1,9 +1,12 @@
+import logging
 import tomllib
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
 
 import platformdirs
 import tomli_w
+
+log = logging.getLogger(__name__)
 
 _APP_NAME = "cartellino-unisa"
 _CONFIG_FILENAME = "config.toml"
@@ -87,10 +90,10 @@ def migrate_from_env_if_needed(env_file: Path = Path(".env")) -> UserConfig | No
         from cartellino.credentials import set_credentials
         set_credentials(username, password)
 
-    print(
+    log.info(
         f"Migrazione automatica da '.env' completata: configurazione salvata in "
         f"'{config_file_path()}'"
         + (" e credenziali salvate nel keyring di sistema." if username and password else ".")
-        + f"\nPuoi eliminare il file '{env_file}' in sicurezza."
+        + f" Puoi eliminare il file '{env_file}' in sicurezza."
     )
     return user_config

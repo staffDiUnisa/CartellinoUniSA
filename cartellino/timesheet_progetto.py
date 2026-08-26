@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import calendar
+import logging
 from dataclasses import dataclass, field
 from datetime import date
 from math import floor
@@ -12,6 +13,8 @@ import yaml
 from pandas.io.formats import excel as excel_fmt
 
 from processor.utils import write_excel_file
+
+log = logging.getLogger(__name__)
 
 _MONTH_NAMES = [
     "gennaio", "febbraio", "marzo", "aprile", "maggio", "giugno",
@@ -189,7 +192,7 @@ class TimesheetProgetto:
         ore_residue = cfg.ore_totali - ore_fisse_totali
 
         if ore_residue < 0:
-            print(
+            log.warning(
                 f"ATTENZIONE: le ore già assegnate ({ore_fisse_totali:.2f}h) "
                 f"superano le ore totali obiettivo ({cfg.ore_totali:.2f}h)."
             )
@@ -202,7 +205,7 @@ class TimesheetProgetto:
         df["ore_progetto"] = df["ore_progetto"].fillna(0.0)
 
         if ore_residue > 0 and n_eligible == 0:
-            print(
+            log.warning(
                 f"ATTENZIONE: nessun giorno idoneo (≥{_MIN_ORE_ELIGIBILITA}h lavorative) "
                 f"per distribuire {ore_residue:.2f}h residue."
             )
@@ -216,7 +219,7 @@ class TimesheetProgetto:
             remainder = round(cfg.ore_totali - total_assigned, 4)
             if remainder > 0:
                 if remainder >= 0.5:
-                    print(
+                    log.warning(
                         f"ATTENZIONE: il resto da aggiungere all'ultimo giorno è "
                         f"{remainder:.2f}h ({remainder * 60:.1f} min ≥ 30 min). "
                         "Il totale sarà corretto ma l'ultimo giorno avrà un valore non multiplo di mezz'ora."
@@ -260,7 +263,7 @@ class TimesheetProgetto:
         output_folder = self._output_folder / "ore_svolte_per_giorno" / cfg.nome
         output_folder.mkdir(parents=True, exist_ok=True)
 
-        print(f"\nTimesheet progetto '{cfg.nome}':")
+        log.info(f"Timesheet progetto '{cfg.nome}':")
         excel_fmt.ExcelFormatter.header_style = None
         total_ore = 0.0
 
@@ -299,6 +302,6 @@ class TimesheetProgetto:
 
             month_total = mdf["ore_progetto"].sum()
             total_ore += month_total
-            print(f"  {mm}_{month_name}: {month_total:.2f}h → {output_file}")
+            log.info(f"  {mm}_{month_name}: {month_total:.2f}h → {output_file}")
 
-        print(f"Totale ore progetto: {total_ore:.4f}h (obiettivo: {cfg.ore_totali}h)")
+        log.info(f"Totale ore progetto: {total_ore:.4f}h (obiettivo: {cfg.ore_totali}h)")

@@ -1,3 +1,4 @@
+import logging
 import socket
 import time
 from datetime import datetime
@@ -16,6 +17,8 @@ from selenium.webdriver.support.ui import WebDriverWait
 
 from cartellino.config import Config
 from cartellino.credentials import get_credentials
+
+log = logging.getLogger(__name__)
 
 def multiselect_set_selections(driver, element_name, labels) -> None:
     el = driver.find_element(By.NAME, element_name)
@@ -47,7 +50,13 @@ def scegli_metodo_autenticazione() -> str:
             return metodi_disponibili[int(scelta) - 1]
         print("Scelta non valida, riprova.")
 
-def ottieni_cartellino(data_folder:Path) -> None:
+def ottieni_cartellino(data_folder: Path, metodo: str | None = None) -> None:
+    """Scarica il cartellino dell'anno configurato e lo salva in Feather.
+
+    `metodo` è il metodo di autenticazione da usare (uno tra `METODI_AUTENTICAZIONE`).
+    Se `None` (uso da CLI interattiva), viene chiesto a schermo con `input()`; il
+    chiamante TUI passa invece il metodo scelto dalla `RadioSet`, bypassando il prompt.
+    """
     config = Config.load(data_folder=data_folder)
     current_year = config.current_year
     start_date = datetime(year=current_year, month=1, day=1)
@@ -55,7 +64,8 @@ def ottieni_cartellino(data_folder:Path) -> None:
     headless = config.headless
     output_file = config.input_folder / 'cartellino.feather'
 
-    metodo = scegli_metodo_autenticazione()
+    if metodo is None:
+        metodo = scegli_metodo_autenticazione()
 
     WINDOW_SIZE = "800,600"
     chrome_options = Options()
@@ -85,8 +95,8 @@ def ottieni_cartellino(data_folder:Path) -> None:
             time.sleep(10)
         else:
             driver.find_element(By.LINK_TEXT, metodo).click()
-            print(f"\nAutenticazione {metodo}: completa il login nel browser, poi attendi.")
-            print("Selenium riprenderà il controllo automaticamente quando sarà raggiunta la pagina principale.\n")
+            log.info(f"Autenticazione {metodo}: completa il login nel browser, poi attendi.")
+            log.info("Selenium riprenderà il controllo automaticamente quando sarà raggiunta la pagina principale.")
             # Attendi fino a 10 minuti che l'utente completi il login
             WebDriverWait(driver, 600).until(
                 EC.url_contains("presenze.unisa.it/default.aspx")
@@ -100,7 +110,7 @@ def ottieni_cartellino(data_folder:Path) -> None:
         driver.find_element(By.ID, "cookieChoiceDismiss").click()
         multiselect_set_selections(driver, "1011_length", ["100"])
         page = 1
-        print(f"Processing page {page}")
+        log.info(f"Processing page {page}")
         table = "<table>" + (driver.find_element(By.ID, "1011").get_attribute('innerHTML') or "") + "</table>"
         table = table.replace("<br><span>", "<br>&nbsp;&amp;-&amp;&nbsp;<span>")
         table = StringIO(table)
@@ -114,16 +124,16 @@ def ottieni_cartellino(data_folder:Path) -> None:
             el = driver.find_element(By.ID, "1011_next")
             class_names = (el.get_attribute('class') or "").split(' ')
             page += 1
-            print(f"Processing page {page}")
+            log.info(f"Processing page {page}")
             table = "<table>" + (driver.find_element(By.ID, "1011").get_attribute('innerHTML') or "") + "</table>"
             table = table.replace("<br><span>", "<br>&nbsp;&amp;-&amp;&nbsp;<span>")
             table = StringIO(table)
             df.extend(pd.read_html(table))
         df = pd.concat(df, ignore_index=True)
         df.reset_index(drop=True).to_feather(output_file)
-        print(f"Cartellino salvato in '{output_file}'")
+        log.info(f"Cartellino salvato in '{output_file}'")
     except TimeoutException as e:
-        print(f"Timeout {e}")
+        log.error(f"Timeout {e}")
     finally:
         driver.close()
         driver.quit()

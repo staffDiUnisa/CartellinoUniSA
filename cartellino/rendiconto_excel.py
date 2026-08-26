@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import calendar
+import logging
 import re
 from datetime import date
 from pathlib import Path
@@ -12,6 +13,8 @@ from openpyxl.styles.colors import Color
 from openpyxl.utils import get_column_letter
 
 from cartellino.timesheet_progetto import ConfigTimesheet
+
+log = logging.getLogger(__name__)
 
 _MONTH_IT_TITLE = [
     "Gennaio", "Febbraio", "Marzo", "Aprile", "Maggio", "Giugno",
@@ -129,7 +132,7 @@ class RendicontoExcel:
 
         output_path = output_folder / filename
         wb.save(output_path)
-        print(f"Rendiconto generato: {output_path}")
+        log.info(f"Rendiconto generato: {output_path}")
         return output_path
 
     # ------------------------------------------------------------------

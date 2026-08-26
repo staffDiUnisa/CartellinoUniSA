@@ -1,3 +1,4 @@
+import logging
 from datetime import datetime
 from pathlib import Path
 
@@ -5,6 +6,8 @@ import pandas as pd
 
 from cartellino.cartellino import Cartellino
 from cartellino.config import Config
+
+log = logging.getLogger(__name__)
 
 _MONTH_ORDER = {
     'gen': 0, 'feb': 1, 'mar': 2, 'apr': 3, 'mag': 4, 'giu': 5,
@@ -37,14 +40,11 @@ class Statistiche:
         }
         return self._sheets
 
-    def salva(self, output_file: Path) -> None:
+    def salva(self, output_file: Path, fmt: str = "xlsx") -> None:
         sheets = self.calcola()
-        print(f"Scrivo le statistiche ottenute su {output_file}")
-        from cartellino.excel_utils import apply_table_format
-        with pd.ExcelWriter(output_file, engine="xlsxwriter") as writer:
-            for sheet_name, df in sheets.items():
-                df.to_excel(writer, sheet_name=sheet_name, index=False)
-                apply_table_format(writer.sheets[sheet_name], df)
+        log.info(f"Scrivo le statistiche ottenute su {output_file}")
+        from cartellino.export_utils import save_sheets
+        save_sheets(sheets, output_file, fmt=fmt)
 
     # ------------------------------------------------------------------
 

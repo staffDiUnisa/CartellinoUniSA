@@ -1,3 +1,4 @@
+import logging
 import os
 from dataclasses import dataclass, field
 from datetime import datetime
@@ -13,6 +14,8 @@ from cartellino.user_config import (
 )
 
 load_dotenv()
+
+log = logging.getLogger(__name__)
 
 
 @dataclass
@@ -46,10 +49,10 @@ class Config:
     def _parse_min_date(current_year: int, min_date_str: str | None) -> datetime | None:
         try:
             min_date = datetime.strptime(f"{current_year}-{min_date_str}", "%Y-%m-%d")
-            print(f"Data da cui verranno considerati i Riposi Compensativi Usati: {min_date.strftime('%d-%m-%Y')}")
+            log.info(f"Data da cui verranno considerati i Riposi Compensativi Usati: {min_date.strftime('%d-%m-%Y')}")
             return min_date
         except (ValueError, TypeError):
-            print(
+            log.warning(
                 "Errore nel processare MIN_DATE_RIPOSI_USATI. "
                 "Userò il file dei riposi usati, se disponibile."
             )

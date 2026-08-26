@@ -1,3 +1,4 @@
+import logging
 import re
 from datetime import datetime, timedelta
 from pathlib import Path
@@ -8,6 +9,8 @@ import pandas as pd
 from cartellino.ore_helpers import estrai_ore_minuti
 from model.ore_inserite import OreInserite
 from model.riposo_compensativo import RiposoCompensativo
+
+log = logging.getLogger(__name__)
 
 
 class OreEccedenti:
@@ -31,9 +34,9 @@ class OreEccedenti:
         df = self.elabora()
         return self._raggruppa_ore_eccedenti(df, riposi_usati)
 
-    def salva_dettaglio(self, output_file: Path) -> None:
+    def salva_dettaglio(self, output_file: Path, fmt: str = "xlsx") -> None:
         df = self.elabora().copy()
-        print(f"Scrivo riposi compensativo su {output_file}")
+        log.info(f"Scrivo riposi compensativo su {output_file}")
         base_date = datetime(1900, 1, 1)
         df["intervallo"] = df["intervallo"].apply(lambda x: base_date + x)
 
@@ -48,21 +51,33 @@ class OreEccedenti:
         riassunto["OE"] = riassunto["ore eccedenti"] + (riassunto["minuti eccedenti"] // 60)
         riassunto["ME"] = riassunto["minuti eccedenti"] % 60
 
-        from cartellino.excel_utils import apply_table_format
         cols = ["Stato", "Data", "Voci Base", "ore eccedenti", "minuti eccedenti", "intervallo"]
-        with pd.ExcelWriter(output_file, engine="xlsxwriter") as writer:
-            df[cols].to_excel(writer, sheet_name="dettaglio", index=False)
-            workbook = writer.book
-            worksheet = writer.sheets["dettaglio"]
-            time_format = workbook.add_format({"num_format": "hh:mm"})
-            for row_num, value in enumerate(df["intervallo"], 1):
-                worksheet.write_datetime(row_num, 5, value, time_format)
-            apply_table_format(worksheet, df[cols])
-            riassunto.to_excel(writer, index=False, sheet_name="riassunto")
-            apply_table_format(writer.sheets["riassunto"], riassunto)
+
+        if fmt == "xlsx":
+            from cartellino.excel_utils import apply_table_format
+            with pd.ExcelWriter(output_file, engine="xlsxwriter") as writer:
+                df[cols].to_excel(writer, sheet_name="dettaglio", index=False)
+                workbook = writer.book
+                worksheet = writer.sheets["dettaglio"]
+                time_format = workbook.add_format({"num_format": "hh:mm"})
+                for row_num, value in enumerate(df["intervallo"], 1):
+                    worksheet.write_datetime(row_num, 5, value, time_format)
+                apply_table_format(worksheet, df[cols])
+                riassunto.to_excel(writer, index=False, sheet_name="riassunto")
+                apply_table_format(writer.sheets["riassunto"], riassunto)
+            return
+
+        dettaglio = df[cols].copy()
+        dettaglio["intervallo"] = dettaglio["intervallo"].dt.strftime("%H:%M")
+        from cartellino.export_utils import save_sheets
+        save_sheets(
+            {"dettaglio": dettaglio, "riassunto": riassunto.reset_index()},
+            output_file,
+            fmt=fmt,
+        )
 
     def salva_testo(self, riposi: list[RiposoCompensativo], output_file: Path) -> None:
-        print(f"Scrivo riposi compensativi su {output_file}")
+        log.info(f"Scrivo riposi compensativi su {output_file}")
         with open(output_file, mode="w") as f:
             for riposo in riposi:
                 f.write("_________________________________________________\n")
@@ -107,7 +122,8 @@ class OreEccedenti:
         excluded = self._load_excluded_dates()
 
         if excluded:
-            [print(d) for d in excluded]
+            for d in excluded:
+                log.debug(d)
             df = df[~df["date"].isin([d["data"] for d in excluded if not d["has_time"]])]
 
         ore_minuti = df["Voci Base"].apply(estrai_ore_minuti)

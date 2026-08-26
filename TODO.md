@@ -123,28 +123,41 @@ presenti nel cartellino per quei codici — nessuna proiezione futura richiesta.
       pattern regex prima duplicato in `OreEccedenti._elabora`), riusabile per il saldo mensile
       dashboard (Fase 4)
 
-## Fase 4 — Fondamenta TUI con Textual
+## Fase 4 — Fondamenta TUI con Textual ✅
 
-Nuovo entrypoint `cartellino_tui` (Textual `App`). File principali:
-`cartellino/tui/app.py`, `cartellino/tui/screens/*.py`, `cartellino/tui/widgets/*.py`.
+Nuovo entrypoint `cartellino_tui.py` (Textual `App`). File principali:
+`cartellino/tui/app.py`, `cartellino/tui/screens/*.py`, `cartellino/tui/logging_handler.py`.
 
-- [ ] Schermata **Onboarding/Setup**: form per credenziali/config se mancanti
-- [ ] **Schermata Dashboard/Home** (vedi sezione dedicata sopra), con **versione app sempre
-      visibile** in header/footer (letta da `pyproject.toml` via `importlib.metadata`)
-- [ ] **Scelta aggiornamento**: azione esplicita "Aggiorna cartellino" (mai automatica
-      all'apertura) con `Switch`/pulsante al posto del prompt `y/N`
-- [ ] **Scelta metodo di autenticazione**: `RadioSet` (Credenziali UNISA / SPID / CIE),
+- [x] Schermata **Onboarding/Setup**: form per credenziali/config se mancanti
+      (`cartellino/tui/screens/onboarding.py`)
+- [x] **Schermata Dashboard/Home** (vedi sezione dedicata sopra), con **versione app sempre
+      visibile** in header/footer — letta da `pyproject.toml` via `tomllib`, non
+      `importlib.metadata` (il progetto ha `tool.uv.package = false`, quindi non è installato
+      come pacchetto e `importlib.metadata.version()` non funzionerebbe)
+- [x] **Scelta aggiornamento**: azione esplicita "Aggiorna cartellino" (mai automatica
+      all'apertura), pulsante/binding al posto del prompt Typer `y/N`
+      (`cartellino/tui/screens/update.py`)
+- [x] **Scelta metodo di autenticazione**: `RadioSet` (Credenziali UNISA / SPID / CIE),
       opzione UNISA disabilitata se `is_on_unisa_network()` è False (funzione esistente in
-      `get.py`, da riusare)
-- [ ] **Log/Progress view**: `RichLog` per output in tempo reale — richiede refactor di
-      `get.py`/`cartellino/*.py` per usare `logging` invece di `print()` diretti; operazioni
-      lunghe (Selenium, elaborazione) lanciate via `App.run_worker`
-- [ ] **Schermata Impostazioni**: anno, min date, formato export, liste codici configurabili
+      `get.py`, riusata senza modifiche)
+- [x] **Log/Progress view**: `RichLog` per output in tempo reale — refactor di
+      `get.py`/`cartellino/*.py` a `logging` fatto in una sessione precedente; operazioni
+      lunghe (Selenium) lanciate via `@work(thread=True)`, log inoltrati al `RichLog` da
+      `cartellino/tui/logging_handler.py::RichLogHandler` (thread-safe via `call_from_thread`)
+- [x] **Schermata Impostazioni**: anno, min date, formato export, liste codici configurabili
       (eccezioni + saldo mensile), gestione credenziali (keyring)
-- [ ] **Report on-demand**: schermata/menu per generare singolarmente i report (riposo
+      (`cartellino/tui/screens/settings.py`)
+- [x] **Report on-demand**: schermata/menu per generare singolarmente i report (riposo
       compensativo, credito ore, statistiche, ore giornaliere) nel formato scelto
-- [ ] **Timesheet di progetto**: selezione/creazione YAML da `timesheet/`
-      (riusa `ConfigTimesheet.from_yaml`)
+      (`cartellino/tui/screens/reports.py`); supporto xlsx/csv aggiunto in
+      `cartellino/export_utils.py::save_sheets` (chiuso il punto lasciato aperto in Fase 3)
+- [x] **Timesheet di progetto**: selezione di uno YAML esistente in `timesheet/` e generazione
+      (`cartellino/tui/screens/timesheet.py`, tramite `cartellino/timesheet_runner.py`,
+      condiviso con `cartellino_v2.py`). Niente wizard di creazione YAML da zero (rimane
+      un'estensione futura, vedi nota sotto)
+
+Estensioni future non incluse in questa fase: wizard di creazione guidata di un nuovo YAML di
+timesheet progetto direttamente dalla TUI (oggi resta un'operazione manuale sul filesystem).
 
 ## Fase 5 — Parità funzionale CLI non interattiva
 

@@ -1,7 +1,9 @@
+import logging
 from pathlib import Path
 
 import pandas as pd
-from pandas.io.formats import excel
+
+log = logging.getLogger(__name__)
 
 _MONTH_ORDER = {
     'gen': 0, 'feb': 1, 'mar': 2, 'apr': 3, 'mag': 4, 'giu': 5,
@@ -20,24 +22,19 @@ class OreGiornaliere:
         self._result = self._calcola()
         return self._result
 
-    def salva(self, output_file: Path) -> None:
+    def salva(self, output_file: Path, fmt: str = "xlsx") -> None:
         data = self.calcola()
         mesi = sorted(data.keys(), key=lambda x: _MONTH_ORDER[x])
-        print(f"Scrivo ore giornaliere su {output_file}")
+        log.info(f"Scrivo ore giornaliere su {output_file}")
 
-        from cartellino.excel_utils import apply_table_format
-        excel.ExcelFormatter.header_style = None
-        writer = pd.ExcelWriter(
-            output_file,
-            engine="xlsxwriter",
-            datetime_format="dd/mm/yyyy",
-            date_format="dd/mm/yyyy",
-        )
+        sheets = {}
         for mese in mesi:
-            df = data[mese]
-            df.to_excel(writer, sheet_name=mese, index=False)
-            apply_table_format(writer.sheets[mese], df)
-        writer.close()
+            df = data[mese].copy()
+            df["date"] = df["date"].dt.strftime("%d/%m/%Y")
+            sheets[mese] = df
+
+        from cartellino.export_utils import save_sheets
+        save_sheets(sheets, output_file, fmt=fmt)
 
     # ------------------------------------------------------------------
 

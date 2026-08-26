@@ -1,3 +1,4 @@
+import logging
 import re
 from datetime import datetime
 from pathlib import Path
@@ -5,6 +6,8 @@ from pathlib import Path
 import pandas as pd
 
 from cartellino.config import Config
+
+log = logging.getLogger(__name__)
 
 _MONTH_MAP = {
     "gen": 1, "feb": 2, "mar": 3, "apr": 4,
@@ -60,7 +63,7 @@ class Cartellino:
             )
         raw = pd.read_excel(legacy_excel_path)
         raw.reset_index(drop=True).to_feather(feather_path)
-        print(f"Migrazione una tantum: '{legacy_excel_path}' -> '{feather_path}'")
+        log.info(f"Migrazione una tantum: '{legacy_excel_path}' -> '{feather_path}'")
         return cls._from_raw(raw, year)
 
     # ------------------------------------------------------------------
@@ -81,7 +84,7 @@ class Cartellino:
         try:
             return datetime(year, month, day)
         except ValueError:
-            print(f"Invalid date: {day}-{month}-{year}")
+            log.error(f"Invalid date: {day}-{month}-{year}")
             raise
 
     # ------------------------------------------------------------------

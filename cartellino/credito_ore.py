@@ -1,9 +1,12 @@
+import logging
 import re
 from datetime import datetime
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
+
+log = logging.getLogger(__name__)
 
 _MONTH_ORDER = {
     'gen': 0, 'feb': 1, 'mar': 2, 'apr': 3, 'mag': 4, 'giu': 5,
@@ -24,10 +27,9 @@ class CreditoOre:
         self._df = self._calcola()
         return self._df
 
-    def salva(self, output_file: Path) -> None:
+    def salva(self, output_file: Path, fmt: str = "xlsx") -> None:
         df = self.calcola()
-        print(f"Scrivo credito ore su {output_file}")
-        from cartellino.excel_utils import apply_table_format
+        log.info(f"Scrivo credito ore su {output_file}")
         renamed = (
             df[["Stato", "mese", "credito", "credito_ore_residuo"]]
             .rename(columns={
@@ -37,9 +39,8 @@ class CreditoOre:
                 "credito_ore_residuo": "Credito ore al netto dei riposi maturati",
             })
         )
-        with pd.ExcelWriter(output_file, engine="xlsxwriter") as writer:
-            renamed.to_excel(writer, index=False, sheet_name="credito_ore")
-            apply_table_format(writer.sheets["credito_ore"], renamed)
+        from cartellino.export_utils import save_sheets
+        save_sheets({"credito_ore": renamed}, output_file, fmt=fmt)
 
     # ------------------------------------------------------------------
 

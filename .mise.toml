@@ -9,3 +9,7 @@ run = "uv sync"
 [tasks.app]
 description = "Esegue lo script principale (cartellino_v2.py)"
 run = "uv run python cartellino_v2.py"
+
+[tasks.tui]
+description = "Esegue la TUI Textual (cartellino_tui.py)"
+run = "uv run python cartellino_tui.py"

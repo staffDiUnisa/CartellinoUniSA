@@ -1,3 +1,4 @@
+import logging
 from pathlib import Path
 
 from processor.cartellinoprogetto import CartellinoProgetto
@@ -8,6 +9,8 @@ from cartellino.credito_ore import CreditoOre
 from cartellino.ore_eccedenti import OreEccedenti
 from cartellino.ore_giornaliere import OreGiornaliere
 from cartellino.statistiche import Statistiche
+
+log = logging.getLogger(__name__)
 
 
 class CartellinoProcessor:
@@ -54,10 +57,8 @@ class CartellinoProcessor:
         stat = Statistiche(cartellino=cartellino, config=cfg)
         stat.salva(cfg.output_folder / "statistiche.xlsx")
 
-        print("Codici usati per le statistiche del cartellino:")
-        print(cartellino.codici_usati)
-        print("Codici non usati per le statistiche del cartellino:")
-        print(cartellino.codici_non_usati())
+        log.info(f"Codici usati per le statistiche del cartellino: {cartellino.codici_usati}")
+        log.info(f"Codici non usati per le statistiche del cartellino: {cartellino.codici_non_usati()}")
 
         # 6. Ore giornaliere
         og_proc = OreGiornaliere(oo_diu=cartellino.oo_diu)
