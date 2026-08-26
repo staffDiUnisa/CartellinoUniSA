@@ -62,19 +62,26 @@ class UpdateScreen(Screen):
 
     @work(thread=True, exclusive=True)
     def _scarica(self, metodo: str) -> None:
+        successo = False
         try:
             ottieni_cartellino(self.app.data_folder, metodo=metodo)
+            successo = True
         except Exception as e:
             log.error(f"Download fallito: {e}")
         finally:
-            self.app.call_from_thread(self._fine_download)
+            self.app.call_from_thread(self._fine_download, successo)
 
-    def _fine_download(self) -> None:
+    def _fine_download(self, successo: bool) -> None:
         if self._handler is not None:
             logging.getLogger().removeHandler(self._handler)
             self._handler = None
         self.query_one("#btn-avvia", Button).disabled = False
         self.query_one("#radio-metodo", RadioSet).disabled = False
+        if successo:
+            # Torna direttamente alla Dashboard, che si aggiorna da sola con i
+            # nuovi dati grazie a `DashboardScreen.on_screen_resume`. In caso di
+            # errore restiamo sullo screen così l'utente legge il log.
+            self.app.pop_screen()
 
     def action_torna_indietro(self) -> None:
         self.app.pop_screen()

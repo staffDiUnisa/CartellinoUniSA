@@ -134,6 +134,7 @@ def ottieni_cartellino(data_folder: Path, metodo: str | None = None) -> None:
         log.info(f"Cartellino salvato in '{output_file}'")
     except TimeoutException as e:
         log.error(f"Timeout {e}")
+        raise
     finally:
         driver.close()
         driver.quit()
