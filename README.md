@@ -465,6 +465,19 @@ qualunque sia il sistema operativo.
 Il `.pkg` è **firmato con certificato Developer ID Installer e notarizzato/staplato da Apple**:
 Gatekeeper non dovrebbe mostrare alcun avviso, nemmeno offline.
 
+> **Se il comando `cartellino-unisa` non viene trovato** (`command not found`): `/usr/local/bin`
+> è nel `PATH` di default su macOS, ma se il tuo shell profile lo sovrascrive esplicitamente
+> (invece di estenderlo) potrebbe non essere incluso. Aggiungi questa riga al file di
+> configurazione della tua shell, poi apri un nuovo Terminale (o esegui `source` sul file):
+> ```bash
+> export PATH="/usr/local/bin:$PATH"
+> ```
+> - **zsh** (shell di default da macOS Catalina in poi): `~/.zshrc`
+> - **bash** (se ancora in uso, es. su macOS più datati o configurazioni personalizzate):
+>   `~/.bashrc` o `~/.bash_profile`
+>
+> Per capire quale shell stai usando: `echo $SHELL`.
+
 **Opzione alternativa — zip della cartella onedir** (per chi preferisce non installare nulla a
 livello di sistema):
 
