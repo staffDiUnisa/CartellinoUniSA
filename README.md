@@ -64,8 +64,8 @@ set_credentials('mario.rossi@unisa.it', 'TuaPassword')
 "
 ```
 
-(la Fase 4 della roadmap v2.0.0 prevede una schermata di onboarding nella TUI che farà questo
-passo in modo interattivo, senza bisogno di eseguire codice a mano)
+(in alternativa, la TUI — vedi sotto — ha una schermata di Onboarding che fa questo passo in modo
+interattivo, senza bisogno di eseguire codice a mano)
 
 Campi di `config.toml`:
 
@@ -74,9 +74,9 @@ Campi di `config.toml`:
 | `current_year` | ✅ | Anno di elaborazione |
 | `min_date_riposi_usati` | ❌ | Data minima (`MM-DD`) per contare i riposi SRC già fruiti. Se mancante viene usato `riposi_usati.txt` |
 | `headless` | ❌ | `true` per avviare Chrome in modalità headless (solo con Credenziali UNISA) |
-| `export_format` | ❌ | Formato di export dei report (`xlsx`/`csv`, default `xlsx`) — usato dalla Fase 3 in poi |
-| `dashboard_exception_codes` | ❌ | Codici per la sezione "eccezioni" della dashboard (Fase 4), default `["ERIT", "SCN"]` |
-| `dashboard_balance_codes` | ❌ | Codici per il saldo ore mensile della dashboard (Fase 4), default `["CRE", "OE-DIU", "SCN"]` |
+| `export_format` | ❌ | Formato di export dei report on-demand nella TUI (`xlsx`/`csv`, default `xlsx`) |
+| `dashboard_exception_codes` | ❌ | Codici per la sezione "eccezioni" della dashboard TUI, default `["ERIT", "SCN"]` |
+| `dashboard_balance_codes` | ❌ | Codici per il saldo ore mensile della dashboard TUI, default `["CRE", "OE-DIU", "SCN"]` |
 
 Username e password si impostano **solo** tramite `set_credentials` (keyring), non in `config.toml`.
 
@@ -112,7 +112,32 @@ HEADLESS=False                    # True per browser invisibile (solo con Creden
 
 ## 💻 Utilizzo
 
-### `cartellino_v2.py` — versione corrente (consigliata)
+### `cartellino_tui.py` — interfaccia testuale (TUI, consigliata)
+
+Interfaccia interattiva basata su [Textual](https://textual.textualize.io/), con dashboard,
+gestione guidata di config/credenziali e report on-demand. Usa lo stesso storage dati di
+`cartellino_v2.py` (`data/v2/{anno}/`).
+
+```bash
+mise run tui
+# oppure
+uv run python cartellino_tui.py
+```
+
+Schermate disponibili:
+
+| Schermata | Scorciatoia | Descrizione |
+|-----------|:---:|---------|
+| **Onboarding** | — | Mostrata automaticamente se manca `config.toml`; imposta anno, data minima riposi, credenziali (opzionali qui) |
+| **Dashboard** | — | Home: eccezioni del mese, saldo ore, riepilogo riposi compensativi, ferie/PMF usati, data ultimo aggiornamento |
+| **Aggiornamento** | `r` | Scelta del metodo di autenticazione (Credenziali UNISA/SPID/CIE, UNISA disabilitata fuori rete) e download con log in tempo reale |
+| **Report** | `p` | Generazione on-demand di riposo compensativo, credito ore, statistiche, ore giornaliere, nel formato scelto in Impostazioni |
+| **Timesheet progetto** | `t` | Selezione ed esecuzione di uno YAML esistente in `timesheet/` (vedi sezione dedicata più sotto) |
+| **Impostazioni** | `s` | Anno, data minima riposi, formato export, codici dashboard, gestione credenziali nel keyring |
+
+`Esc` torna alla schermata precedente, `q` esce dall'app.
+
+### `cartellino_v2.py` — CLI non interattiva
 
 Dati salvati in `data/v2/{anno}/`.
 

@@ -16,12 +16,18 @@ mise install   # installa Python 3.12 e uv secondo .mise.toml
 mise run install   # equivalente a: uv sync
 ```
 
-Per eseguire lo script principale:
+Per eseguire lo script principale (CLI non interattiva):
 
 ```bash
 mise run app        # equivalente a: uv run python cartellino_v2.py
 # oppure direttamente:
 uv run python cartellino_v2.py
+```
+
+Per la TUI (Fase 4 TODO v2.0.0, entrypoint consigliato, vedi sezione dedicata sotto):
+
+```bash
+mise run tui         # equivalente a: uv run python cartellino_tui.py
 ```
 
 ### Credenziali e configurazione (`cartellino_v2.py` / pacchetto `cartellino/`)
@@ -57,6 +63,19 @@ uv run python main.py --no-aggiorna-cartellino  # skip download, process existin
 
 Download requires UniSA network access and Chrome Beta at `/Applications/Google Chrome Beta.app/Contents/MacOS/Google Chrome Beta`. Set `HEADLESS=True` in `.env` for headless mode.
 
+### `cartellino_tui.py` — TUI Textual (Fase 4 TODO v2.0.0, entrypoint consigliato)
+
+```bash
+mise run tui
+# oppure
+uv run python cartellino_tui.py
+```
+
+App Textual (pacchetto `cartellino/tui/`) con dashboard, onboarding, aggiornamento
+(con scelta metodo auth e log in tempo reale), impostazioni, report on-demand e
+timesheet di progetto. Usa lo stesso storage di `cartellino_v2.py`
+(`data/v2/{anno}/`). Vedi il pacchetto `cartellino/tui/` sotto per i dettagli.
+
 ## Architecture
 
 **Entry point**: `main.py` — Typer CLI that chains `get.run()` and `process.run()`.
@@ -91,7 +110,32 @@ Download requires UniSA network access and Chrome Beta at `/Applications/Google 
 - **`cartellino/ore_helpers.py`** — `estrai_ore_minuti`/`somma_ore_per_codici`: helper condiviso
   per estrarre ore/minuti dal pattern `HH.MM` di "Voci Base", generalizzato da quanto usato in
   `OreEccedenti._elabora` per `OE-DIU`; riusabile per qualunque codice con lo stesso formato
-  (es. `SCN`, `CRE` per il saldo mensile della dashboard, Fase 4).
+  (es. `SCN`, `CRE` per il saldo mensile della dashboard).
+- **`cartellino/export_utils.py`** — `save_sheets(sheets, output_path, fmt)`: scrive uno o più
+  DataFrame in xlsx (un foglio per voce, stile tabella) o csv (un file per foglio). Usato da
+  `Statistiche.salva`, `CreditoOre.salva`, `OreGiornaliere.salva`,
+  `OreEccedenti.salva_dettaglio` per il parametro `fmt` (`Config.export_format`, scelto nella
+  TUI in Impostazioni).
+- **`cartellino/timesheet_runner.py`** — `esegui_timesheet_progetto`/`risolvi_percorso_timesheet`:
+  sequenza `ConfigTimesheet.from_yaml` → `TimesheetProgetto.salva` → `RendicontoExcel.genera`
+  (se `template_rendiconto` è impostato), condivisa tra `cartellino_v2.py` (flag
+  `--timesheet-progetto`) e la schermata Timesheet della TUI.
+- **`cartellino/tui/`** — TUI Textual (Fase 4 TODO v2.0.0, entrypoint `cartellino_tui.py`):
+  - `app.py` — `CartellinoApp`, instrada verso `OnboardingScreen` o `DashboardScreen` in base
+    alla presenza di `config.toml` (`Config.load()`); versione mostrata in header letta da
+    `pyproject.toml` via `tomllib` (il progetto ha `tool.uv.package = false`, quindi non è
+    installato come pacchetto e `importlib.metadata.version()` non funzionerebbe).
+  - `logging_handler.py` — `RichLogHandler`, inoltra i record di `logging` a un widget
+    `RichLog` in modo thread-safe (`App.call_from_thread`), usato dalla schermata di
+    aggiornamento durante il download Selenium (lanciato con `@work(thread=True)`).
+  - `screens/onboarding.py`, `dashboard.py`, `update.py`, `settings.py`, `reports.py`,
+    `timesheet.py` — una schermata per ciascuna voce del TODO Fase 4; costruite sul layer di
+    dominio esistente (`Cartellino`, `OreEccedenti`, `CreditoOre`, `Statistiche`,
+    `OreGiornaliere`, `TimesheetProgetto`) senza modificarne la logica di calcolo.
+  - Nota implementativa: `DashboardScreen.on_screen_resume` ricostruisce solo il container
+    `#dashboard-body` (non l'intero screen via `recompose()`) — un `recompose()` pieno
+    ricreerebbe anche l'`Header`, lasciando in sospeso il suo task interno di set-title contro
+    l'istanza appena rimossa e rompendo la gestione del prossimo evento in Textual.
 
 ## Data flow
 
