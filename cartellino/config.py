@@ -51,6 +51,13 @@ class Config:
         self.input_folder.mkdir(parents=True, exist_ok=True)
         self.output_folder.mkdir(parents=True, exist_ok=True)
 
+        # OreEccedenti._load_excluded_dates apre questo file direttamente (a
+        # differenza di riposi_usati_file/data_ticket_file, letti con un controllo
+        # di esistenza a monte): se manca va creato vuoto invece di far fallire
+        # l'elaborazione con un FileNotFoundError.
+        if not self.excluded_dates_file.exists():
+            self.excluded_dates_file.touch()
+
     @staticmethod
     def _parse_min_date(current_year: int, min_date_str: str | None) -> datetime | None:
         try:
