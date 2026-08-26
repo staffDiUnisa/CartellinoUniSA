@@ -1,9 +1,10 @@
-# TODO — Roadmap verso v2.0.0
+# TODO — Roadmap verso v2.0.0 ✅ completata
 
-> Stato attuale rilasciato come [`v1.2.0`](https://github.com/staffDiUnisa/CartellinoUniSA/releases/tag/v1.2.0).
+> Rilasciato come [`v2.0.0`](https://github.com/staffDiUnisa/CartellinoUniSA/releases/tag/v2.0.0)
+> (precedente: [`v1.2.0`](https://github.com/staffDiUnisa/CartellinoUniSA/releases/tag/v1.2.0)).
 > Obiettivo v2.0.0: TUI (Textual) al posto dei prompt CLI, credenziali in OS keyring,
 > tooling `mise`/`uv` al posto di `pip`/`venv`, dashboard iniziale sullo stato del cartellino,
-> eseguibili standalone per macOS/Windows/Linux.
+> eseguibili standalone per macOS/Windows/Linux — tutte le 7 fasi sotto sono completate.
 
 Decisioni prese:
 - La v2 avrà **sia TUI che flag CLI non interattivi** (per uso scriptato).
@@ -237,10 +238,10 @@ Bug trovati e corretti, nessuno riproducibile con una build/esecuzione locale no
    `os.environ.pop(...)` non bastava (dyld fissa queste variabili all'avvio del processo): serve
    un **re-exec** (`os.execve`) con ambiente ripulito.
 
-## Fase 7 — Rilascio v2.0.0
+## Fase 7 — Rilascio v2.0.0 ✅
 
-- [ ] Bump versione a `2.0.0` in `pyproject.toml`
-- [ ] Tag `v2.0.0` + GitHub Release con i binari allegati dalla pipeline CI
+- [x] Bump versione a `2.0.0` in `pyproject.toml`
+- [x] Tag `v2.0.0` + GitHub Release con i binari allegati dalla pipeline CI (pubblicata, non più draft)
 
 ---
 
