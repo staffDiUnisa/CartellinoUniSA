@@ -1,11 +1,17 @@
 # 📊 Elaborazione Cartellino UniSA
 
+![Release](https://img.shields.io/github/v/release/staffDiUnisa/CartellinoUniSA?include_prereleases&label=release&style=for-the-badge)
 ![License](https://img.shields.io/badge/License-GPL_3.0-blue?style=for-the-badge&logo=gnu&logoColor=white)
 ![Python](https://img.shields.io/badge/Python-3.12+-3776AB?style=for-the-badge&logo=python&logoColor=white)
+![Textual](https://img.shields.io/badge/TUI-Textual-8A2BE2?style=for-the-badge)
 ![Selenium](https://img.shields.io/badge/Selenium-43B02A?style=for-the-badge&logo=selenium&logoColor=white)
 ![Pandas](https://img.shields.io/badge/Pandas-150458?style=for-the-badge&logo=pandas&logoColor=white)
 
-Strumento Python per il download automatico e l'elaborazione del cartellino presenze da [presenze.unisa.it](https://presenze.unisa.it). Calcola ore eccedenti, riposi compensativi, credito ore mensile e genera timesheet per progetti di ricerca.
+![macOS](https://img.shields.io/badge/macOS-firmato%20%26%20notarizzato-success?style=flat-square&logo=apple&logoColor=white)
+![Windows](https://img.shields.io/badge/Windows-supportato-blue?style=flat-square&logo=windowsterminal&logoColor=white)
+![Linux](https://img.shields.io/badge/Linux-supportato-blue?style=flat-square&logo=linux&logoColor=white)
+
+Strumento Python per il download automatico e l'elaborazione del cartellino presenze da [presenze.unisa.it](https://presenze.unisa.it). Calcola ore eccedenti, riposi compensativi, credito ore mensile e genera timesheet per progetti di ricerca. Disponibile sia come **TUI** (interfaccia testuale interattiva) sia come **CLI** scriptabile, entrambe scaricabili come eseguibile standalone senza installare Python.
 
 ## 🎯 Funzionalità
 
@@ -424,12 +430,63 @@ Vengono inoltre corretti automaticamente:
 
 A partire dalla v2.0.0, ogni tag `v2.*` genera automaticamente (GitHub Actions,
 `.github/workflows/release.yml`) un eseguibile standalone della TUI per macOS, Windows e Linux,
-allegato come bozza (draft) alla relativa [GitHub Release](https://github.com/staffDiUnisa/CartellinoUniSA/releases) —
-`cartellino-unisa-macos.zip`, `cartellino-unisa-linux.zip`, `cartellino-unisa-windows.zip`. Non
-serve installare Python/`mise`/`uv`: si scarica lo zip del proprio sistema operativo, si estrae e
-si esegue il binario dentro la cartella estratta (`cartellino-unisa/cartellino-unisa`, `.exe` su
-Windows) da terminale — **non spostare l'eseguibile fuori dalla sua cartella**: le librerie di
-supporto (Python, Textual, pandas/pyarrow, ecc.) stanno lì accanto.
+allegato alla relativa [GitHub Release](https://github.com/staffDiUnisa/CartellinoUniSA/releases/latest).
+Non serve installare Python, `mise` o `uv`: si scarica lo zip del proprio sistema operativo, si
+estrae e si esegue il binario dentro la cartella estratta — **non spostare l'eseguibile fuori
+dalla sua cartella**: le librerie di supporto (Python, Textual, pandas/pyarrow, ecc.) stanno lì
+accanto, servono per farlo funzionare.
+
+**Chrome resta comunque una dipendenza esterna obbligatoria** (il download del cartellino usa
+Selenium, che non è imbottigliabile in un eseguibile standalone): va installato separatamente,
+qualunque sia il sistema operativo.
+
+### 🍎 macOS
+
+1. Dalla pagina delle [Release](https://github.com/staffDiUnisa/CartellinoUniSA/releases/latest),
+   scarica `cartellino-unisa-macos.zip`
+2. Estrai lo zip (doppio click, oppure `unzip cartellino-unisa-macos.zip` da terminale)
+3. Apri il Terminale, entra nella cartella estratta ed esegui:
+   ```bash
+   cd cartellino-unisa
+   ./cartellino-unisa
+   ```
+
+L'eseguibile è **firmato con certificato Developer ID e notarizzato da Apple**: Gatekeeper non
+dovrebbe mostrare alcun avviso. Se comparisse comunque "app non verificata"/"sviluppatore non
+identificato" (es. per una build senza i secrets di firma configurati), risolvi con: click destro
+(o `Ctrl`+click) sul file `cartellino-unisa` dentro la cartella estratta → **Apri**, poi conferma
+nel dialogo (necessario solo la prima volta).
+
+### 🪟 Windows
+
+1. Dalla pagina delle [Release](https://github.com/staffDiUnisa/CartellinoUniSA/releases/latest),
+   scarica `cartellino-unisa-windows.zip`
+2. Estrai lo zip (click destro → **Estrai tutto...**)
+3. Apri PowerShell o il Prompt dei comandi, entra nella cartella estratta ed esegui:
+   ```powershell
+   cd cartellino-unisa
+   .\cartellino-unisa.exe
+   ```
+
+Il binario **non è firmato** (nessun certificato di firma codice per Windows), quindi al primo
+avvio SmartScreen mostra "Windows ha protetto il PC": clicca **Ulteriori informazioni** → **Esegui
+comunque** (necessario solo la prima volta).
+
+### 🐧 Linux
+
+1. Dalla pagina delle [Release](https://github.com/staffDiUnisa/CartellinoUniSA/releases/latest),
+   scarica `cartellino-unisa-linux.zip`
+2. Estrai ed esegui da terminale:
+   ```bash
+   unzip cartellino-unisa-linux.zip
+   cd cartellino-unisa
+   ./cartellino-unisa
+   ```
+   Se il sistema segnala permessi mancanti (`Permission denied`): `chmod +x cartellino-unisa`.
+3. Chrome/Chromium deve essere installato e raggiungibile dal `PATH` per il download del
+   cartellino (Selenium/`webdriver-manager` lo useranno automaticamente).
+
+### Note comuni
 
 > Perché una cartella (zip) e non un singolo eseguibile: la prima versione usava un eseguibile
 > "onefile", che su macOS si è rivelato rotto (`pyarrow` falliva l'import sul binario scaricato,
@@ -437,22 +494,13 @@ supporto (Python, Textual, pandas/pyarrow, ecc.) stanno lì accanto.
 > temporanea non firmata vengono bloccate da macOS. La modalità "onedir" (cartella) evita questa
 > estrazione runtime.
 
-**Chrome resta comunque una dipendenza esterna obbligatoria** (il download del cartellino usa
-Selenium, che non è imbottigliabile in un eseguibile standalone): va installato separatamente.
-
-**Avvisi di sicurezza del sistema operativo**:
-- **macOS**: il binario è firmato con un certificato Developer ID e notarizzato da Apple
-  (`.github/workflows/release.yml`, richiede i secrets `MACOS_CERTIFICATE`,
-  `MACOS_CERTIFICATE_PWD`, `APPLE_ID`, `APPLE_ID_PASSWORD`, `APPLE_TEAM_ID`) — Gatekeeper non
-  dovrebbe più mostrare l'avviso "sviluppatore non identificato" (solo una verifica online al
-  primo avvio se lo stapling del ticket di notarizzazione non fosse andato a buon fine)
-- **Windows**: il binario **non** è firmato (nessun certificato di firma codice a pagamento),
-  quindi SmartScreen mostra "Windows ha protetto il PC" al primo avvio — **Ulteriori
-  informazioni** → **Esegui comunque**
-
 Per rigenerare l'eseguibile localmente (es. per verificare una modifica prima di taggare una
-release): `uv sync --group build && uv run pyinstaller packaging/cartellino.spec`, poi
-`./dist/cartellino-unisa/cartellino-unisa` (`.exe` su Windows).
+release):
+```bash
+uv sync --group build
+uv run pyinstaller packaging/cartellino.spec
+./dist/cartellino-unisa/cartellino-unisa   # .exe su Windows
+```
 
 ## 🔧 Troubleshooting
 

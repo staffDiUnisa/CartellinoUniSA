@@ -135,6 +135,12 @@ jobs:
           mkdir -p release
           for dir in artifacts/*/; do
             name="$(basename "$dir")"
+            # actions/upload-artifact + download-artifact non preservano sempre
+            # il bit +x sui binari Unix (macOS/Linux): va ripristinato prima di
+            # comprimere, altrimenti chi scarica lo zip deve fare chmod a mano.
+            if [ -f "$dir/cartellino-unisa" ]; then
+              chmod +x "$dir/cartellino-unisa"
+            fi
             (cd "$dir" && zip -r "../../release/${name}.zip" .)
           done
           ls -la release
