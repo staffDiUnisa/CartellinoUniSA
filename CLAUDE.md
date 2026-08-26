@@ -113,9 +113,15 @@ uv run pyinstaller packaging/cartellino.spec --noconfirm
   `COLLECT(...)`: le librerie stanno accanto all'eseguibile fin dalla build, niente estrazione
   runtime. Il workflow comprime la cartella in uno zip per l'asset della Release
   (`.github/workflows/release.yml`).
-- `keyring`, `pyarrow`, `selenium` hanno già hook PyInstaller propri (rispettivamente in
-  `PyInstaller.hooks` e `_pyinstaller_hooks_contrib`) che raccolgono automaticamente
-  submodule/metadata/data file — nessun `hiddenimports` manuale necessario per questi tre.
+- `keyring` e `pyarrow` hanno già hook PyInstaller propri (rispettivamente in `PyInstaller.hooks`
+  e `_pyinstaller_hooks_contrib`) che raccolgono automaticamente submodule/metadata/data file —
+  nessun `hiddenimports` manuale necessario per questi due. Il hook di `selenium` raccoglie solo
+  i data file, non i submodule dei browser: `selenium/webdriver/__init__.py` espone
+  `webdriver.Chrome` con `__getattr__` a livello di modulo (PEP 562, lazy import), invisibile
+  all'analisi statica di PyInstaller (riscontrato in produzione:
+  `ModuleNotFoundError: No module named 'selenium.webdriver.chrome.webdriver'` all'avvio del
+  download) — vanno dichiarati esplicitamente in `hiddenimports` nello spec
+  (`selenium.webdriver.chrome.{webdriver,options,service}`).
 - `cartellino/tui/app.py::CartellinoApp._BASE_PATH`/`_bundle_base()`: Textual risolve `CSS_PATH`
   con `inspect.getfile(CartellinoApp)`, che una volta "frozen" non punta a un file reale su disco
   (il modulo vive nell'archivio PYZ, non estratto). `_BASE_PATH` viene quindi impostato in base a

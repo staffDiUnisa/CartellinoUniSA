@@ -32,7 +32,12 @@ Note sui dati bundled:
 Hidden imports non dichiarati esplicitamente: `keyring` (backend OS-specifici) e
 `pyarrow` hanno già hook PyInstaller propri (rispettivamente in `PyInstaller.hooks`
 e `_pyinstaller_hooks_contrib`) che raccolgono automaticamente submodule/metadata/
-data file necessari; stesso discorso per `selenium` (raccoglie i suoi data file).
+data file necessari. Il hook di `selenium` (`_pyinstaller_hooks_contrib`) raccoglie
+solo i data file, non i submodule dei singoli browser: `selenium/webdriver/__init__.py`
+espone `webdriver.Chrome` con un meccanismo che l'analisi statica di PyInstaller non
+segue (riscontrato in produzione: `ModuleNotFoundError: No module named
+'selenium.webdriver.chrome.webdriver'` all'avvio del download nel binario
+impacchettato), quindi vanno dichiarati esplicitamente qui sotto.
 """
 
 from pathlib import Path
@@ -44,12 +49,18 @@ datas = [
     (str(REPO_ROOT / "pyproject.toml"), "."),
 ]
 
+hiddenimports = [
+    "selenium.webdriver.chrome.webdriver",
+    "selenium.webdriver.chrome.options",
+    "selenium.webdriver.chrome.service",
+]
+
 a = Analysis(  # noqa: F821
     [str(REPO_ROOT / "cartellino_tui.py")],
     pathex=[str(REPO_ROOT)],
     binaries=[],
     datas=datas,
-    hiddenimports=[],
+    hiddenimports=hiddenimports,
     hookspath=[],
     hooksconfig={},
     runtime_hooks=[],
