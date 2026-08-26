@@ -137,7 +137,7 @@ Schermate disponibili:
 | **Aggiornamento** | `r` | Scelta del metodo di autenticazione (Credenziali UNISA/SPID/CIE, UNISA disabilitata fuori rete) e download con log in tempo reale |
 | **Report** | `p` | Generazione on-demand di riposo compensativo, credito ore, statistiche, ore giornaliere, nel formato scelto in Impostazioni |
 | **Timesheet progetto** | `t` | Selezione ed esecuzione di uno YAML esistente in `timesheet/` (vedi sezione dedicata più sotto) |
-| **Impostazioni** | `s` | Anno, data minima riposi, formato export, codici dashboard, cartella dati/output (con selettore), data ticket mensa, gestione credenziali nel keyring |
+| **Impostazioni** | `s` | Anno, data minima riposi, formato export, codici dashboard, cartella dati/output (con selettore), data ticket mensa, gestione date escluse (`date_escluse.txt`), gestione credenziali nel keyring |
 
 `Esc` torna alla schermata precedente, `q` esce dall'app.
 

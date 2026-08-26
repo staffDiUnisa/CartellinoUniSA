@@ -83,6 +83,8 @@ class SettingsScreen(Screen):
                 id="input-data-ticket",
             )
 
+            yield Button("Gestisci date escluse (date_escluse.txt)", id="btn-date-escluse")
+
             stato_cred = "impostate" if get_credentials() is not None else "non impostate"
             yield Static(f"[b]Credenziali UniSA[/b]: {stato_cred}")
             yield Label("Nuovo username (lascia vuoto per non modificare)")
@@ -113,6 +115,9 @@ class SettingsScreen(Screen):
             self._sfoglia("#input-data-folder")
         elif event.button.id == "btn-sfoglia-output-folder":
             self._sfoglia("#input-output-folder")
+        elif event.button.id == "btn-date-escluse":
+            from cartellino.tui.screens.date_escluse import DateEscluseScreen
+            self.app.push_screen(DateEscluseScreen())
 
     def _sfoglia(self, input_id: str) -> None:
         campo = self.query_one(input_id, Input)
