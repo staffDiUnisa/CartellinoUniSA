@@ -175,39 +175,67 @@ timesheet progetto direttamente dalla TUI (oggi resta un'operazione manuale sul 
 ## Fase 6 — Packaging multipiattaforma (PyInstaller + GitHub Actions) ✅
 
 - [x] `packaging/cartellino.spec` per PyInstaller (entrypoint `cartellino_tui.py`, **onedir**,
-      non onefile — vedi nota sotto). `keyring`/`pyarrow`/`selenium` non hanno bisogno di
-      hidden-imports manuali: hanno già hook PyInstaller propri che raccolgono
-      submodule/metadata/data file da soli. Textual non ha bisogno di hidden-imports, ma
-      richiede `CartellinoApp._BASE_PATH` esplicito (basato su `sys._MEIPASS` quando "frozen")
-      perché altrimenti risolverebbe `CSS_PATH` con `inspect.getfile()`, che non punta a un file
-      reale una volta impacchettato — stesso discorso per la lettura di `pyproject.toml` in
-      `_app_version()` (`cartellino/tui/app.py::_bundle_base()`).
+      non onefile — vedi nota sotto). `keyring`/`pyarrow` non hanno bisogno di hidden-imports
+      manuali: hanno già hook PyInstaller propri che raccolgono submodule/metadata/data file da
+      soli. `selenium` invece sì (`selenium.webdriver.chrome.{webdriver,options,service}`): il suo
+      hook raccoglie solo i data file, non i submodule dei browser, e
+      `selenium/webdriver/__init__.py` espone `webdriver.Chrome` con `__getattr__` a livello di
+      modulo (PEP 562, lazy import), invisibile all'analisi statica di PyInstaller. Textual non ha
+      bisogno di hidden-imports, ma richiede `CartellinoApp._BASE_PATH` esplicito (basato su
+      `sys._MEIPASS` quando "frozen") perché altrimenti risolverebbe `CSS_PATH` con
+      `inspect.getfile()`, che non punta a un file reale una volta impacchettato — stesso
+      discorso per la lettura di `pyproject.toml` in `_app_version()`
+      (`cartellino/tui/app.py::_bundle_base()`).
 - [x] `pyinstaller` aggiunto come `[dependency-groups] build` in `pyproject.toml` (non nelle
       dipendenze runtime — è uno strumento di packaging, non serve per usare l'app)
 - [x] Workflow `.github/workflows/release.yml`: build matrix macOS/Windows/Linux
       (`uv sync --group build && uv run pyinstaller packaging/cartellino.spec`), il job
-      `release` comprime ogni cartella onedir in uno zip e allega i binari **come draft** alla
-      GitHub Release (trigger su push tag `v2.*`; pubblicazione manuale dopo revisione, non
-      automatica). **Verificato con build reali su tag di prova** (`v2.0.0-rc1/rc2/rc3`, poi
-      eliminati): 3 bug trovati e corretti solo grazie a run CI reali, non riproducibili in
-      locale — (1) `pyarrow` falliva l'import nel binario onefile scaricato da Release pur
-      funzionando su una build locale (causa: librerie native estratte non firmate a runtime,
-      bloccate da macOS — risolto passando a onedir); (2) un `:` non quotato nel nome di uno
-      step rompeva il parsing YAML del workflow; (3) `zip` non è disponibile in Git Bash su
-      `windows-latest` (spostata la compressione nel job `release`, sempre ubuntu-latest).
-- [x] Documentato nel `README.md` (§ "Eseguibili standalone"): Chrome resta dipendenza esterna
-      obbligatoria; su Windows SmartScreen mostra comunque l'avviso (nessun certificato di firma
-      codice per Windows); su macOS l'eseguibile è firmato+notarizzato (vedi punto successivo),
-      quindi Gatekeeper non dovrebbe più bloccarlo.
-- [x] **Firma e notarizzazione macOS** (oltre a quanto previsto originariamente in questa fase):
-      il job `build (macos-latest, ...)` importa un certificato Developer ID Application da
-      secrets GitHub (`MACOS_CERTIFICATE`/`MACOS_CERTIFICATE_PWD`/`APPLE_ID`/
-      `APPLE_ID_PASSWORD`/`APPLE_TEAM_ID`), firma ogni `.so`/`.dylib` e l'eseguibile con
-      `packaging/entitlements.plist` (hardened runtime), notarizza con `notarytool submit --wait`
-      e prova lo stapling del ticket (best-effort). Procedura per ottenere/generare i secrets in
-      `ignored/signed_macos.md` (non versionato, contiene solo istruzioni, nessun segreto).
-      **Non ancora verificato con una build reale** (serve un nuovo tag di prova con i secrets
-      configurati per confermare firma+notarizzazione end-to-end).
+      `release` comprime ogni cartella onedir in uno zip (`chmod +x` ripristinato sul binario
+      prima di comprimere: `upload-artifact`/`download-artifact` non preservano sempre il bit
+      +x) e allega gli zip **come draft** alla GitHub Release (trigger su push tag `v2.*`;
+      pubblicazione manuale dopo revisione, non automatica). Action aggiornate a versioni che
+      dichiarano runtime Node 24 (`checkout@v7`, `upload-artifact@v7`, `download-artifact@v8`,
+      `mise-action@v4`, `action-gh-release@v3`) per eliminare il warning di deprecazione Node 20.
+- [x] **Firma e notarizzazione macOS**: il job `build (macos-latest, ...)` importa un
+      certificato Developer ID Application da secrets GitHub
+      (`MACOS_CERTIFICATE`/`MACOS_CERTIFICATE_PWD`/`APPLE_ID`/`APPLE_ID_PASSWORD`/
+      `APPLE_TEAM_ID` — procedura per ottenerli/generarli in `ignored/signed_macos.md`, non
+      versionato), firma ogni Mach-O reale nella cartella onedir (rilevato con `file`, non per
+      estensione `.so`/`.dylib`: `selenium-manager` di `selenium` è un binario nativo senza
+      estensione) con `packaging/entitlements.plist` (hardened runtime +
+      `disable-library-validation`), notarizza con `notarytool submit --wait
+      --output-format json` controllando esplicitamente lo `status` nella risposta (senza,
+      `--wait` esce con codice 0 anche a notarizzazione rifiutata). Niente step di stapling:
+      confermato che non supporta un eseguibile "sciolto" (non `.app`/`.pkg`/`.dmg`).
+- [x] Documentato nel `README.md` (§ "Eseguibili standalone"): istruzioni passo-passo per
+      macOS/Windows/Linux, Chrome dipendenza esterna obbligatoria, avviso SmartScreen su
+      Windows (nessun certificato di firma codice per Windows — macOS invece firmato/notarizzato).
+- [x] **`cartellino_tui.py`**: cartella dati/log fissa (`~/.cartellino_unisa/`,
+      `%LOCALAPPDATA%\cartellino_unisa\` su Windows) invece che relativa alla cwd — necessario
+      per un eseguibile lanciabile da qualunque cartella (Desktop, Downloads, ecc.).
+
+**Verificato interamente con build reali su tag di prova** (`v2.0.0-rc1`...`rc12`, poi
+eliminati) **e con un uso reale end-to-end del binario macOS** (download completo funzionante).
+Bug trovati e corretti, nessuno riproducibile con una build/esecuzione locale non impacchettata
+— solo grazie a run CI reali + test sul binario scaricato:
+1. `pyarrow` falliva l'import nel binario **onefile** scaricato da Release (funzionava in
+   locale): librerie native estratte non firmate a runtime, bloccate da macOS — risolto
+   passando a **onedir**.
+2. Un `:` non quotato nel nome di uno step rompeva il parsing YAML del workflow.
+3. `zip` non è disponibile in Git Bash su `windows-latest` — compressione spostata nel job
+   `release` (sempre `ubuntu-latest`).
+4. Notarizzazione rifiutata da Apple (`status: Invalid`) passava inosservata: `notarytool
+   submit --wait` esce con codice 0 anche a rifiuto — va controllato lo `status` nel JSON.
+5. `selenium-manager` (binario nativo senza estensione, incluso da `selenium` stesso) non
+   veniva firmato dal filtro per estensione `.so`/`.dylib` → notarizzazione rifiutata.
+6. Bit `+x` perso su macOS/Linux tra `upload-artifact`/`download-artifact`.
+7. `ModuleNotFoundError: selenium.webdriver.chrome.webdriver` all'avvio del download (lazy
+   import via `__getattr__`, invisibile a PyInstaller) → aggiunto a `hiddenimports`.
+8. `ImportError: Import pyarrow failed` su un Mac con `apache-arrow` installato via Homebrew:
+   `DYLD_LIBRARY_PATH`/`DYLD_FALLBACK_LIBRARY_PATH` (esportate da Homebrew) fanno caricare a
+   `dyld` la libreria di sistema invece di quella bundled. Un primo tentativo con
+   `os.environ.pop(...)` non bastava (dyld fissa queste variabili all'avvio del processo): serve
+   un **re-exec** (`os.execve`) con ambiente ripulito.
 
 ## Fase 7 — Rilascio v2.0.0
 
