@@ -217,7 +217,9 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y rpm ruby ruby-dev build-essential
-          gem install --no-document fpm
+          # Il gem di sistema (/var/lib/gems) non è scrivibile dall'utente
+          # non privilegiato del runner: serve sudo, non un `gem install` liscio.
+          sudo gem install --no-document fpm
 
       - name: Costruisce i pacchetti .deb e .rpm (solo Linux)
         if: matrix.os == 'ubuntu-latest'
