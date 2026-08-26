@@ -188,12 +188,13 @@ uv run pyinstaller packaging/cartellino.spec --noconfirm
   - **macOS `.pkg`**: `pkgbuild --root dist/cartellino-unisa --scripts packaging/macos ...`, firmato
     con un **secondo certificato**, "Developer ID Installer" (distinto da "Developer ID
     Application" usato per l'eseguibile — stessa Apple Developer membership, procedura per
-    generarlo aggiunta a `ignored/signed_macos.md`; nuovi secrets `MACOS_INSTALLER_CERTIFICATE`/
-    `MACOS_INSTALLER_CERTIFICATE_PWD`, importati nello stesso keychain temporaneo del certificato
-    Application). Notarizzato separatamente e **staplato** (a differenza dell'eseguibile sciolto,
-    il `.pkg` è un formato supportato dallo stapler). `packaging/macos/postinstall` crea un
-    symlink `/usr/local/bin/cartellino-unisa` verso l'installazione in
-    `/usr/local/cartellino-unisa`.
+    generarlo al punto 5 di `ignored/signed_macos.md`; secrets `MACOS_INSTALLER_CERTIFICATE`/
+    `MACOS_INSTALLER_CERTIFICATE_PWD`, **già configurati sul repo** e importati nello stesso
+    keychain temporaneo del certificato Application). Notarizzato separatamente e **staplato**
+    (a differenza dell'eseguibile sciolto, il `.pkg` è un formato supportato dallo stapler).
+    `packaging/macos/postinstall` crea un symlink `/usr/local/bin/cartellino-unisa` verso
+    l'installazione in `/usr/local/cartellino-unisa`. Verificato con una build reale (tag di
+    prova `v2.0.1-rc1`, poi eliminato) e pubblicato in `v2.0.1`.
   - **Windows `.exe`**: Inno Setup (`packaging/windows/installer.iss`, compilato con `ISCC.exe`
     installato via `choco install innosetup`), payload = stessa cartella onedir. **Non firmato**
     per ora — `ignored/signed_windows.md` (non versionato) raccoglie le opzioni valutate
