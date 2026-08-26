@@ -137,6 +137,18 @@ uv run pyinstaller packaging/cartellino.spec --noconfirm
   (ubuntu-latest, unico posto dove serve `zip`: assente in Git Bash su `windows-latest`) le
   scarica e comprime ciascuna in `<asset>.zip`, poi allega gli zip come **draft** alla GitHub
   Release (pubblicazione manuale dopo revisione).
+- **`CHANGELOG.md`**: sezioni `## vX.Y.Z` (senza suffisso `-rcN`) con le novità principali di
+  ogni release definitiva, in italiano. Il job `release` estrae con `awk` la sezione il cui
+  titolo corrisponde esattamente al tag pushato (`## ${GITHUB_REF_NAME}`) e la passa come
+  `body_path` a `softprops/action-gh-release` (insieme a `generate_release_notes: true`, che
+  aggiunge comunque il changelog automatico di GitHub sotto). Nessun `if` esplicito limita
+  l'estrazione alle sole release definitive: un tag `-rcN` non ha mai una sezione corrispondente
+  in `CHANGELOG.md` (per costruzione — non se ne scrivono per le rc), quindi l'estrazione produce
+  un file vuoto e la release non ha descrizione extra, comportamento identico a prima
+  dell'introduzione di questo meccanismo. Va aggiunta la sezione della prossima versione **prima**
+  di taggare una release definitiva, altrimenti va persa la descrizione delle novità (solo il
+  changelog auto-generato) — uno step logga un `::warning::` in quel caso, ma non fa fallire la
+  build.
 - Chrome resta dipendenza esterna obbligatoria (Selenium non è imbottigliabile).
 - **`cartellino_tui.py` importa `pyarrow` esplicitamente all'avvio, sul thread principale, e
   ripulisce `DYLD_LIBRARY_PATH`/`DYLD_FALLBACK_LIBRARY_PATH` (macOS) tramite re-exec del

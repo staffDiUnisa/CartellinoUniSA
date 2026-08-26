@@ -346,6 +346,8 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v7
+
       - uses: actions/download-artifact@v8
         with:
           path: artifacts
@@ -378,9 +380,29 @@ jobs:
           done
           ls -la release
 
+      - name: Estrae le novità della release da CHANGELOG.md (solo release definitive)
+        # Cerca una sezione "## <tag>" (es. "## v2.0.2") — le rc (es. "v2.0.2-rc1") non hanno
+        # mai una sezione dedicata in CHANGELOG.md, quindi per quei tag il file estratto resta
+        # vuoto: nessun `if` esplicito necessario per limitare l'estrazione alle sole release
+        # definitive, il contratto è imposto dal contenuto del CHANGELOG stesso (vedi commento
+        # in testa al file). Un file vuoto passato a `body_path` sotto non aggiunge nulla,
+        # `generate_release_notes` fornisce comunque il changelog automatico di GitHub.
+        run: |
+          awk -v ver="## ${GITHUB_REF_NAME}" '
+            $0 == ver { found=1; next }
+            found && /^## / { exit }
+            found { print }
+          ' CHANGELOG.md > release_notes.md
+          if [ -s release_notes.md ]; then
+            echo "Sezione '## ${GITHUB_REF_NAME}' trovata in CHANGELOG.md."
+          else
+            echo "::warning::Nessuna sezione '## ${GITHUB_REF_NAME}' in CHANGELOG.md — la release non avrà una descrizione delle novità, solo il changelog automatico di GitHub."
+          fi
+
       - name: Crea la GitHub Release con i binari allegati
         uses: softprops/action-gh-release@v3
         with:
           files: release/*
+          body_path: release_notes.md
           generate_release_notes: true
           draft: true
