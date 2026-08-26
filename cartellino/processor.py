@@ -1,8 +1,6 @@
 import logging
 from pathlib import Path
 
-from processor.cartellinoprogetto import CartellinoProgetto
-
 from cartellino.cartellino import Cartellino
 from cartellino.config import Config
 from cartellino.credito_ore import CreditoOre
@@ -42,7 +40,7 @@ class CartellinoProcessor:
             riposi_usati = OreEccedenti.get_date_usate_from_file(cfg.riposi_usati_file)
 
         riposi_compensativi = oe_proc.raggruppa(riposi_usati)
-        oe_proc.salva_dettaglio(cfg.output_folder / "riposo_compensativo.xlsx")
+        oe_proc.salva_dettaglio(cfg.output_folder / "riposo_compensativo.xlsx", fmt=cfg.export_format)
         oe_proc.salva_testo(riposi_compensativi, cfg.output_folder / "riposi_compensativi.txt")
 
         # 4. Credito ore
@@ -51,25 +49,18 @@ class CartellinoProcessor:
             oe=oe_df,
             excluded_dates_file=cfg.excluded_dates_file,
         )
-        ce_proc.salva(cfg.output_folder / "credito_ore.xlsx")
+        ce_proc.salva(cfg.output_folder / "credito_ore.xlsx", fmt=cfg.export_format)
 
         # 5. Statistiche
         stat = Statistiche(cartellino=cartellino, config=cfg)
-        stat.salva(cfg.output_folder / "statistiche.xlsx")
+        stat.salva(cfg.output_folder / "statistiche.xlsx", fmt=cfg.export_format)
 
         log.info(f"Codici usati per le statistiche del cartellino: {cartellino.codici_usati}")
         log.info(f"Codici non usati per le statistiche del cartellino: {cartellino.codici_non_usati()}")
 
         # 6. Ore giornaliere
         og_proc = OreGiornaliere(oo_diu=cartellino.oo_diu)
-        og_proc.salva(cfg.output_folder / "ore_giornaliere.xlsx")
-
-        # 7. Timesheet di progetto
-        CartellinoProgetto(
-            input_folder=cfg.output_folder,
-            min_hours_per_day=5,
-            max_project_hours_per_day=2.5,
-        )
+        og_proc.salva(cfg.output_folder / "ore_giornaliere.xlsx", fmt=cfg.export_format)
 
     @classmethod
     def from_env(cls, data_folder: Path = Path("data")) -> "CartellinoProcessor":

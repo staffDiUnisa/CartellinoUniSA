@@ -163,15 +163,28 @@ Scegli il metodo di autenticazione:
 
 Per SPID e CIE il browser si apre e attende che l'utente completi manualmente il login (timeout 10 minuti).
 
-**Opzioni disponibili:**
+**Opzioni disponibili** (uso non interattivo/scriptato, nessun prompt se specificate):
 
 ```bash
 # Salta il download e usa i dati già presenti
 uv run python cartellino_v2.py --no-aggiorna-cartellino
 
+# Aggiorna scegliendo il metodo di autenticazione senza prompt interattivo
+uv run python cartellino_v2.py --aggiorna-cartellino --auth-method spid
+
+# Genera i report in CSV invece di xlsx (default: quello configurato in config.toml/Impostazioni TUI)
+uv run python cartellino_v2.py --no-aggiorna-cartellino --export-format csv
+
 # Genera anche il timesheet di progetto (vedi sezione dedicata)
 uv run python cartellino_v2.py --no-aggiorna-cartellino --timesheet-progetto mio_progetto.yaml
 ```
+
+| Opzione | Valori | Descrizione |
+|---------|--------|-------------|
+| `--aggiorna-cartellino`/`--no-aggiorna-cartellino` | flag | Scarica i dati aggiornati oppure usa solo quelli già presenti; se omesso, viene chiesto a schermo |
+| `--auth-method` | `unisa`, `spid`, `cie` | Metodo di autenticazione per il download; se omesso e il download è attivo, viene chiesto a schermo |
+| `--export-format` | `xlsx`, `csv` | Formato dei report generati; se omesso usa quello configurato (default `xlsx`) |
+| `--timesheet-progetto` | nome file YAML | Genera anche il timesheet di progetto (vedi sezione dedicata) |
 
 ### `main.py` — versione legacy
 

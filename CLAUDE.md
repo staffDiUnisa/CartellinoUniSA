@@ -16,13 +16,22 @@ mise install   # installa Python 3.12 e uv secondo .mise.toml
 mise run install   # equivalente a: uv sync
 ```
 
-Per eseguire lo script principale (CLI non interattiva):
+Per eseguire lo script principale (CLI non interattiva, Fase 5 TODO v2.0.0):
 
 ```bash
 mise run app        # equivalente a: uv run python cartellino_v2.py
 # oppure direttamente:
 uv run python cartellino_v2.py
 ```
+
+Flag non interattivi (`cartellino_v2.py`, nessun prompt se specificati): `--aggiorna-cartellino`/
+`--no-aggiorna-cartellino`, `--auth-method {unisa,spid,cie}` (passato a
+`get.ottieni_cartellino(metodo=...)`, bypassa `scegli_metodo_autenticazione()`),
+`--export-format {xlsx,csv}` (sovrascrive `Config.export_format` per questa sola esecuzione,
+senza toccare `config.toml`), `--timesheet-progetto`. `CartellinoProcessor.run()` passa
+`cfg.export_format` ai quattro report configurabili (riposo compensativo, credito ore,
+statistiche, ore giornaliere) tramite `cartellino/export_utils.py::save_sheets` — condiviso con
+la TUI, insieme a `cartellino/timesheet_runner.py` per `--timesheet-progetto`.
 
 Per la TUI (Fase 4 TODO v2.0.0, entrypoint consigliato, vedi sezione dedicata sotto):
 

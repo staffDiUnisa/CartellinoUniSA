@@ -159,14 +159,18 @@ Nuovo entrypoint `cartellino_tui.py` (Textual `App`). File principali:
 Estensioni future non incluse in questa fase: wizard di creazione guidata di un nuovo YAML di
 timesheet progetto direttamente dalla TUI (oggi resta un'operazione manuale sul filesystem).
 
-## Fase 5 — Parità funzionale CLI non interattiva
+## Fase 5 — Parità funzionale CLI non interattiva (parziale)
 
-- [ ] Entrypoint CLI (Typer) con flag equivalenti (`--no-aggiorna-cartellino`,
+- [x] Entrypoint CLI (Typer) con flag equivalenti (`--no-aggiorna-cartellino`,
       `--timesheet-progetto`, `--auth-method {unisa,spid,cie}`, `--export-format {xlsx,csv}`)
-- [ ] CLI e TUI condividono le stesse funzioni di dominio e lo stesso storage
-      credenziali/config/dati (Fasi 2-3)
+- [x] CLI e TUI condividono le stesse funzioni di dominio e lo stesso storage
+      credenziali/config/dati (Fasi 2-3) — `timesheet_runner.py`/`export_utils.py` (Fase 4) già
+      usati da entrambe; `CartellinoProcessor.run()` ora passa `cfg.export_format` ai 4 report
+      configurabili (prima lo ignorava, sempre xlsx indipendentemente dalla config)
 - [ ] Rimuovere/sostituire `cartellino_v2.py` legacy con entrypoint unico non interattivo
-      + entrypoint TUI separato
+      + entrypoint TUI separato — non fatto: è una scelta architetturale (elimina un
+      entrypoint pubblico) da confermare esplicitamente prima di procedere, non contestuale a
+      questa sessione
 
 ## Fase 6 — Packaging multipiattaforma (PyInstaller + GitHub Actions)
 
