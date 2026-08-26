@@ -49,29 +49,36 @@ class DashboardScreen(Screen):
         # rimossa e far fallire il prossimo evento gestito da Textual.
         body = self.query_one("#dashboard-body")
         await body.remove_children()
-        await body.mount_all(list(self._build_body()))
+        await body.mount_all(self._build_body())
 
     # ------------------------------------------------------------------
 
-    def _build_body(self):
+    def _build_body(self) -> list:
+        # NB: costruisce i widget con i costruttori (`Vertical(*children)`), non con
+        # `with Vertical(): yield ...` — quel pattern di composizione funziona solo
+        # dentro una chiamata a `compose()` vera e propria (si appoggia allo stack
+        # interno `App._compose_stacks`), mentre questo metodo viene richiamato anche
+        # da `on_screen_resume` fuori da un ciclo di compose.
         config = self.app.config
         feather_path = config.input_folder / "cartellino.feather"
 
         if not feather_path.exists():
-            yield Static(
-                "Nessun cartellino scaricato ancora per l'anno "
-                f"{config.current_year}.\n\n"
-                "Premi 'r' o il pulsante qui sotto per avviare il primo download."
-            )
-            yield Button("Aggiorna cartellino", id="btn-aggiorna", variant="primary")
-            return
+            return [
+                Static(
+                    "Nessun cartellino scaricato ancora per l'anno "
+                    f"{config.current_year}.\n\n"
+                    "Premi 'r' o il pulsante qui sotto per avviare il primo download."
+                ),
+                Button("Aggiorna cartellino", id="btn-aggiorna", variant="primary"),
+            ]
 
         try:
             cartellino = Cartellino.from_config(config)
         except Exception as e:
-            yield Static(f"[red]Errore nella lettura del cartellino: {e}[/red]")
-            yield Button("Aggiorna cartellino", id="btn-aggiorna", variant="primary")
-            return
+            return [
+                Static(f"[red]Errore nella lettura del cartellino: {e}[/red]"),
+                Button("Aggiorna cartellino", id="btn-aggiorna", variant="primary"),
+            ]
 
         now = datetime.now()
 
@@ -83,20 +90,24 @@ class DashboardScreen(Screen):
             ("Ultimo aggiornamento", lambda: self._sezione_aggiornamento(feather_path)),
         ]
 
-        with Vertical():
-            for nome, build in sezioni:
-                try:
-                    testo = build()
-                except Exception as e:
-                    log.warning(f"Errore nella sezione dashboard '{nome}': {e}")
-                    testo = f"[b]{nome}[/b]\n  [red]Errore: {e}[/red]"
-                yield Static(testo, classes="dashboard-section")
+        sezione_widgets = []
+        for nome, build in sezioni:
+            try:
+                testo = build()
+            except Exception as e:
+                log.warning(f"Errore nella sezione dashboard '{nome}': {e}")
+                testo = f"[b]{nome}[/b]\n  [red]Errore: {e}[/red]"
+            sezione_widgets.append(Static(testo, classes="dashboard-section"))
 
-        with Vertical():
-            yield Button("Aggiorna cartellino [r]", id="btn-aggiorna")
-            yield Button("Report [p]", id="btn-report")
-            yield Button("Timesheet progetto [t]", id="btn-timesheet")
-            yield Button("Impostazioni [s]", id="btn-impostazioni")
+        return [
+            Vertical(*sezione_widgets),
+            Vertical(
+                Button("Aggiorna cartellino [r]", id="btn-aggiorna"),
+                Button("Report [p]", id="btn-report"),
+                Button("Timesheet progetto [t]", id="btn-timesheet"),
+                Button("Impostazioni [s]", id="btn-impostazioni"),
+            ),
+        ]
 
     @staticmethod
     def _sezione_eccezioni(cartellino: Cartellino, config, now: datetime) -> str:
