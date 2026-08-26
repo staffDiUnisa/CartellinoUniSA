@@ -7,9 +7,9 @@
 ![Selenium](https://img.shields.io/badge/Selenium-43B02A?style=for-the-badge&logo=selenium&logoColor=white)
 ![Pandas](https://img.shields.io/badge/Pandas-150458?style=for-the-badge&logo=pandas&logoColor=white)
 
-![macOS](https://img.shields.io/badge/macOS-firmato%20%26%20notarizzato-success?style=flat-square&logo=apple&logoColor=white)
-![Windows](https://img.shields.io/badge/Windows-supportato-blue?style=flat-square&logo=windowsterminal&logoColor=white)
-![Linux](https://img.shields.io/badge/Linux-supportato-blue?style=flat-square&logo=linux&logoColor=white)
+![macOS](https://img.shields.io/badge/macOS-pkg%20firmato%20%26%20notarizzato-success?style=flat-square&logo=apple&logoColor=white)
+![Windows](https://img.shields.io/badge/Windows-installer%20.exe-blue?style=flat-square&logo=windowsterminal&logoColor=white)
+![Linux](https://img.shields.io/badge/Linux-.deb%20%2F%20.rpm-blue?style=flat-square&logo=linux&logoColor=white)
 
 Strumento Python per il download automatico e l'elaborazione del cartellino presenze da [presenze.unisa.it](https://presenze.unisa.it). Calcola ore eccedenti, riposi compensativi, credito ore mensile e genera timesheet per progetti di ricerca. Disponibile sia come **TUI** (interfaccia testuale interattiva) sia come **CLI** scriptabile, entrambe scaricabili come eseguibile standalone senza installare Python.
 
