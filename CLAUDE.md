@@ -132,15 +132,23 @@ uv run pyinstaller packaging/cartellino.spec --noconfirm
   `MACOS_CERTIFICATE`/`MACOS_CERTIFICATE_PWD`/`APPLE_ID`/`APPLE_ID_PASSWORD`/`APPLE_TEAM_ID` —
   procedura per generarli/ottenerli in `ignored/signed_macos.md`, non versionato):
   1. Importa il certificato Developer ID `.p12` in un keychain temporaneo creato ad-hoc
-  2. Firma **ogni** `.so`/`.dylib` individualmente (`codesign --deep` non attraversa una
-     cartella onedir "piatta" come un vero bundle/framework), poi l'eseguibile, con
+  2. Firma **ogni** Mach-O reale nella cartella onedir (rilevato con `file`, non per estensione
+     `.so`/`.dylib`: alcuni pacchetti — es. `selenium-manager` di `selenium` — includono binari
+     nativi senza estensione, causa di un primo rifiuto di notarizzazione), poi l'eseguibile, con
      `packaging/entitlements.plist` (hardened runtime + `disable-library-validation`, necessario
      perché le dylib vendored di pyarrow/numpy potrebbero non condividere la stessa identity)
-  3. `xcrun notarytool submit --wait` su uno zip temporaneo (creato con `ditto`, non `zip`, per
-     preservare i metadati di firma)
-  4. `xcrun stapler staple` sull'eseguibile (best-effort: se lo stapling su un binario "sciolto"
-     non fosse supportato, la notarizzazione resta comunque valida — solo verifica online al
-     primo avvio invece che offline)
+  3. `xcrun notarytool submit --wait --output-format json` su uno zip temporaneo (creato con
+     `ditto`, non `zip`, per preservare i metadati di firma); lo step controlla esplicitamente lo
+     `status` nel JSON e fa fallire la build se non è `Accepted` — `--wait` da solo esce con
+     codice 0 anche se Apple rifiuta la richiesta, quindi un semplice check dell'exit code
+     lascerebbe passare come "verde" un binario NON notarizzato (successo così in un run di
+     prova). In caso di rifiuto stampa anche `xcrun notarytool log` per il motivo esatto.
+  4. **Niente stapling**: `xcrun stapler staple` non supporta un eseguibile "sciolto" (non un
+     `.app`/`.pkg`/`.dmg` — risposta verificata: "Stapler is incapable of working with Document
+     files"), quindi il passo è stato rimosso invece di lasciarlo fallire ad ogni run. La
+     notarizzazione resta comunque valida senza stapling: Gatekeeper fa una verifica online al
+     primo avvio invece che offline (verificato: un binario con attributo di quarantena reale si
+     avvia senza blocchi).
   Windows resta non firmato (nessun certificato acquistato): SmartScreen mostra comunque
   l'avviso, documentato in README.md.
 

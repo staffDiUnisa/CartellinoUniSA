@@ -26,9 +26,9 @@ jobs:
             asset_name: cartellino-unisa-windows
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
-      - uses: jdx/mise-action@v2
+      - uses: jdx/mise-action@v4
 
       - name: Installa le dipendenze (incluso il gruppo build per PyInstaller)
         run: uv sync --group build
@@ -106,16 +106,14 @@ jobs:
             exit 1
           fi
 
-      - name: Staple il ticket di notarizzazione (solo macOS)
-        # Best-effort: se lo stapling su un eseguibile "sciolto" (non un .app/.pkg/.dmg)
-        # non fosse supportato, la notarizzazione resta comunque valida — Gatekeeper
-        # farà solo una verifica online al primo avvio invece che offline.
-        if: matrix.os == 'macos-latest'
-        run: |
-          xcrun stapler staple dist/cartellino-unisa/cartellino-unisa \
-            || echo "::warning::Stapling fallito, la notarizzazione resta valida (verifica online al primo avvio)"
+      # Niente step di stapling: `xcrun stapler staple` non supporta un eseguibile
+      # "sciolto" come questo (non è un .app/.pkg/.dmg — verificato: risponde
+      # "Stapler is incapable of working with Document files"), quindi fallirebbe
+      # sempre e genererebbe solo un warning rumoroso ad ogni run. La
+      # notarizzazione resta comunque valida senza stapling: Gatekeeper fa una
+      # verifica online al primo avvio invece che offline.
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: ${{ matrix.asset_name }}
           path: dist/cartellino-unisa/
@@ -125,7 +123,7 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           path: artifacts
 
@@ -142,7 +140,7 @@ jobs:
           ls -la release
 
       - name: Crea la GitHub Release con i binari allegati
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           files: release/*
           generate_release_notes: true
