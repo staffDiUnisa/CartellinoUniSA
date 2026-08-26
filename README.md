@@ -77,8 +77,12 @@ Campi di `config.toml`:
 | `export_format` | ❌ | Formato di export dei report on-demand nella TUI (`xlsx`/`csv`, default `xlsx`) |
 | `dashboard_exception_codes` | ❌ | Codici per la sezione "eccezioni" della dashboard TUI, default `["ERIT", "SCN"]` |
 | `dashboard_balance_codes` | ❌ | Codici per il saldo ore mensile della dashboard TUI, default `["CRE", "OE-DIU", "SCN"]` |
+| `data_folder` | ❌ | Cartella radice dei dati (`{data_folder}/{anno}/input/output`), dove viene salvato `cartellino.feather`. Se mancante viene usato il default dell'entrypoint (`data/v2`) |
+| `output_folder` | ❌ | Cartella di output dei report, se diversa da `{data_folder}/{anno}/output` |
 
 Username e password si impostano **solo** tramite `set_credentials` (keyring), non in `config.toml`.
+
+Tutti questi campi (tranne username/password) sono modificabili dalla schermata **Impostazioni** della TUI, comprese `data_folder`/`output_folder` tramite un selettore di cartelle. Se si punta `data_folder` a una cartella senza ancora un `cartellino.feather`, la TUI la tratta come "primo avvio" per quella cartella: la crea e passa direttamente alla schermata di aggiornamento.
 
 ### `main.py` — versione legacy (`.env`)
 
@@ -133,7 +137,7 @@ Schermate disponibili:
 | **Aggiornamento** | `r` | Scelta del metodo di autenticazione (Credenziali UNISA/SPID/CIE, UNISA disabilitata fuori rete) e download con log in tempo reale |
 | **Report** | `p` | Generazione on-demand di riposo compensativo, credito ore, statistiche, ore giornaliere, nel formato scelto in Impostazioni |
 | **Timesheet progetto** | `t` | Selezione ed esecuzione di uno YAML esistente in `timesheet/` (vedi sezione dedicata più sotto) |
-| **Impostazioni** | `s` | Anno, data minima riposi, formato export, codici dashboard, gestione credenziali nel keyring |
+| **Impostazioni** | `s` | Anno, data minima riposi, formato export, codici dashboard, cartella dati/output (con selettore), data ticket mensa, gestione credenziali nel keyring |
 
 `Esc` torna alla schermata precedente, `q` esce dall'app.
 

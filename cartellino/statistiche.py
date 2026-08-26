@@ -60,8 +60,7 @@ class Statistiche:
         return tck
 
     def _leggi_data_ticket(self) -> datetime:
-        data_ticket_file = self._config.input_folder / "data_ticket.txt"
-        line = data_ticket_file.read_text().strip()
+        line = self._config.data_ticket_file.read_text().strip()
         return datetime.strptime(line, "%d-%m-%Y")
 
     @staticmethod

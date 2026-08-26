@@ -49,6 +49,7 @@ class CartellinoApp(App):
         """
         from cartellino.tui.screens.dashboard import DashboardScreen
         from cartellino.tui.screens.onboarding import OnboardingScreen
+        from cartellino.tui.screens.update import UpdateScreen
 
         try:
             config = Config.load(data_folder=self.data_folder)
@@ -62,6 +63,13 @@ class CartellinoApp(App):
 
         if config is None:
             self.push_screen(OnboardingScreen())
+        elif not (config.input_folder / "cartellino.feather").exists():
+            # Prima volta per questa cartella dati (nuova o appena cambiata in
+            # Impostazioni): la cartella è già stata creata da Config.__post_init__,
+            # si passa direttamente alla schermata di download invece di mostrare la
+            # Dashboard vuota con un click in più.
+            self.push_screen(DashboardScreen())
+            self.push_screen(UpdateScreen())
         else:
             self.push_screen(DashboardScreen())
 

@@ -31,16 +31,22 @@ class Config:
     dashboard_balance_codes: list[str] = field(
         default_factory=lambda: list(DEFAULT_DASHBOARD_BALANCE_CODES)
     )
+    output_folder_override: Path | None = None
+    """Cartella di output dei report, se diversa da `data_folder/{anno}/output`."""
     input_folder: Path = field(init=False)
     output_folder: Path = field(init=False)
     excluded_dates_file: Path = field(init=False)
     riposi_usati_file: Path = field(init=False)
+    data_ticket_file: Path = field(init=False)
 
     def __post_init__(self) -> None:
         self.input_folder = self.data_folder / str(self.current_year) / "input"
-        self.output_folder = self.data_folder / str(self.current_year) / "output"
+        self.output_folder = self.output_folder_override or (
+            self.data_folder / str(self.current_year) / "output"
+        )
         self.excluded_dates_file = self.input_folder / "date_escluse.txt"
         self.riposi_usati_file = self.input_folder / "riposi_usati.txt"
+        self.data_ticket_file = self.input_folder / "data_ticket.txt"
 
         self.input_folder.mkdir(parents=True, exist_ok=True)
         self.output_folder.mkdir(parents=True, exist_ok=True)
@@ -78,18 +84,25 @@ class Config:
         procedere. In assenza sia di `config.toml` che di `.env` valido, ricade su
         `from_env` per compatibilità con ambienti che impostano le variabili
         direttamente (es. CI).
+
+        `data_folder` è il default usato dall'entrypoint (`data/v2` per TUI/CLI v2);
+        se l'utente ha impostato una cartella dati diversa in Impostazioni
+        (`UserConfig.data_folder`), quella ha la precedenza.
         """
         user_config = UserConfig.load() or migrate_from_env_if_needed()
         if user_config is None:
             return cls.from_env(data_folder=data_folder)
 
         min_date = cls._parse_min_date(user_config.current_year, user_config.min_date_riposi_usati)
+        resolved_data_folder = Path(user_config.data_folder) if user_config.data_folder else data_folder
+        output_folder_override = Path(user_config.output_folder) if user_config.output_folder else None
         return cls(
             current_year=user_config.current_year,
             min_date=min_date,
-            data_folder=data_folder,
+            data_folder=resolved_data_folder,
             headless=user_config.headless,
             export_format=user_config.export_format,
             dashboard_exception_codes=list(user_config.dashboard_exception_codes),
             dashboard_balance_codes=list(user_config.dashboard_balance_codes),
+            output_folder_override=output_folder_override,
         )

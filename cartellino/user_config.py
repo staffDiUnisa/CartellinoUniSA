@@ -31,6 +31,12 @@ class UserConfig:
     dashboard_balance_codes: list[str] = field(
         default_factory=lambda: list(DEFAULT_DASHBOARD_BALANCE_CODES)
     )
+    data_folder: str | None = None
+    """Cartella radice dei dati (`{data_folder}/{anno}/input|output`), es. dove viene salvato
+    `cartellino.feather`. Se `None`, resta quella passata dall'entrypoint (`data/v2` per la
+    TUI/CLI v2)."""
+    output_folder: str | None = None
+    """Cartella di output dei report, se diversa da `{data_folder}/{anno}/output` (default)."""
 
     @classmethod
     def load(cls, path: Path | None = None) -> "UserConfig | None":
@@ -50,13 +56,18 @@ class UserConfig:
             dashboard_balance_codes=data.get(
                 "dashboard_balance_codes", list(DEFAULT_DASHBOARD_BALANCE_CODES)
             ),
+            data_folder=data.get("data_folder"),
+            output_folder=data.get("output_folder"),
         )
 
     def save(self, path: Path | None = None) -> None:
         path = path or config_file_path()
         path.parent.mkdir(parents=True, exist_ok=True)
+        # TOML non ha un tipo "null": i campi opzionali non impostati (es.
+        # `min_date_riposi_usati`, `data_folder`) vanno omessi, non scritti come None.
+        data = {k: v for k, v in asdict(self).items() if v is not None}
         with open(path, "wb") as fh:
-            tomli_w.dump(asdict(self), fh)
+            tomli_w.dump(data, fh)
 
 
 def migrate_from_env_if_needed(env_file: Path = Path(".env")) -> UserConfig | None:

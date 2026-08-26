@@ -121,21 +121,36 @@ timesheet di progetto. Usa lo stesso storage di `cartellino_v2.py`
   (se `template_rendiconto` è impostato), condivisa tra `cartellino_v2.py` (flag
   `--timesheet-progetto`) e la schermata Timesheet della TUI.
 - **`cartellino/tui/`** — TUI Textual (Fase 4 TODO v2.0.0, entrypoint `cartellino_tui.py`):
-  - `app.py` — `CartellinoApp`, instrada verso `OnboardingScreen` o `DashboardScreen` in base
-    alla presenza di `config.toml` (`Config.load()`); versione mostrata in header letta da
-    `pyproject.toml` via `tomllib` (il progetto ha `tool.uv.package = false`, quindi non è
-    installato come pacchetto e `importlib.metadata.version()` non funzionerebbe).
+  - `app.py` — `CartellinoApp`, instrada verso `OnboardingScreen` se manca `config.toml`
+    (`Config.load()`), altrimenti verso `UpdateScreen` (sopra una `DashboardScreen`, per l'`Esc`)
+    se manca ancora `cartellino.feather` nella cartella dati configurata — "primo avvio" per
+    quella cartella, che può cambiare in qualunque momento da Impostazioni — o verso
+    `DashboardScreen` normalmente. Versione mostrata in header letta da `pyproject.toml` via
+    `tomllib` (il progetto ha `tool.uv.package = false`, quindi non è installato come pacchetto
+    e `importlib.metadata.version()` non funzionerebbe).
   - `logging_handler.py` — `RichLogHandler`, inoltra i record di `logging` a un widget
     `RichLog` in modo thread-safe (`App.call_from_thread`), usato dalla schermata di
-    aggiornamento durante il download Selenium (lanciato con `@work(thread=True)`).
+    aggiornamento durante il download Selenium (lanciato con `@work(thread=True)`); il testo va
+    escapato (`rich.markup.escape`) perché può contenere `[...]` (es. path chromedriver) che
+    romperebbero il parsing markup del `RichLog`.
   - `screens/onboarding.py`, `dashboard.py`, `update.py`, `settings.py`, `reports.py`,
-    `timesheet.py` — una schermata per ciascuna voce del TODO Fase 4; costruite sul layer di
-    dominio esistente (`Cartellino`, `OreEccedenti`, `CreditoOre`, `Statistiche`,
-    `OreGiornaliere`, `TimesheetProgetto`) senza modificarne la logica di calcolo.
-  - Nota implementativa: `DashboardScreen.on_screen_resume` ricostruisce solo il container
-    `#dashboard-body` (non l'intero screen via `recompose()`) — un `recompose()` pieno
-    ricreerebbe anche l'`Header`, lasciando in sospeso il suo task interno di set-title contro
-    l'istanza appena rimossa e rompendo la gestione del prossimo evento in Textual.
+    `timesheet.py`, `folder_picker.py` — una schermata per ciascuna voce del TODO Fase 4 (più
+    `folder_picker.py`, modale `DirectoryTree` riusata da Impostazioni per scegliere cartella
+    dati/output); costruite sul layer di dominio esistente (`Cartellino`, `OreEccedenti`,
+    `CreditoOre`, `Statistiche`, `OreGiornaliere`, `TimesheetProgetto`) senza modificarne la
+    logica di calcolo. `settings.py` gestisce anche `data_ticket.txt` (widget `MaskedInput`,
+    template `DD-MM-YYYY`) e le impostazioni `UserConfig.data_folder`/`output_folder` che
+    risolvono rispettivamente `Config.input_folder` (dove va `cartellino.feather`) e
+    `Config.output_folder` (se diverso dal default `data_folder/{anno}/output`).
+  - Nota implementativa: `DashboardScreen.on_screen_resume`/`_build_body` ricostruiscono i
+    widget con `Vertical(*children)` (costruttore diretto), non con `with Vertical(): yield ...`
+    — quel pattern di composizione funziona solo dentro una vera chiamata a `compose()` (si
+    appoggia allo stack interno `App._compose_stacks`), mentre `_build_body` viene richiamato
+    anche da `on_screen_resume` per rinfrescare i dati al ritorno da un'altra schermata, fuori
+    da quel contesto. Va ricostruito solo il container `#dashboard-body`, non l'intero screen
+    via `recompose()`: un `recompose()` pieno ricreerebbe anche l'`Header`, lasciando in sospeso
+    il suo task interno di set-title contro l'istanza appena rimossa e rompendo la gestione del
+    prossimo evento in Textual.
 
 ## Data flow
 
