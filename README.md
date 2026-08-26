@@ -83,7 +83,7 @@ Campi di `config.toml`:
 | `export_format` | ❌ | Formato di export dei report on-demand nella TUI (`xlsx`/`csv`, default `xlsx`) |
 | `dashboard_exception_codes` | ❌ | Codici per la sezione "eccezioni" della dashboard TUI, default `["ERIT", "SCN"]` |
 | `dashboard_balance_codes` | ❌ | Codici per il saldo ore mensile della dashboard TUI, default `["CRE", "OE-DIU", "SCN"]` |
-| `data_folder` | ❌ | Cartella radice dei dati (`{data_folder}/{anno}/input/output`), dove viene salvato `cartellino.feather`. Se mancante viene usato il default dell'entrypoint (`data/v2`) |
+| `data_folder` | ❌ | Cartella radice dei dati (`{data_folder}/{anno}/input/output`), dove viene salvato `cartellino.feather`. Se mancante viene usato il default dell'entrypoint: `data/v2` (relativo alla cwd) per `cartellino_v2.py`, `~/.cartellino_unisa/data/v2` (`%LOCALAPPDATA%\cartellino_unisa\data\v2` su Windows) per `cartellino_tui.py` |
 | `output_folder` | ❌ | Cartella di output dei report, se diversa da `{data_folder}/{anno}/output` |
 
 Username e password si impostano **solo** tramite `set_credentials` (keyring), non in `config.toml`.
@@ -125,8 +125,12 @@ HEADLESS=False                    # True per browser invisibile (solo con Creden
 ### `cartellino_tui.py` — interfaccia testuale (TUI, consigliata)
 
 Interfaccia interattiva basata su [Textual](https://textual.textualize.io/), con dashboard,
-gestione guidata di config/credenziali e report on-demand. Usa lo stesso storage dati di
-`cartellino_v2.py` (`data/v2/{anno}/`).
+gestione guidata di config/credenziali e report on-demand. Dati e log salvati in una cartella
+fissa nella home dell'utente — **non** relativa alla cartella da cui si lancia l'eseguibile
+(importante per il binario standalone, lanciabile da qualunque posizione: Desktop, Downloads,
+ecc.): `~/.cartellino_unisa/` su macOS/Linux, `%LOCALAPPDATA%\cartellino_unisa\` su Windows.
+Dentro: `data/v2/{anno}/` (stessa struttura di `cartellino_v2.py`, vedi sotto) e
+`cartellino_tui.log`.
 
 ```bash
 mise run tui
@@ -235,6 +239,11 @@ CartellinoUniSA/
                     ├── 02_febbraio.xlsx
                     └── ...
 ```
+
+> Questa struttura è relativa alla cartella del repository quando si usa `cartellino_v2.py`
+> (CLI/dev). Per l'eseguibile standalone (`cartellino_tui.py`), la stessa struttura (`data/v2/`
+> in poi) vive dentro `~/.cartellino_unisa/` (`%LOCALAPPDATA%\cartellino_unisa\` su Windows), non
+> nella cartella da cui si lancia il binario.
 
 ## 📝 File di input
 

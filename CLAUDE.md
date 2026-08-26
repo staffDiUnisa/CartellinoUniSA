@@ -87,8 +87,12 @@ uv run python cartellino_tui.py
 
 App Textual (pacchetto `cartellino/tui/`) con dashboard, onboarding, aggiornamento
 (con scelta metodo auth e log in tempo reale), impostazioni, report on-demand e
-timesheet di progetto. Usa lo stesso storage di `cartellino_v2.py`
-(`data/v2/{anno}/`). Vedi il pacchetto `cartellino/tui/` sotto per i dettagli.
+timesheet di progetto. Stessa struttura dati di `cartellino_v2.py` (`data/v2/{anno}/`), ma con
+root diversa: `cartellino_tui.py` definisce `APP_DATA_DIR`/`DATA_FOLDER`/`LOG_FILE` fissi nella
+home dell'utente (`~/.cartellino_unisa/`, `%LOCALAPPDATA%\cartellino_unisa\` su Windows,
+`_app_data_dir()`) invece che relativi alla cwd — necessario per l'eseguibile standalone
+(Fase 6), lanciabile da qualunque cartella. Vedi il pacchetto `cartellino/tui/` sotto per i
+dettagli.
 
 ### Packaging (Fase 6 TODO v2.0.0)
 
