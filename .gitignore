@@ -167,6 +167,8 @@ MANIFEST
 #  before PyInstaller builds the exe, so as to inject date/other infos into it.
 *.manifest
 *.spec
+# ...eccetto il nostro spec scritto a mano (Fase 6 TODO.md), non generato/usa-e-getta
+!packaging/cartellino.spec
 
 # Installer logs
 pip-log.txt

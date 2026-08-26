@@ -420,6 +420,31 @@ Vengono inoltre corretti automaticamente:
 - **Colori weekend**: sabati e domeniche colorati con il grigio del template, lunedì–venerdì senza colore, in base al calendario effettivo dell'anno (non del template originale)
 - **Fogli Riassuntivo**: i riferimenti formula ai fogli mensili vengono aggiornati con i nuovi nomi — il layout e la logica del Riassuntivo non vengono modificati
 
+## 📦 Eseguibili standalone (senza Python)
+
+A partire dalla v2.0.0, ogni tag `v2.*` genera automaticamente (GitHub Actions,
+`.github/workflows/release.yml`) un eseguibile standalone della TUI per macOS, Windows e Linux,
+allegato come bozza (draft) alla relativa [GitHub Release](https://github.com/staffDiUnisa/CartellinoUniSA/releases) —
+`cartellino-unisa-macos`, `cartellino-unisa-linux`, `cartellino-unisa-windows.exe`. Non serve
+installare Python/`mise`/`uv`: si scarica il binario del proprio sistema operativo e si esegue
+direttamente da terminale.
+
+**Chrome resta comunque una dipendenza esterna obbligatoria** (il download del cartellino usa
+Selenium, che non è imbottigliabile in un eseguibile standalone): va installato separatamente.
+
+**Avvisi di sicurezza del sistema operativo**: i binari non sono firmati/notarizzati (nessun
+certificato sviluppatore a pagamento), quindi al primo avvio il sistema operativo mostra un
+avviso:
+- **macOS (Gatekeeper)**: "app non verificata"/"sviluppatore non identificato" — click destro
+  (o `Ctrl`+click) sul file → **Apri**, poi conferma nel dialogo che compare (necessario solo la
+  prima volta)
+- **Windows (SmartScreen)**: "Windows ha protetto il PC" — **Ulteriori informazioni** → **Esegui
+  comunque**
+
+Per rigenerare l'eseguibile localmente (es. per verificare una modifica prima di taggare una
+release): `uv sync --group build && uv run pyinstaller packaging/cartellino.spec`, poi
+`./dist/cartellino-unisa` (`.exe` su Windows).
+
 ## 🔧 Troubleshooting
 
 **Chrome non si avvia / ChromeDriver non trovato**

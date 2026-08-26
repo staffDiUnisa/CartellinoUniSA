@@ -172,16 +172,31 @@ timesheet progetto direttamente dalla TUI (oggi resta un'operazione manuale sul 
       previsto per la Fase 6 (packaging): PyInstaller impacchetta l'entrypoint TUI, `main.py`/
       `process.py` restano il percorso legacy pre-v2 non toccato da questa roadmap.
 
-## Fase 6 — Packaging multipiattaforma (PyInstaller + GitHub Actions)
+## Fase 6 — Packaging multipiattaforma (PyInstaller + GitHub Actions) ✅
 
-- [ ] `packaging/cartellino.spec` per PyInstaller (entrypoint TUI), con hidden-imports per
-      Textual, `pyarrow` e Selenium/webdriver-manager
-- [ ] Workflow `.github/workflows/release.yml`: matrix macOS/Windows/Linux, ognuno esegue
-      `mise install && uv sync && uv run pyinstaller packaging/cartellino.spec`, allega il
-      binario alla GitHub Release (trigger su push tag `v2.*`)
-- [ ] Documentare nel `README.md`: Chrome resta dipendenza esterna obbligatoria; binari non
-      firmati/notarizzati possono generare avvisi Gatekeeper (macOS) / SmartScreen (Windows),
-      con istruzioni per sbloccarli
+- [x] `packaging/cartellino.spec` per PyInstaller (entrypoint `cartellino_tui.py`, onefile).
+      `keyring`/`pyarrow`/`selenium` non hanno bisogno di hidden-imports manuali: hanno già hook
+      PyInstaller propri che raccolgono submodule/metadata/data file da soli. Textual non ha
+      bisogno di hidden-imports, ma richiede `CartellinoApp._BASE_PATH` esplicito (basato su
+      `sys._MEIPASS` quando "frozen") perché altrimenti risolverebbe `CSS_PATH` con
+      `inspect.getfile()`, che non punta a un file reale una volta impacchettato — stesso
+      discorso per la lettura di `pyproject.toml` in `_app_version()`
+      (`cartellino/tui/app.py::_bundle_base()`). Build locale verificata su macOS arm64: il
+      binario si avvia senza errori di import/CSS.
+- [x] `pyinstaller` aggiunto come `[dependency-groups] build` in `pyproject.toml` (non nelle
+      dipendenze runtime — è uno strumento di packaging, non serve per usare l'app)
+- [x] Workflow `.github/workflows/release.yml`: build matrix macOS/Windows/Linux
+      (`uv sync --group build && uv run pyinstaller packaging/cartellino.spec`), allega i binari
+      **come draft** alla GitHub Release (trigger su push tag `v2.*`; pubblicazione manuale dopo
+      revisione, non automatica)
+- [x] Documentato nel `README.md` (§ "Eseguibili standalone"): Chrome resta dipendenza esterna
+      obbligatoria; avvisi Gatekeeper (macOS)/SmartScreen (Windows) sui binari non
+      firmati/notarizzati, con istruzioni per sbloccarli
+
+Non verificato in questa sessione (nessun ambiente Windows/Linux disponibile): la build reale
+del workflow CI su Windows e Linux. Da controllare al primo tag `v2.*` effettivo — in
+particolare i missing-module warning platform-specific (`winreg`, `msvcrt`, ecc., innocui su
+macOS/Linux ma da rivedere se il build Windows dovesse davvero fallire).
 
 ## Fase 7 — Rilascio v2.0.0
 

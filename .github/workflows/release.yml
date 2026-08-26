@@ -1,0 +1,73 @@
+name: Release
+
+# Fase 6 TODO.md: build multipiattaforma degli eseguibili standalone della TUI
+# (PyInstaller, packaging/cartellino.spec) e pubblicazione su GitHub Release.
+# Trigger: push di un tag `v2.*` (es. v2.0.0).
+
+on:
+  push:
+    tags:
+      - "v2.*"
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: macos-latest
+            asset_name: cartellino-unisa-macos
+            binary_name: cartellino-unisa
+          - os: ubuntu-latest
+            asset_name: cartellino-unisa-linux
+            binary_name: cartellino-unisa
+          - os: windows-latest
+            asset_name: cartellino-unisa-windows.exe
+            binary_name: cartellino-unisa.exe
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: jdx/mise-action@v2
+
+      - name: Installa le dipendenze (incluso il gruppo build per PyInstaller)
+        run: uv sync --group build
+
+      - name: Build eseguibile standalone
+        run: uv run pyinstaller packaging/cartellino.spec --noconfirm
+
+      - name: Prepara l'artefatto per il nome finale per-OS
+        shell: bash
+        run: |
+          mkdir -p artifact
+          cp "dist/${{ matrix.binary_name }}" "artifact/${{ matrix.asset_name }}"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.asset_name }}
+          path: artifact/${{ matrix.asset_name }}
+          if-no-files-found: error
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Appiattisce gli artefatti scaricati in un'unica cartella
+        run: |
+          mkdir -p release
+          find artifacts -type f -exec cp {} release/ \;
+          ls -la release
+
+      - name: Crea la GitHub Release con i binari allegati
+        uses: softprops/action-gh-release@v2
+        with:
+          files: release/*
+          generate_release_notes: true
+          draft: true

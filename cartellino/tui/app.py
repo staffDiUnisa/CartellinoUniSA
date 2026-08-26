@@ -1,4 +1,5 @@
 import logging
+import sys
 import tomllib
 from pathlib import Path
 
@@ -12,11 +13,25 @@ log = logging.getLogger(__name__)
 DATA_FOLDER = Path("data/v2")
 
 
+def _bundle_base() -> Path:
+    """Cartella base per risolvere risorse (CSS, `pyproject.toml`) sia in sviluppo
+    sia una volta impacchettati con PyInstaller (Fase 6 TODO.md).
+
+    In sviluppo è la root del repo (calcolata da questo file); una volta
+    "frozen", `sys._MEIPASS` è la cartella (temporanea o dell'eseguibile onedir)
+    in cui PyInstaller estrae i `datas` dichiarati in `packaging/cartellino.spec`
+    — che li piazza con gli stessi percorsi relativi usati qui.
+    """
+    if getattr(sys, "frozen", False) and hasattr(sys, "_MEIPASS"):
+        return Path(sys._MEIPASS)
+    return Path(__file__).resolve().parents[2]
+
+
 def _app_version() -> str:
     """Legge la versione da `pyproject.toml` (il progetto ha `tool.uv.package = false`,
     quindi non è installato come pacchetto e `importlib.metadata.version()` non
     funzionerebbe)."""
-    pyproject_path = Path(__file__).resolve().parents[2] / "pyproject.toml"
+    pyproject_path = _bundle_base() / "pyproject.toml"
     try:
         with open(pyproject_path, "rb") as fh:
             data = tomllib.load(fh)
@@ -29,6 +44,13 @@ class CartellinoApp(App):
     TITLE = "Cartellino UniSA"
     SUB_TITLE = f"v{_app_version()}"
     CSS_PATH = "app.tcss"
+    # Necessario per PyInstaller: senza `_BASE_PATH` esplicito, Textual risolve
+    # CSS_PATH con `inspect.getfile(CartellinoApp)`, che una volta "frozen" non
+    # punta a un file reale su disco (il modulo vive nell'archivio PYZ bundled).
+    # Textual fa `.parent` su `_BASE_PATH` (si aspetta il path di un *file*, come
+    # ritornerebbe `inspect.getfile`), quindi va puntato dentro "tui/", non alla
+    # cartella stessa.
+    _BASE_PATH = str(_bundle_base() / "cartellino" / "tui" / "app.py")
 
     BINDINGS = [
         Binding("q", "quit", "Esci"),

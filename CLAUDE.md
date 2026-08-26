@@ -90,6 +90,31 @@ App Textual (pacchetto `cartellino/tui/`) con dashboard, onboarding, aggiornamen
 timesheet di progetto. Usa lo stesso storage di `cartellino_v2.py`
 (`data/v2/{anno}/`). Vedi il pacchetto `cartellino/tui/` sotto per i dettagli.
 
+### Packaging (Fase 6 TODO v2.0.0)
+
+`packaging/cartellino.spec` — spec PyInstaller (onefile) per `cartellino_tui.py`:
+
+```bash
+uv sync --group build   # installa pyinstaller (dependency-group "build", non nelle
+                         # dipendenze runtime: pyinstaller serve solo per impacchettare)
+uv run pyinstaller packaging/cartellino.spec --noconfirm
+./dist/cartellino-unisa  # .exe su Windows
+```
+
+- `keyring`, `pyarrow`, `selenium` hanno già hook PyInstaller propri (rispettivamente in
+  `PyInstaller.hooks` e `_pyinstaller_hooks_contrib`) che raccolgono automaticamente
+  submodule/metadata/data file — nessun `hiddenimports` manuale necessario per questi tre.
+- `cartellino/tui/app.py::CartellinoApp._BASE_PATH`/`_bundle_base()`: Textual risolve `CSS_PATH`
+  con `inspect.getfile(CartellinoApp)`, che una volta "frozen" non punta a un file reale su disco
+  (il modulo vive nell'archivio PYZ, non estratto). `_BASE_PATH` viene quindi impostato in base a
+  `sys._MEIPASS` quando l'app è frozen; lo stesso vale per la lettura di `pyproject.toml` in
+  `_app_version()`. Il file `cartellino/tui/app.tcss` e `pyproject.toml` sono dichiarati come
+  `datas` nello spec, con gli stessi percorsi relativi attesi da `_bundle_base()`.
+- `.github/workflows/release.yml`: build matrix macOS/Windows/Linux su push di un tag `v2.*`,
+  allega i binari come **draft** alla GitHub Release (pubblicazione manuale dopo revisione).
+- Chrome resta dipendenza esterna obbligatoria (Selenium non è imbottigliabile); i binari non
+  sono firmati/notarizzati (avvisi Gatekeeper/SmartScreen, documentati in README.md).
+
 ## Architecture
 
 **Entry point**: `main.py` — Typer CLI that chains `get.run()` and `process.run()`.
