@@ -171,7 +171,16 @@ class SettingsScreen(Screen):
         if not data_folder_valore:
             errore_widget.update("[red]La cartella dati non può essere vuota.[/red]")
             return
+        # Risolto in path assoluto prima di salvare: un path relativo digitato a mano
+        # (invece di scelto con "Sfoglia", che restituisce già path assoluti) verrebbe
+        # altrimenti interpretato al prossimo avvio relativamente alla cwd da cui parte
+        # l'eseguibile, vanificando la cartella fissa (APP_DATA_DIR in cartellino_tui.py —
+        # home dell'utente su macOS/Linux, %LOCALAPPDATA% su Windows) pensata per essere
+        # indipendente da dove viene lanciato.
+        data_folder_valore = str(Path(data_folder_valore).expanduser().resolve())
         output_folder_valore = self.query_one("#input-output-folder", Input).value.strip() or None
+        if output_folder_valore:
+            output_folder_valore = str(Path(output_folder_valore).expanduser().resolve())
 
         min_date = self.query_one("#input-min-date", Input).value.strip() or None
         export_format = self.query_one("#select-formato", Select).value
