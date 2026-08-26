@@ -306,3 +306,4 @@ test*.*
 timesheet/*
 !timesheet/.gitkeep
 
+ignored/
