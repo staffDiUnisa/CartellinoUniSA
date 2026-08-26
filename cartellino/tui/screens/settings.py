@@ -85,7 +85,12 @@ class SettingsScreen(Screen):
 
             yield Button("Gestisci date escluse (date_escluse.txt)", id="btn-date-escluse")
 
-            stato_cred = "impostate" if get_credentials() is not None else "non impostate"
+            credenziali_esistenti = get_credentials()
+            if credenziali_esistenti is not None:
+                username_esistente, _ = credenziali_esistenti
+                stato_cred = f"impostate (username: {username_esistente})"
+            else:
+                stato_cred = "non impostate"
             yield Static(f"[b]Credenziali UniSA[/b]: {stato_cred}")
             yield Label("Nuovo username (lascia vuoto per non modificare)")
             yield Input(placeholder="mario.rossi", id="input-username")

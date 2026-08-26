@@ -24,3 +24,32 @@ Button:focus {
 .button-row Button {
     margin-right: 1;
 }
+
+/* Menu di navigazione della Dashboard: un colore diverso per pulsante */
+#btn-aggiorna {
+    background: blue;
+}
+#btn-aggiorna:hover {
+    background: royalblue;
+}
+
+#btn-report {
+    background: darkgreen;
+}
+#btn-report:hover {
+    background: green;
+}
+
+#btn-timesheet {
+    background: darkorange;
+}
+#btn-timesheet:hover {
+    background: orange;
+}
+
+#btn-impostazioni {
+    background: purple;
+}
+#btn-impostazioni:hover {
+    background: mediumpurple;
+}
