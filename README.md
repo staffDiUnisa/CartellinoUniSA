@@ -451,49 +451,89 @@ qualunque sia il sistema operativo.
 
 ### 🍎 macOS
 
+**Opzione consigliata — installer `.pkg`:**
+
 1. Dalla pagina delle [Release](https://github.com/staffDiUnisa/CartellinoUniSA/releases/latest),
-   scarica `cartellino-unisa-macos.zip`
-2. Estrai lo zip (doppio click, oppure `unzip cartellino-unisa-macos.zip` da terminale)
-3. Apri il Terminale, entra nella cartella estratta ed esegui:
+   scarica `cartellino-unisa.pkg`
+2. Doppio click, segui la procedura guidata (installa in `/usr/local/cartellino-unisa`, crea il
+   comando `cartellino-unisa` nel `PATH`)
+3. Apri il Terminale ed esegui semplicemente:
+   ```bash
+   cartellino-unisa
+   ```
+
+Il `.pkg` è **firmato con certificato Developer ID Installer e notarizzato/staplato da Apple**:
+Gatekeeper non dovrebbe mostrare alcun avviso, nemmeno offline.
+
+**Opzione alternativa — zip della cartella onedir** (per chi preferisce non installare nulla a
+livello di sistema):
+
+1. Scarica `cartellino-unisa-macos.zip`, estrai (doppio click, oppure
+   `unzip cartellino-unisa-macos.zip` da terminale)
+2. Apri il Terminale, entra nella cartella estratta ed esegui:
    ```bash
    cd cartellino-unisa
    ./cartellino-unisa
    ```
 
-L'eseguibile è **firmato con certificato Developer ID e notarizzato da Apple**: Gatekeeper non
-dovrebbe mostrare alcun avviso. Se comparisse comunque "app non verificata"/"sviluppatore non
-identificato" (es. per una build senza i secrets di firma configurati), risolvi con: click destro
-(o `Ctrl`+click) sul file `cartellino-unisa` dentro la cartella estratta → **Apri**, poi conferma
-nel dialogo (necessario solo la prima volta).
+L'eseguibile dentro lo zip è anch'esso firmato e notarizzato: se comparisse comunque "app non
+verificata"/"sviluppatore non identificato" (es. per una build senza i secrets di firma
+configurati), risolvi con: click destro (o `Ctrl`+click) sul file `cartellino-unisa` → **Apri**,
+poi conferma nel dialogo (necessario solo la prima volta).
 
 ### 🪟 Windows
 
+**Opzione consigliata — installer `cartellino-unisa-setup.exe`:**
+
 1. Dalla pagina delle [Release](https://github.com/staffDiUnisa/CartellinoUniSA/releases/latest),
-   scarica `cartellino-unisa-windows.zip`
-2. Estrai lo zip (click destro → **Estrai tutto...**)
-3. Apri PowerShell o il Prompt dei comandi, entra nella cartella estratta ed esegui:
+   scarica `cartellino-unisa-setup.exe`
+2. Doppio click, segui la procedura guidata (installa in Program Files, crea una voce nel Menu
+   Start)
+3. Avvia "Cartellino UniSA" dal Menu Start (apre una finestra terminale, essendo un'app testuale)
+
+**Opzione alternativa — zip della cartella onedir:**
+
+1. Scarica `cartellino-unisa-windows.zip`, estrai (click destro → **Estrai tutto...**)
+2. Apri PowerShell o il Prompt dei comandi, entra nella cartella estratta ed esegui:
    ```powershell
    cd cartellino-unisa
    .\cartellino-unisa.exe
    ```
 
-Il binario **non è firmato** (nessun certificato di firma codice per Windows), quindi al primo
-avvio SmartScreen mostra "Windows ha protetto il PC": clicca **Ulteriori informazioni** → **Esegui
-comunque** (necessario solo la prima volta).
+In entrambi i casi il binario **non è firmato** (nessun certificato di firma codice per Windows,
+vedi `ignored/signed_windows.md` per le opzioni valutate), quindi al primo avvio SmartScreen mostra
+"Windows ha protetto il PC": clicca **Ulteriori informazioni** → **Esegui comunque** (necessario
+solo la prima volta).
 
 ### 🐧 Linux
 
+**Opzione consigliata — pacchetto `.deb`/`.rpm`:**
+
 1. Dalla pagina delle [Release](https://github.com/staffDiUnisa/CartellinoUniSA/releases/latest),
-   scarica `cartellino-unisa-linux.zip`
-2. Estrai ed esegui da terminale:
+   scarica `cartellino-unisa_<versione>_amd64.deb` (Debian/Ubuntu) o
+   `cartellino-unisa-<versione>.x86_64.rpm` (Fedora/RHEL/openSUSE)
+2. Installa:
+   ```bash
+   sudo dpkg -i cartellino-unisa_<versione>_amd64.deb      # Debian/Ubuntu
+   # oppure
+   sudo rpm -i cartellino-unisa-<versione>.x86_64.rpm      # Fedora/RHEL/openSUSE
+   ```
+3. Esegui da terminale: `cartellino-unisa`
+
+**Opzione alternativa — zip della cartella onedir:**
+
+1. Scarica `cartellino-unisa-linux.zip`, estrai ed esegui da terminale:
    ```bash
    unzip cartellino-unisa-linux.zip
    cd cartellino-unisa
    ./cartellino-unisa
    ```
    Se il sistema segnala permessi mancanti (`Permission denied`): `chmod +x cartellino-unisa`.
-3. Chrome/Chromium deve essere installato e raggiungibile dal `PATH` per il download del
-   cartellino (Selenium/`webdriver-manager` lo useranno automaticamente).
+
+In entrambi i casi, Chrome/Chromium deve essere installato e raggiungibile dal `PATH` per il
+download del cartellino (Selenium/`webdriver-manager` lo useranno automaticamente). Il `.deb`/
+`.rpm` è costruito su Ubuntu (glibc recente): su distro molto datate potrebbero presentarsi
+incompatibilità di libreria, stesso limite implicito già presente per lo zip.
 
 ### Note comuni
 

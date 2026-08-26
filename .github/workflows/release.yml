@@ -3,6 +3,11 @@ name: Release
 # Fase 6 TODO.md: build multipiattaforma degli eseguibili standalone della TUI
 # (PyInstaller, packaging/cartellino.spec) e pubblicazione su GitHub Release.
 # Trigger: push di un tag `v2.*` (es. v2.0.0).
+#
+# Oltre agli zip onedir "grezzi" (storici), il job build produce anche un vero
+# installer per OS: .pkg firmato/notarizzato/staplato su macOS, setup.exe
+# (Inno Setup, non firmato) su Windows, .deb/.rpm (fpm) su Linux. Vedi
+# CLAUDE.md § Packaging per i dettagli.
 
 on:
   push:
@@ -27,6 +32,14 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v7
+
+      - name: Estrae la versione dal tag (es. v2.0.0 -> 2.0.0)
+        # Usata da pkgbuild/ISCC/fpm per il numero di versione degli installer
+        # nativi: più affidabile che leggerla da pyproject.toml, dato che il
+        # bump versione precede sempre il tag per convenzione del progetto.
+        id: version
+        shell: bash
+        run: echo "value=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
 
       - uses: jdx/mise-action@v4
 
@@ -106,17 +119,140 @@ jobs:
             exit 1
           fi
 
-      # Niente step di stapling: `xcrun stapler staple` non supporta un eseguibile
-      # "sciolto" come questo (non è un .app/.pkg/.dmg — verificato: risponde
-      # "Stapler is incapable of working with Document files"), quindi fallirebbe
-      # sempre e genererebbe solo un warning rumoroso ad ogni run. La
-      # notarizzazione resta comunque valida senza stapling: Gatekeeper fa una
-      # verifica online al primo avvio invece che offline.
+      # Niente stapling sull'eseguibile grezzo: `xcrun stapler staple` non
+      # supporta un eseguibile "sciolto" come questo (non è un .app/.pkg/.dmg —
+      # verificato: risponde "Stapler is incapable of working with Document
+      # files"), quindi fallirebbe sempre. La notarizzazione resta comunque
+      # valida senza stapling: Gatekeeper fa una verifica online al primo
+      # avvio invece che offline. Il `.pkg` costruito sotto, invece, È un
+      # formato supportato dallo stapler (vedi step dedicato).
 
       - uses: actions/upload-artifact@v7
         with:
           name: ${{ matrix.asset_name }}
           path: dist/cartellino-unisa/
+          if-no-files-found: error
+
+      - name: Importa il certificato "Developer ID Installer" (solo macOS)
+        if: matrix.os == 'macos-latest'
+        env:
+          MACOS_INSTALLER_CERTIFICATE: ${{ secrets.MACOS_INSTALLER_CERTIFICATE }}
+          MACOS_INSTALLER_CERTIFICATE_PWD: ${{ secrets.MACOS_INSTALLER_CERTIFICATE_PWD }}
+        run: |
+          echo "$MACOS_INSTALLER_CERTIFICATE" | base64 --decode -o installer_certificate.p12
+          security import installer_certificate.p12 -k build.keychain -P "$MACOS_INSTALLER_CERTIFICATE_PWD" -T /usr/bin/pkgbuild
+          security set-key-partition-list -S apple-tool:,apple:,pkgbuild: -s -k actions-runner build.keychain
+          rm -f installer_certificate.p12
+
+      - name: "Costruisce, firma e notarizza il .pkg (solo macOS)"
+        if: matrix.os == 'macos-latest'
+        env:
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_ID_PASSWORD: ${{ secrets.APPLE_ID_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: |
+          chmod +x packaging/macos/postinstall
+          pkgbuild \
+            --root dist/cartellino-unisa \
+            --install-location /usr/local/cartellino-unisa \
+            --scripts packaging/macos \
+            --identifier org.antaresnet.cartellino-unisa \
+            --version "${{ steps.version.outputs.value }}" \
+            --sign "Developer ID Installer" \
+            cartellino-unisa.pkg
+
+          xcrun notarytool submit cartellino-unisa.pkg \
+            --apple-id "$APPLE_ID" \
+            --password "$APPLE_ID_PASSWORD" \
+            --team-id "$APPLE_TEAM_ID" \
+            --wait \
+            --output-format json | tee notarize_pkg_result.json
+          submission_id=$(jq -r '.id' notarize_pkg_result.json)
+          status=$(jq -r '.status' notarize_pkg_result.json)
+          echo "Notarizzazione .pkg: status=$status id=$submission_id"
+          if [ "$status" != "Accepted" ]; then
+            echo "--- Log dettagliato Apple (xcrun notarytool log) ---"
+            xcrun notarytool log "$submission_id" \
+              --apple-id "$APPLE_ID" \
+              --password "$APPLE_ID_PASSWORD" \
+              --team-id "$APPLE_TEAM_ID" || true
+            echo "::error::Notarizzazione .pkg non accettata da Apple (status: $status) — vedi il log sopra"
+            exit 1
+          fi
+          rm -f notarize_pkg_result.json
+
+          # A differenza dell'eseguibile sciolto, il .pkg è un formato
+          # supportato dallo stapler: permette verifica offline del ticket
+          # di notarizzazione.
+          xcrun stapler staple cartellino-unisa.pkg
+
+      - uses: actions/upload-artifact@v7
+        if: matrix.os == 'macos-latest'
+        with:
+          name: cartellino-unisa-macos-pkg
+          path: cartellino-unisa.pkg
+          if-no-files-found: error
+
+      - name: Installa Inno Setup (solo Windows)
+        if: matrix.os == 'windows-latest'
+        run: choco install innosetup -y --no-progress
+
+      - name: "Costruisce l'installer .exe (solo Windows, non firmato)"
+        # Vedi ignored/signed_windows.md (non versionato) per le opzioni
+        # valutate per aggiungere la firma in futuro.
+        if: matrix.os == 'windows-latest'
+        shell: cmd
+        run: |
+          "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" packaging\windows\installer.iss /DMyAppVersion=${{ steps.version.outputs.value }}
+
+      - uses: actions/upload-artifact@v7
+        if: matrix.os == 'windows-latest'
+        with:
+          name: cartellino-unisa-windows-installer
+          path: packaging/windows/Output/cartellino-unisa-setup.exe
+          if-no-files-found: error
+
+      - name: Installa fpm e le dipendenze per .deb/.rpm (solo Linux)
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y rpm ruby ruby-dev build-essential
+          gem install --no-document fpm
+
+      - name: Costruisce i pacchetti .deb e .rpm (solo Linux)
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          chmod +x packaging/linux/postinstall.sh
+          VERSION="${{ steps.version.outputs.value }}"
+
+          fpm -s dir -t deb -f -n cartellino-unisa -v "$VERSION" \
+            --after-install packaging/linux/postinstall.sh \
+            --description "Gestione cartellino presenze UniSA" \
+            --maintainer "staffDiUnisa" \
+            --license "GPL-3.0" \
+            --url "https://github.com/staffDiUnisa/CartellinoUniSA" \
+            dist/cartellino-unisa/=/opt/cartellino-unisa/
+
+          fpm -s dir -t rpm -f -n cartellino-unisa -v "$VERSION" \
+            --after-install packaging/linux/postinstall.sh \
+            --description "Gestione cartellino presenze UniSA" \
+            --maintainer "staffDiUnisa" \
+            --license "GPL-3.0" \
+            --url "https://github.com/staffDiUnisa/CartellinoUniSA" \
+            dist/cartellino-unisa/=/opt/cartellino-unisa/
+
+      - uses: actions/upload-artifact@v7
+        if: matrix.os == 'ubuntu-latest'
+        with:
+          name: cartellino-unisa-linux-deb
+          path: "*.deb"
+          if-no-files-found: error
+
+      - uses: actions/upload-artifact@v7
+        if: matrix.os == 'ubuntu-latest'
+        with:
+          name: cartellino-unisa-linux-rpm
+          path: "*.rpm"
           if-no-files-found: error
 
   release:
@@ -127,21 +263,31 @@ jobs:
         with:
           path: artifacts
 
-      - name: Comprime ogni cartella onedir scaricata in uno zip per asset
+      - name: Comprime le cartelle onedir e copia gli installer nativi già pronti
         # I job di build girano anche su windows-latest, dove `zip` non è
         # disponibile in Git Bash: la compressione va fatta qui (ubuntu-latest,
-        # `zip` sempre presente), non nei job di build.
+        # `zip` sempre presente), non nei job di build. Gli installer nativi
+        # (.pkg/.exe/.deb/.rpm) sono invece già file singoli pronti alla
+        # pubblicazione: vanno solo copiati, non ri-zippati.
         run: |
           mkdir -p release
           for dir in artifacts/*/; do
             name="$(basename "$dir")"
-            # actions/upload-artifact + download-artifact non preservano sempre
-            # il bit +x sui binari Unix (macOS/Linux): va ripristinato prima di
-            # comprimere, altrimenti chi scarica lo zip deve fare chmod a mano.
-            if [ -f "$dir/cartellino-unisa" ]; then
-              chmod +x "$dir/cartellino-unisa"
-            fi
-            (cd "$dir" && zip -r "../../release/${name}.zip" .)
+            case "$name" in
+              cartellino-unisa-macos-pkg|cartellino-unisa-windows-installer|cartellino-unisa-linux-deb|cartellino-unisa-linux-rpm)
+                find "$dir" -type f -exec cp {} release/ \;
+                ;;
+              *)
+                # actions/upload-artifact + download-artifact non preservano
+                # sempre il bit +x sui binari Unix (macOS/Linux): va
+                # ripristinato prima di comprimere, altrimenti chi scarica lo
+                # zip deve fare chmod a mano.
+                if [ -f "$dir/cartellino-unisa" ]; then
+                  chmod +x "$dir/cartellino-unisa"
+                fi
+                (cd "$dir" && zip -r "../../release/${name}.zip" .)
+                ;;
+            esac
           done
           ls -la release
 

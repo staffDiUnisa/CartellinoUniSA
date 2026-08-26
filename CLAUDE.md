@@ -174,14 +174,44 @@ uv run pyinstaller packaging/cartellino.spec --noconfirm
      codice 0 anche se Apple rifiuta la richiesta, quindi un semplice check dell'exit code
      lascerebbe passare come "verde" un binario NON notarizzato (successo così in un run di
      prova). In caso di rifiuto stampa anche `xcrun notarytool log` per il motivo esatto.
-  4. **Niente stapling**: `xcrun stapler staple` non supporta un eseguibile "sciolto" (non un
-     `.app`/`.pkg`/`.dmg` — risposta verificata: "Stapler is incapable of working with Document
-     files"), quindi il passo è stato rimosso invece di lasciarlo fallire ad ogni run. La
-     notarizzazione resta comunque valida senza stapling: Gatekeeper fa una verifica online al
-     primo avvio invece che offline (verificato: un binario con attributo di quarantena reale si
-     avvia senza blocchi).
+  4. **Niente stapling sull'eseguibile grezzo**: `xcrun stapler staple` non supporta un eseguibile
+     "sciolto" (non un `.app`/`.pkg`/`.dmg` — risposta verificata: "Stapler is incapable of working
+     with Document files"), quindi il passo è stato rimosso invece di lasciarlo fallire ad ogni
+     run per l'eseguibile onedir grezzo. La notarizzazione resta comunque valida senza stapling:
+     Gatekeeper fa una verifica online al primo avvio invece che offline (verificato: un binario
+     con attributo di quarantena reale si avvia senza blocchi). Il `.pkg` sotto, invece, viene
+     staplato: è un formato supportato.
   Windows resta non firmato (nessun certificato acquistato): SmartScreen mostra comunque
   l'avviso, documentato in README.md.
+- **Installer nativi per OS** (job `build`, oltre agli zip onedir storici — vedi README.md §
+  "Eseguibili standalone" per le istruzioni utente finale):
+  - **macOS `.pkg`**: `pkgbuild --root dist/cartellino-unisa --scripts packaging/macos ...`, firmato
+    con un **secondo certificato**, "Developer ID Installer" (distinto da "Developer ID
+    Application" usato per l'eseguibile — stessa Apple Developer membership, procedura per
+    generarlo aggiunta a `ignored/signed_macos.md`; nuovi secrets `MACOS_INSTALLER_CERTIFICATE`/
+    `MACOS_INSTALLER_CERTIFICATE_PWD`, importati nello stesso keychain temporaneo del certificato
+    Application). Notarizzato separatamente e **staplato** (a differenza dell'eseguibile sciolto,
+    il `.pkg` è un formato supportato dallo stapler). `packaging/macos/postinstall` crea un
+    symlink `/usr/local/bin/cartellino-unisa` verso l'installazione in
+    `/usr/local/cartellino-unisa`.
+  - **Windows `.exe`**: Inno Setup (`packaging/windows/installer.iss`, compilato con `ISCC.exe`
+    installato via `choco install innosetup`), payload = stessa cartella onedir. **Non firmato**
+    per ora — `ignored/signed_windows.md` (non versionato) raccoglie le opzioni valutate
+    (certificato OV esportabile con lo stesso pattern del `.p12` macOS, EV via servizio di firma
+    cloud dato che la chiave non è esportabile, o SignPath.io gratuito per OSS) da decidere in un
+    secondo momento.
+  - **Linux `.deb`/`.rpm`**: `fpm` (Ruby gem, installato in CI con `gem install fpm` +
+    `apt-get install rpm ruby-dev build-essential` per il target rpm, che richiede `rpmbuild`),
+    un solo comando per formato dalla stessa cartella onedir mappata su `/opt/cartellino-unisa/`,
+    nessun file `.spec`/`control` scritto a mano. `packaging/linux/postinstall.sh` (via
+    `--after-install`) crea il symlink in `/usr/local/bin`, stesso schema del `.pkg` macOS.
+  - La versione passata a tutti e tre gli strumenti viene estratta dal **tag git** (`v2.0.0` →
+    `2.0.0`), non da `pyproject.toml`: più robusto in CI, dato che il bump versione precede
+    sempre il tag per convenzione del progetto.
+  - Nel job `release`, i quattro nuovi artifact (già file singoli pronti) vengono copiati
+    direttamente in `release/` senza passare dallo step di compressione zip, che resta solo per
+    gli asset onedir storici (necessario perché `zip` non è disponibile in Git Bash su
+    `windows-latest`, quindi la compressione va fatta sempre nel job `release`, `ubuntu-latest`).
 
 ## Architecture
 
