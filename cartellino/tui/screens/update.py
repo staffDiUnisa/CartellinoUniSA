@@ -67,7 +67,10 @@ class UpdateScreen(Screen):
             ottieni_cartellino(self.app.data_folder, metodo=metodo)
             successo = True
         except Exception as e:
-            log.error(f"Download fallito: {e}")
+            # log.exception scrive anche il traceback completo su cartellino_tui.log:
+            # alcuni messaggi (es. "Import pyarrow failed" di pandas) nascondono la
+            # vera eccezione originale dietro un messaggio amichevole generico.
+            log.exception(f"Download fallito: {e}")
         finally:
             self.app.call_from_thread(self._fine_download, successo)
 

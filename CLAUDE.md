@@ -134,6 +134,15 @@ uv run pyinstaller packaging/cartellino.spec --noconfirm
   scarica e comprime ciascuna in `<asset>.zip`, poi allega gli zip come **draft** alla GitHub
   Release (pubblicazione manuale dopo revisione).
 - Chrome resta dipendenza esterna obbligatoria (Selenium non è imbottigliabile).
+- **`cartellino_tui.py` importa `pyarrow` esplicitamente all'avvio, sul thread principale.**
+  `pandas` importa `pyarrow` in modo lazy solo alla prima chiamata reale a
+  `to_feather()`/`read_feather()`; nella TUI quella prima chiamata avviene dentro il worker
+  thread del download (`UpdateScreen._scarica`, `@work(thread=True)`), non sul thread
+  principale. Riscontrato in produzione sul binario firmato/notarizzato: il primo import di
+  `pyarrow` da un thread diverso da quello principale falliva con "Import pyarrow failed", pur
+  essendo il pacchetto correttamente impacchettato (verificato con test isolati sullo stesso
+  binario — il file *è* presente, il problema è di ordine/thread di import, non di packaging).
+  Importarlo eagerly all'avvio lo inizializza una volta sola sul thread principale.
 - **Firma e notarizzazione macOS** (job `build (macos-latest, ...)`, richiede i secrets
   `MACOS_CERTIFICATE`/`MACOS_CERTIFICATE_PWD`/`APPLE_ID`/`APPLE_ID_PASSWORD`/`APPLE_TEAM_ID` —
   procedura per generarli/ottenerli in `ignored/signed_macos.md`, non versionato):
