@@ -28,6 +28,7 @@ def _app_version() -> str:
 class CartellinoApp(App):
     TITLE = "Cartellino UniSA"
     SUB_TITLE = f"v{_app_version()}"
+    CSS_PATH = "app.tcss"
 
     BINDINGS = [
         Binding("q", "quit", "Esci"),

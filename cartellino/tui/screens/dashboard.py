@@ -2,7 +2,7 @@ import logging
 from datetime import datetime, timedelta
 
 from textual.app import ComposeResult
-from textual.containers import Vertical, VerticalScroll
+from textual.containers import Horizontal, Vertical, VerticalScroll
 from textual.screen import Screen
 from textual.widgets import Button, Footer, Header, Static
 
@@ -101,11 +101,12 @@ class DashboardScreen(Screen):
 
         return [
             Vertical(*sezione_widgets),
-            Vertical(
+            Horizontal(
                 Button("Aggiorna cartellino [r]", id="btn-aggiorna"),
                 Button("Report [p]", id="btn-report"),
                 Button("Timesheet progetto [t]", id="btn-timesheet"),
                 Button("Impostazioni [s]", id="btn-impostazioni"),
+                classes="button-row",
             ),
         ]
 

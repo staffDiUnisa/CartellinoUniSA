@@ -1,0 +1,26 @@
+/* Stile globale della TUI: pulsanti blu, righe di pulsanti affiancati con un
+   minimo di spazio tra loro (vedi classe .button-row, usata da dashboard.py,
+   reports.py e folder_picker.py). */
+
+Button {
+    background: blue;
+    color: white;
+    text-style: bold;
+}
+
+Button:hover {
+    background: royalblue;
+}
+
+Button:focus {
+    background: dodgerblue;
+}
+
+.button-row {
+    height: auto;
+    width: auto;
+}
+
+.button-row Button {
+    margin-right: 1;
+}

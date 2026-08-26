@@ -1,7 +1,7 @@
 import logging
 
 from textual.app import ComposeResult
-from textual.containers import Vertical
+from textual.containers import Horizontal, Vertical
 from textual.screen import Screen
 from textual.widgets import Button, Footer, Header, RichLog, Static
 
@@ -26,10 +26,11 @@ class ReportsScreen(Screen):
             yield Static(
                 f"Formato export: {self.app.config.export_format} (modificabile in Impostazioni)"
             )
-            yield Button("Riposo compensativo", id="btn-riposo")
-            yield Button("Credito ore", id="btn-credito")
-            yield Button("Statistiche", id="btn-statistiche")
-            yield Button("Ore giornaliere", id="btn-ore-giornaliere")
+            with Horizontal(classes="button-row"):
+                yield Button("Riposo compensativo", id="btn-riposo")
+                yield Button("Credito ore", id="btn-credito")
+                yield Button("Statistiche", id="btn-statistiche")
+                yield Button("Ore giornaliere", id="btn-ore-giornaliere")
             yield RichLog(id="reports-log", wrap=True, markup=True)
         yield Footer()
 

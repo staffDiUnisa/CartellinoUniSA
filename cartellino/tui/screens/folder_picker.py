@@ -33,7 +33,7 @@ class FolderPickerScreen(ModalScreen[Optional[Path]]):
             yield Static("Seleziona una cartella (o scrivi/incolla il percorso)")
             yield Input(value=str(self._start), id="fp-input")
             yield _SoloCartelle(self._start, id="fp-tree")
-            with Horizontal():
+            with Horizontal(classes="button-row"):
                 yield Button("Conferma", id="fp-conferma", variant="primary")
                 yield Button("Annulla", id="fp-annulla")
 
