@@ -138,15 +138,27 @@ uv run pyinstaller packaging/cartellino.spec --noconfirm
   scarica e comprime ciascuna in `<asset>.zip`, poi allega gli zip come **draft** alla GitHub
   Release (pubblicazione manuale dopo revisione).
 - Chrome resta dipendenza esterna obbligatoria (Selenium non è imbottigliabile).
-- **`cartellino_tui.py` importa `pyarrow` esplicitamente all'avvio, sul thread principale.**
-  `pandas` importa `pyarrow` in modo lazy solo alla prima chiamata reale a
-  `to_feather()`/`read_feather()`; nella TUI quella prima chiamata avviene dentro il worker
-  thread del download (`UpdateScreen._scarica`, `@work(thread=True)`), non sul thread
-  principale. Riscontrato in produzione sul binario firmato/notarizzato: il primo import di
-  `pyarrow` da un thread diverso da quello principale falliva con "Import pyarrow failed", pur
-  essendo il pacchetto correttamente impacchettato (verificato con test isolati sullo stesso
-  binario — il file *è* presente, il problema è di ordine/thread di import, non di packaging).
-  Importarlo eagerly all'avvio lo inizializza una volta sola sul thread principale.
+- **`cartellino_tui.py` importa `pyarrow` esplicitamente all'avvio, sul thread principale, e
+  ripulisce `DYLD_LIBRARY_PATH`/`DYLD_FALLBACK_LIBRARY_PATH` (macOS) tramite re-exec del
+  processo prima di qualunque altro import.** Due problemi distinti riscontrati in produzione
+  sul binario firmato/notarizzato, entrambi con lo stesso sintomo ("Import pyarrow failed"):
+  1. L'import lazy di `pyarrow` fatto da `pandas` solo alla prima chiamata reale a
+     `to_feather()`/`read_feather()` avveniva dentro il worker thread del download
+     (`UpdateScreen._scarica`, `@work(thread=True)`), rendendo il vero errore difficile da
+     diagnosticare (visibile solo come messaggio breve nel log). Importarlo eagerly
+     all'avvio, sul thread principale, rende qualunque problema di import immediato e con
+     traceback completo invece che nascosto dentro un worker thread.
+  2. **Causa reale, trovata grazie al punto precedente**: su un Mac con `apache-arrow`
+     installato via Homebrew, `DYLD_LIBRARY_PATH`/`DYLD_FALLBACK_LIBRARY_PATH` (esportate da
+     Homebrew nella shell) puntano a `/opt/homebrew/lib`, facendo sì che `dyld` carichi
+     `libarrow.dylib` di sistema (stesso nome/versione nominale, ma compilata con una versione
+     diversa di Abseil) al posto di quella bundled — `ImportError: ... Symbol not found:
+     __ZN4absl...`. Riprodotto e confermato in locale impostando le stesse variabili.
+     `os.environ.pop(...)` da solo **non basta**: dyld fissa queste variabili all'avvio del
+     processo, una modifica di `os.environ` fatta da Python dopo non ha effetto retroattivo
+     (stesso errore identico anche col pop). Serve un **re-exec** (`os.execve`) con ambiente
+     ripulito, che riavvia il processo da zero senza quelle variabili fin dall'inizio —
+     verificato che risolve il problema con lo stesso identico ambiente che prima crashava.
 - **Firma e notarizzazione macOS** (job `build (macos-latest, ...)`, richiede i secrets
   `MACOS_CERTIFICATE`/`MACOS_CERTIFICATE_PWD`/`APPLE_ID`/`APPLE_ID_PASSWORD`/`APPLE_TEAM_ID` —
   procedura per generarli/ottenerli in `ignored/signed_macos.md`, non versionato):
