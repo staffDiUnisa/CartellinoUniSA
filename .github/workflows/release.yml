@@ -33,7 +33,7 @@ jobs:
       - name: Installa le dipendenze (incluso il gruppo build per PyInstaller)
         run: uv sync --group build
 
-      - name: Build eseguibile standalone (onedir: dist/cartellino-unisa/)
+      - name: "Build eseguibile standalone (onedir: dist/cartellino-unisa/)"
         run: uv run pyinstaller packaging/cartellino.spec --noconfirm
 
       - name: Comprimi la cartella onedir in un unico archivio zip
