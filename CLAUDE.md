@@ -203,9 +203,15 @@ uv run pyinstaller packaging/cartellino.spec --noconfirm
       specifico della versione Xcode/OS del runner), compilato in CI con
       `osacompile -o "Cartellino UniSA.app" packaging/macos/launcher.applescript`. Preferito a
       uno script di shell scritto a mano come `Contents/MacOS/<eseguibile>`: `osacompile` produce
-      un vero Mach-O (`Contents/MacOS/applet`), firmabile/notarizzabile con lo **stesso comando
-      `codesign`** già usato per la CLI (stessa `entitlements.plist`, stessa identity Developer ID
-      Application). L'AppleScript apre Terminale e lancia il **percorso assoluto**
+      un vero Mach-O (`Contents/MacOS/applet`), firmabile/notarizzabile con la **stessa identity**
+      Developer ID Application della CLI, ma con un **entitlements dedicato**
+      (`packaging/macos/launcher-entitlements.plist`, non `packaging/entitlements.plist`):
+      sotto hardened runtime, inviare un Apple Event (`tell application "Terminal"`) richiede
+      l'entitlement `com.apple.security.automation.apple-events`, altrimenti fallisce con
+      `Not authorised to send Apple events to Terminal. (-1743)` anche dopo che l'utente ha
+      concesso il permesso nel prompt di Automazione — riscontrato in produzione sulla
+      v2.0.2-rc1, il flag va dichiarato a livello di firma, il prompt di sistema da solo non
+      basta. L'AppleScript apre Terminale e lancia il **percorso assoluto**
       `/usr/local/cartellino-unisa/cartellino-unisa`, non il comando `cartellino-unisa` dal
       `PATH`: un Terminale aperto da Finder subito dopo l'installazione potrebbe non avere ancora
       un `PATH` aggiornato (stesso problema di profili shell che sovrascrivono `PATH` documentato

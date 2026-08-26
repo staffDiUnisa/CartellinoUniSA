@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <!-- Necessaria perché il launcher è firmato con hardened runtime e usa
+         AppleScript per controllare Terminale (`tell application "Terminal"`):
+         senza questa entitlement l'invio di un Apple Event fallisce con
+         "Not authorised to send Apple events to Terminal. (-1743)", anche
+         dopo che l'utente ha concesso il permesso di Automazione in System
+         Settings — il flag va dichiarato a livello di firma, non basta il
+         prompt di sistema. Non serve alcuna entitlement JIT/dylib (quelle di
+         packaging/entitlements.plist): questo binario è un applet AppleScript
+         compilato da osacompile, non l'eseguibile PyInstaller. -->
+    <key>com.apple.security.automation.apple-events</key>
+    <true/>
+</dict>
+</plist>

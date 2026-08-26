@@ -90,9 +90,16 @@ jobs:
         # Compilato da un sorgente AppleScript versionato (non committiamo un
         # .app binario: diff illeggibili, specifico della versione Xcode/OS
         # del runner). `osacompile` produce un vero Mach-O
-        # (Contents/MacOS/applet), firmabile con lo stesso comando `codesign`
-        # già usato per la CLI. L'Info.plist di default di osacompile ha un
-        # identifier generico (com.apple.ScriptEditor.id.*) e nessuna
+        # (Contents/MacOS/applet), firmabile con lo stesso identity Developer
+        # ID Application della CLI, ma con un file di entitlements dedicato
+        # (packaging/macos/launcher-entitlements.plist, non quello della CLI):
+        # sotto hardened runtime, inviare un Apple Event (`tell application
+        # "Terminal"`) richiede l'entitlement
+        # com.apple.security.automation.apple-events, altrimenti fallisce con
+        # "Not authorised to send Apple events... (-1743)" anche dopo il
+        # consenso dell'utente nel prompt di Automazione (riscontrato in
+        # produzione sulla v2.0.2-rc1). L'Info.plist di default di osacompile
+        # ha un identifier generico (com.apple.ScriptEditor.id.*) e nessuna
         # versione: va patchato con PlistBuddy prima della firma, dato che
         # pkgbuild non firma il payload, solo l'installer package.
         if: matrix.os == 'macos-latest'
@@ -112,7 +119,7 @@ jobs:
             || /usr/libexec/PlistBuddy -c "Add :CFBundleVersion string ${{ steps.version.outputs.value }}" "$PLIST"
 
           codesign --force --timestamp --options runtime \
-            --entitlements packaging/entitlements.plist \
+            --entitlements packaging/macos/launcher-entitlements.plist \
             --sign "Developer ID Application" \
             "build/Cartellino UniSA.app"
           codesign --verify --deep --strict --verbose=2 "build/Cartellino UniSA.app"
