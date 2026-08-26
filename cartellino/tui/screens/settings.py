@@ -1,4 +1,5 @@
 import logging
+import sys
 from datetime import datetime
 from pathlib import Path
 
@@ -52,6 +53,27 @@ class SettingsScreen(Screen):
                 allow_blank=False,
                 id="select-formato",
             )
+
+            if sys.platform == "darwin":
+                # Primo codice OS-conditional del repo Python: la scelta del terminale
+                # riguarda solo il launcher .app macOS (packaging/macos/launcher.applescript),
+                # persistita in un file separato da config.toml (cartellino/tui/macos_terminal.py)
+                # perché quel launcher gira prima di qualunque cosa Python, quindi prima
+                # dell'onboarding. Non replicare questo pattern per impostazioni Linux/Windows.
+                from cartellino.tui.macos_terminal import installed_terminal_choices, load_terminal_bundle_id
+
+                terminal_choices = installed_terminal_choices()
+                terminal_ids = {bundle_id for _, bundle_id in terminal_choices}
+                current_terminal = load_terminal_bundle_id() or "com.apple.Terminal"
+                if current_terminal not in terminal_ids:
+                    current_terminal = "com.apple.Terminal"
+                yield Label("Terminale (solo macOS)")
+                yield Select(
+                    terminal_choices,
+                    value=current_terminal,
+                    allow_blank=False,
+                    id="select-terminale-macos",
+                )
 
             yield Label("Codici eccezione dashboard (separati da virgola)")
             yield Input(value=",".join(user_config.dashboard_exception_codes), id="input-codici-eccezione")
@@ -202,6 +224,12 @@ class SettingsScreen(Screen):
             data_folder=data_folder_valore,
             output_folder=output_folder_valore,
         ).save()
+
+        if sys.platform == "darwin":
+            # File separato da config.toml (vedi commento in compose()): nessun
+            # ordinamento richiesto rispetto a UserConfig(...).save() sopra.
+            from cartellino.tui.macos_terminal import save_terminal_bundle_id
+            save_terminal_bundle_id(str(self.query_one("#select-terminale-macos", Select).value))
 
         # Scrive data_ticket.txt nella NUOVA cartella dati (Config va ricaricato per
         # avere il path corretto, dato che data_folder può essere appena cambiato).

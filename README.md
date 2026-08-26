@@ -459,9 +459,15 @@ qualunque sia il sistema operativo.
    comando `cartellino-unisa` nel `PATH`, e aggiunge **Cartellino UniSA** ad `/Applications`)
 3. **Per chi preferisce non usare il Terminale manualmente**: apri **Launchpad** o
    **Applicazioni** e fai doppio click su **Cartellino UniSA** — si aprirà automaticamente un
-   Terminale con la CLI già avviata.
+   terminale con la CLI già avviata, a schermo massimizzato, e si chiuderà da solo quando esci
+   dalla TUI.
 
-   > Al primo avvio macOS potrebbe chiedere il permesso di controllare "Terminale"
+   Al primo avvio ti viene chiesto quale terminale usare tra quelli installati (**Terminale**
+   nativo, **Ghostty**, **iTerm2** — non è invece possibile scegliere Warp: non ha alcun supporto
+   di automazione, quindi non è utilizzabile da questo launcher). La scelta viene ricordata per
+   sempre e puoi cambiarla in seguito da **Impostazioni → Terminale (solo macOS)**.
+
+   > Al primo avvio macOS potrebbe chiedere il permesso di controllare il terminale scelto
    > (**Impostazioni di Sistema → Privacy e Sicurezza → Automazione**): è una richiesta
    > standard per qualunque app che ne pilota un'altra via AppleScript, necessaria solo la
    > prima volta — concedila per continuare.

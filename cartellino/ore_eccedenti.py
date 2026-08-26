@@ -99,6 +99,35 @@ class OreEccedenti:
                     f.write(f"\t- {data_str} -> {h:02}:{m:02} [{stato}]\n")
                 f.write("_________________________________________________\n")
 
+    def riposi_markdown(self, riposi: list[RiposoCompensativo]) -> str:
+        """Stesso contenuto di `salva_testo` (usato per `riposi_compensativi.txt`), ma come
+        Markdown — un titolo con tabella per ogni riposo compensativo — per la visualizzazione
+        nella schermata Statistiche della TUI (`MarkdownViewer`), più leggibile del formato a
+        delimitatori del file di testo."""
+        from cartellino.cartellino import Cartellino
+
+        righe: list[str] = []
+        for riposo in riposi:
+            titolo = f"### Riposo compensativo {riposo.id}"
+            if riposo.data:
+                titolo += f" — usato per il {riposo.data}"
+            if riposo.ore_mancanti() > timedelta(0):
+                h = riposo.ore_mancanti().seconds // 3600
+                m = (riposo.ore_mancanti().seconds // 60) % 60
+                titolo += f" — ore necessarie al completamento: {h}:{m:02}"
+            righe.append(titolo)
+            righe.append("")
+            righe.append("| Data | Ore | Stato |")
+            righe.append("| --- | --- | --- |")
+            for ore in riposo.ore_inserite:
+                h = ore.ore.seconds // 3600
+                m = (ore.ore.seconds // 60) % 60
+                stato = "✅" if ore.stato == "ELAB P1" else "⏳"
+                data_str = Cartellino.get_date_from_string(ore.data, self.current_year).strftime("%d-%m-%Y")
+                righe.append(f"| {data_str} | {h:02}:{m:02} | {stato} |")
+            righe.append("")
+        return "\n".join(righe)
+
     # ------------------------------------------------------------------
     # Internal helpers
     # ------------------------------------------------------------------

@@ -239,6 +239,66 @@ uv run pyinstaller packaging/cartellino.spec --noconfirm
       - **Nessuna icona personalizzata** per ora: nessun asset `.icns`/logo esiste nel repo;
         l'app usa l'icona di default dell'applet AppleScript compilato (eventuale follow-up,
         fuori scope).
+      - **Chiusura automatica, scelta del terminale, finestra massimizzata** (v2.0.3):
+        `launcher.applescript` non apre più solo Terminal.app — dispatcher verso uno di tre
+        blocchi (`launchInTerminalApp`/`launchInGhostty`/`launchInITerm2`) in base a un bundle id
+        scelto dall'utente. **Warp escluso di proposito**: nessun supporto AppleScript (verificato
+        — richiesta aperta dal 2022 su GitHub, mai implementata), nessun modo di
+        lanciare/tracciare/chiudere/ridimensionare una finestra Warp via script.
+        - **Persistenza separata da `config.toml`**: `macos_terminal.txt` (stessa cartella di
+          `config.toml`, file distinto) contiene una riga col bundle id scelto — letto/scritto
+          in AppleScript senza parsing TOML, e da `cartellino/tui/macos_terminal.py` lato Python
+          (usato solo da `SettingsScreen`, campo "Terminale (solo macOS)" gated da
+          `sys.platform == "darwin"`, primo codice OS-conditional del repo Python). File separato
+          perché il picker gira **prima** di qualunque cosa Python, quindi prima dell'onboarding,
+          quando `UserConfig` non è costruibile (`current_year` obbligatorio, senza default).
+        - **`run script` per Ghostty/iTerm2, non `tell application id` diretto** — scoperta
+          critica in fase di implementazione: `osacompile` deve risolvere la terminologia
+          AppleScript di un'app (comandi non-Standard-Suite come `new window with configuration`)
+          **al momento della compilazione**, non solo a runtime. Il runner CI (`macos-latest` su
+          GitHub Actions) non ha né Ghostty né iTerm2 installati — solo Terminal.app (di sistema).
+          Un `tell application id "com.mitchellh.ghostty" to <comando specifico>` scritto
+          direttamente nel file fallirebbe quindi la compilazione in CI. Soluzione: i blocchi
+          Ghostty/iTerm2 costruiscono il proprio codice come stringa AppleScript ed eseguono con
+          `run script ... with parameters {...}` (i valori dinamici passano come parametri,
+          niente escaping manuale di quote annidate) — la risoluzione della terminologia avviene
+          così solo a runtime, sulla macchina dell'utente finale che avrà scelto quell'app solo se
+          installata. Verificato: un file che referenzia Ghostty/iTerm2 solo dentro `run script`
+          compila con `osacompile` anche senza quelle app installate.
+        - **Terminal.app**: `do script` restituisce un riferimento diretto alla tab, quindi
+          `repeat while busy of t` è un polling preciso (chiude esattamente la finestra aperta,
+          non "una finestra Terminal.app qualunque"). Massimizzazione via `bounds of front window`
+          impostato a un rettangolo volutamente più grande dello schermo reale (es.
+          `{0, 0, 4000, 4000}`): il window server clippa alle dimensioni reali, evitando di dover
+          chiedere un secondo permesso Automazione solo per interrogare Finder/System Events sulla
+          risoluzione — scelta esplicita dell'utente: "finestra massimizzata", non fullscreen
+          nativo macOS (Space dedicato), per evitare il permesso Accessibilità aggiuntivo che
+          servirebbe per simulare la scorciatoia da tastiera via System Events.
+        - **Ghostty** (AppleScript in preview da v1.3, soggetto a modifiche in v1.4): verificato a
+          mano con `sdef`/`osascript` su Ghostty realmente installato. Il dizionario NON ha un
+          `do script` atomico né un verbo "toggle_fullscreen" diretto: si crea la finestra con
+          `new window with configuration {initial input:...}` (record "surface configuration",
+          `initial input` = testo inviato al terminale come se digitato — non il campo `command`,
+          la cui semantica shell non è documentata con certezza) e si massimizza con il comando
+          generico `perform action "toggle_fullscreen" on <terminal>` (non su una "window" — va
+          ottenuto `focused terminal of (selected tab of <window>)`). Nessuna proprietà
+          "busy"/di stato del processo: l'unico modo per chiudere a fine esecuzione è appendere
+          `osascript -e 'tell application id "com.mitchellh.ghostty" to close window (front
+          window)'` alla riga di comando stessa — limite noto e accettato, potrebbe chiudere "la"
+          finestra Ghostty frontmost, non necessariamente quella aperta qui, se un'altra diventa
+          frontmost nel frattempo (non risolvibile con l'API attuale).
+        - **iTerm2**: testato a mano (non solo da documentazione) dopo l'installazione durante lo
+          sviluppo di questa feature — e la documentazione ufficiale si è rivelata fuorviante su
+          due punti concreti: (1) `create window with default profile command` **non restituisce
+          un riferimento valido alla finestra creata** (torna sempre `missing value`, bug
+          riproducibile, nonostante il dizionario dichiari `result type window`), e la proprietà
+          `current window` dell'applicazione è ugualmente inaffidabile — quindi niente polling
+          preciso su una sessione specifica come per Terminal.app, si usa lo stesso meccanismo di
+          self-close appeso al comando già usato per Ghostty, con lo stesso limite noto; (2) la
+          proprietà per "massimizzata" non è `fullscreen` (come suggerito da fonti generiche) ma
+          `zoomed` (il classico zoom del pulsante verde macOS, confermato funzionante) — avvolta
+          in un `try` comunque, per non rompere il lancio se una versione futura di iTerm2
+          cambiasse ancora nome/comportamento.
   - **Windows `.exe`**: Inno Setup (`packaging/windows/installer.iss`, compilato con `ISCC.exe`
     installato via `choco install innosetup`), payload = stessa cartella onedir. **Non firmato**
     per ora — `ignored/signed_windows.md` (non versionato) raccoglie le opzioni valutate
@@ -350,7 +410,18 @@ uv run pyinstaller packaging/cartellino.spec --noconfirm
     `FileNotFoundError` se manca `data_ticket.txt`: salta solo i fogli `ticket`/
     `statistica_ticket` (con un `log.warning`), lasciando le altre categorie utilizzabili — la
     Dashboard mostra anche una sezione "Ticket da ricevere" (righe di `ticket` con
-    `Da ricevere == 1`, dalla stessa `Statistiche`).
+    `Da ricevere == 1`, dalla stessa `Statistiche`). Un ottavo pulsante, "Riposo compensativo",
+    mostra un `MarkdownViewer` (invece della `DataTable` usata per le altre 7 categorie: il
+    contenuto — un titolo + tabella per ogni riposo compensativo — non è tabulare come le altre,
+    e il TOC del `MarkdownViewer` aiuta a saltare tra i riposi) al posto della `DataTable`
+    (`display` alternato tra i due widget). Contenuto prodotto da
+    `OreEccedenti.riposi_markdown()` (nuovo metodo, accanto a `salva_testo()` che scrive
+    `riposi_compensativi.txt`): **non** legge/riformatta quel file — richiama la stessa
+    `OreEccedenti.raggruppa()` con la stessa logica di scelta `riposi_usati` (`cfg.min_date` →
+    `get_date_usate_from_src`, altrimenti `get_date_usate_from_file`) già usata da
+    `CartellinoProcessor.run` per il report `"riposo"`, così questa vista resta sempre coerente
+    con le stesse regole del report anche se quest'ultimo cambia, senza doverle duplicare o
+    disallinearsi da un file scritto in un momento diverso.
   - Nota implementativa: `DashboardScreen.on_screen_resume`/`_build_body` ricostruiscono i
     widget con `Vertical(*children)` (costruttore diretto), non con `with Vertical(): yield ...`
     — quel pattern di composizione funziona solo dentro una vera chiamata a `compose()` (si
