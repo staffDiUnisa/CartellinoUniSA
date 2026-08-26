@@ -38,6 +38,23 @@ espone `webdriver.Chrome` con un meccanismo che l'analisi statica di PyInstaller
 segue (riscontrato in produzione: `ModuleNotFoundError: No module named
 'selenium.webdriver.chrome.webdriver'` all'avvio del download nel binario
 impacchettato), quindi vanno dichiarati esplicitamente qui sotto.
+
+Stesso identico problema per `textual.widgets`: nessun hook PyInstaller esiste per
+`textual` (né in `_pyinstaller_hooks_contrib` né bundled col pacchetto stesso).
+`textual/widgets/__init__.py` espone le classi widget (es. `MarkdownViewer`) tramite
+un `__getattr__` a livello di modulo (PEP 562, lazy loading per ridurre lo startup
+time) che fa `import_module(f"._{camel_to_snake(nome_classe)}", package="textual.widgets")`
+— invisibile all'analisi statica di PyInstaller esattamente come per `selenium`.
+La maggior parte dei widget già usati nella TUI (`DataTable`, `Select`, `Switch`,
+`MaskedInput`, `RichLog`, `DirectoryTree`, ecc.) risultano comunque raggiungibili
+per qualche altro percorso di import (interno a Textual stesso) e non hanno mai
+richiesto una dichiarazione esplicita — ma `MarkdownViewer` (introdotto per la vista
+"Riposo compensativo" in Statistiche) no: riscontrato in produzione
+`ModuleNotFoundError: No module named 'textual.widgets._markdown_viewer'`
+all'apertura della schermata Statistiche nel binario impacchettato. Qualunque nuovo
+widget Textual introdotto in futuro va verificato allo stesso modo (build reale +
+uso della schermata che lo usa) prima di assumere che funzioni nel binario
+impacchettato solo perché funziona in `uv run`.
 """
 
 from pathlib import Path
@@ -53,6 +70,8 @@ hiddenimports = [
     "selenium.webdriver.chrome.webdriver",
     "selenium.webdriver.chrome.options",
     "selenium.webdriver.chrome.service",
+    "textual.widgets._markdown",
+    "textual.widgets._markdown_viewer",
 ]
 
 a = Analysis(  # noqa: F821
