@@ -238,6 +238,34 @@ Bug trovati e corretti, nessuno riproducibile con una build/esecuzione locale no
    `os.environ.pop(...)` non bastava (dyld fissa queste variabili all'avvio del processo): serve
    un **re-exec** (`os.execve`) con ambiente ripulito.
 
+### Estensione post-v2.0.0 — installer nativi per OS ✅
+
+Oltre agli zip onedir sopra (che restano invariati), aggiunto un vero installer per piattaforma,
+riusando la stessa cartella prodotta da PyInstaller come payload:
+
+- [x] **macOS `.pkg`**: `pkgbuild` con un **secondo certificato**, "Developer ID Installer"
+      (distinto da "Developer ID Application" usato per l'eseguibile — procedura per generarlo
+      aggiunta a `ignored/signed_macos.md`; secrets `MACOS_INSTALLER_CERTIFICATE`/
+      `MACOS_INSTALLER_CERTIFICATE_PWD`), notarizzato separatamente e **staplato** — a differenza
+      dell'eseguibile sciolto, il `.pkg` è un formato supportato dallo stapler. `postinstall`
+      (`packaging/macos/postinstall`) crea il symlink `/usr/local/bin/cartellino-unisa`.
+- [x] **Windows `.exe`**: installer Inno Setup (`packaging/windows/installer.iss`, compilato con
+      `ISCC.exe`). **Non firmato** per ora — `ignored/signed_windows.md` (non versionato)
+      raccoglie le opzioni valutate (OV/EV/SignPath.io) e le istruzioni concrete per il percorso
+      OV, da seguire quando/se si deciderà di procedere.
+- [x] **Linux `.deb`/`.rpm`**: `fpm`, un solo comando per formato dalla stessa cartella onedir
+      mappata su `/opt/cartellino-unisa/`; `postinstall.sh` (`packaging/linux/postinstall.sh`)
+      crea lo stesso symlink in `/usr/local/bin`, stesso schema del `.pkg` macOS.
+- [x] Versione per tutti e tre gli strumenti estratta dal **tag git**, non da `pyproject.toml`
+      (più robusto in CI). Nel job `release`, i quattro nuovi artifact (file singoli già pronti)
+      vengono copiati direttamente senza passare dallo step di compressione zip.
+- [x] `README.md`/`CLAUDE.md` aggiornati con le istruzioni utente e le note tecniche.
+
+**Verificato con build reali su tag di prova** (`v2.0.1-rc1`, poi eliminato) e pubblicato in
+`v2.0.1`. Un bug trovato solo grazie alla run CI reale: `gem install fpm` falliva con
+`Gem::FilePermissionError` sul runner `ubuntu-latest` (l'utente non privilegiato non ha permessi
+di scrittura su `/var/lib/gems`) — risolto con `sudo gem install`.
+
 ## Fase 7 — Rilascio v2.0.0 ✅
 
 - [x] Bump versione a `2.0.0` in `pyproject.toml`
