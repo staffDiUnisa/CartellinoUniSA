@@ -72,4 +72,4 @@ class CartellinoProcessor:
 
     @classmethod
     def from_env(cls, data_folder: Path = Path("data")) -> "CartellinoProcessor":
-        return cls(config=Config.from_env(data_folder=data_folder))
+        return cls(config=Config.load(data_folder=data_folder))

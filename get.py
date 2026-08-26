@@ -1,4 +1,3 @@
-import os
 import socket
 import time
 from datetime import datetime
@@ -6,7 +5,6 @@ from io import StringIO
 from pathlib import Path
 
 import pandas as pd
-from dotenv import load_dotenv
 from selenium import webdriver
 from selenium.common import TimeoutException
 from selenium.webdriver.chrome.options import Options
@@ -16,7 +14,8 @@ from webdriver_manager.chrome import ChromeDriverManager
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
 
-load_dotenv()
+from cartellino.config import Config
+from cartellino.credentials import get_credentials
 
 def multiselect_set_selections(driver, element_name, labels) -> None:
     el = driver.find_element(By.NAME, element_name)
@@ -49,14 +48,12 @@ def scegli_metodo_autenticazione() -> str:
         print("Scelta non valida, riprova.")
 
 def ottieni_cartellino(data_folder:Path) -> None:
-    current_year = int(os.environ["CURRENT_YEAR"])
+    config = Config.load(data_folder=data_folder)
+    current_year = config.current_year
     start_date = datetime(year=current_year, month=1, day=1)
     end_date = datetime(year=current_year, month=12, day=31)
-    output_folder = data_folder / str(current_year) / 'input'
-    headless = os.getenv("HEADLESS") == "True"
-    if not output_folder.exists():
-        output_folder.mkdir(parents=True, exist_ok=True)
-    output_file = output_folder / 'cartellino.xlsx'
+    headless = config.headless
+    output_file = config.input_folder / 'cartellino.feather'
 
     metodo = scegli_metodo_autenticazione()
 
@@ -71,12 +68,19 @@ def ottieni_cartellino(data_folder:Path) -> None:
         driver.get("https://presenze.unisa.it/")
 
         if metodo == "Credenziali UNISA":
+            credentials = get_credentials()
+            if credentials is None:
+                raise RuntimeError(
+                    "Credenziali UNISA non configurate. Impostale nel keyring di sistema "
+                    "(cartellino.credentials.set_credentials) oppure tramite il file '.env' legacy."
+                )
+            username_value, password_value = credentials
             driver.find_element(By.LINK_TEXT, "Credenziali UNISA").click()
             time.sleep(1)
             username = driver.find_element(By.ID, "_username")
-            username.send_keys(os.environ["USERNAME"])
+            username.send_keys(username_value)
             password = driver.find_element(By.ID, "password")
-            password.send_keys(os.environ["PASSWORD"])
+            password.send_keys(password_value)
             driver.find_element(By.NAME, "_eventId_proceed").click()
             time.sleep(10)
         else:
@@ -116,19 +120,8 @@ def ottieni_cartellino(data_folder:Path) -> None:
             table = StringIO(table)
             df.extend(pd.read_html(table))
         df = pd.concat(df, ignore_index=True)
-        with pd.ExcelWriter(output_file, engine="xlsxwriter") as writer:
-            df.to_excel(writer, index=False, sheet_name="Sheet1")
-            worksheet = writer.sheets["Sheet1"]
-            for i, col in enumerate(df.columns):
-                series = df[col].astype(str)
-                data_max = int(series.str.len().fillna(0).max()) if len(series) > 0 else 0
-                worksheet.set_column(i, i, max(data_max, len(str(col))) + 2)
-            n_rows, n_cols = df.shape
-            if n_rows > 0 and n_cols > 0:
-                worksheet.add_table(
-                    0, 0, n_rows, n_cols - 1,
-                    {"columns": [{"header": str(c)} for c in df.columns], "style": "Table Style Medium 9"},
-                )
+        df.reset_index(drop=True).to_feather(output_file)
+        print(f"Cartellino salvato in '{output_file}'")
     except TimeoutException as e:
         print(f"Timeout {e}")
     finally:

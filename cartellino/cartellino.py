@@ -27,14 +27,41 @@ class Cartellino:
     # ------------------------------------------------------------------
 
     @classmethod
-    def from_excel(cls, path: Path, year: int) -> "Cartellino":
-        df = pd.read_excel(path)
+    def _from_raw(cls, df: pd.DataFrame, year: int) -> "Cartellino":
+        df = df.copy()
         df["Voci Base"] = df["Voci Base"].str.split(_VOCI_SEP)
         df["date"] = df["Data"].apply(lambda x: cls.get_date_from_string(x, year))
         df = df.explode("Voci Base")
         df["Voci Base"] = df["Voci Base"].fillna("____")
         df["Codice"] = df["Voci Base"].apply(cls.extract_codice)
         return cls(df=df, year=year)
+
+    @classmethod
+    def from_excel(cls, path: Path, year: int) -> "Cartellino":
+        return cls._from_raw(pd.read_excel(path), year)
+
+    @classmethod
+    def from_feather(cls, path: Path, year: int) -> "Cartellino":
+        return cls._from_raw(pd.read_feather(path), year)
+
+    @classmethod
+    def load(cls, feather_path: Path, legacy_excel_path: Path, year: int) -> "Cartellino":
+        """Legge il cartellino grezzo da Feather (formato primario, Fase 3 TODO.md).
+
+        Se il Feather non esiste ancora ma è presente un `cartellino.xlsx` legacy,
+        esegue una migrazione one-shot: legge l'xlsx e riscrive subito il Feather,
+        così le esecuzioni successive non toccano più l'xlsx.
+        """
+        if feather_path.exists():
+            return cls.from_feather(feather_path, year)
+        if not legacy_excel_path.exists():
+            raise FileNotFoundError(
+                f"Nessun cartellino trovato né in '{feather_path}' né in '{legacy_excel_path}'."
+            )
+        raw = pd.read_excel(legacy_excel_path)
+        raw.reset_index(drop=True).to_feather(feather_path)
+        print(f"Migrazione una tantum: '{legacy_excel_path}' -> '{feather_path}'")
+        return cls._from_raw(raw, year)
 
     # ------------------------------------------------------------------
     # Static helpers
@@ -136,4 +163,8 @@ class Cartellino:
 
     @classmethod
     def from_config(cls, config: Config) -> "Cartellino":
-        return cls.from_excel(config.input_folder / "cartellino.xlsx", config.current_year)
+        return cls.load(
+            feather_path=config.input_folder / "cartellino.feather",
+            legacy_excel_path=config.input_folder / "cartellino.xlsx",
+            year=config.current_year,
+        )

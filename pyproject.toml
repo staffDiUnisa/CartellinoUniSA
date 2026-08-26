@@ -54,6 +54,7 @@ dependencies = [
     "keyring",
     "platformdirs",
     "pyarrow",
+    "tomli-w",
 ]
 
 [tool.uv]

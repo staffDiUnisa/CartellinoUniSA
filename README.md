@@ -39,6 +39,51 @@ mise run install   # equivalente a: uv sync (installa le dipendenze da pyproject
 
 ## ⚙️ Configurazione
 
+### `cartellino_v2.py` — credenziali nel keyring del SO + `config.toml`
+
+A partire dalla v2.0.0, `cartellino_v2.py` non usa più `.env`: la configurazione è salvata in un
+file `config.toml` nella cartella di configurazione standard del sistema operativo (via
+`platformdirs`), e le credenziali UniSA nel **keyring nativo del SO** (Keychain su macOS,
+Credential Manager su Windows, Secret Service/kwallet su Linux).
+
+**Se hai già un `.env` da una versione precedente**, non serve fare nulla: al primo avvio di
+`cartellino_v2.py` (o `get.py`) viene eseguita una **migrazione automatica one-shot** che crea
+`config.toml`, salva le credenziali nel keyring, e stampa un messaggio che conferma la migrazione
+e consiglia di eliminare il vecchio `.env`.
+
+**Per una configurazione da zero**, senza `.env`, puoi creare `config.toml` e le credenziali
+programmaticamente:
+
+```bash
+uv run python -c "
+from cartellino.user_config import UserConfig
+from cartellino.credentials import set_credentials
+
+UserConfig(current_year=2025, min_date_riposi_usati='01-01', headless=False).save()
+set_credentials('mario.rossi@unisa.it', 'TuaPassword')
+"
+```
+
+(la Fase 4 della roadmap v2.0.0 prevede una schermata di onboarding nella TUI che farà questo
+passo in modo interattivo, senza bisogno di eseguire codice a mano)
+
+Campi di `config.toml`:
+
+| Campo | Obbligatorio | Descrizione |
+|-------|:---:|---------|
+| `current_year` | ✅ | Anno di elaborazione |
+| `min_date_riposi_usati` | ❌ | Data minima (`MM-DD`) per contare i riposi SRC già fruiti. Se mancante viene usato `riposi_usati.txt` |
+| `headless` | ❌ | `true` per avviare Chrome in modalità headless (solo con Credenziali UNISA) |
+| `export_format` | ❌ | Formato di export dei report (`xlsx`/`csv`, default `xlsx`) — usato dalla Fase 3 in poi |
+| `dashboard_exception_codes` | ❌ | Codici per la sezione "eccezioni" della dashboard (Fase 4), default `["ERIT", "SCN"]` |
+| `dashboard_balance_codes` | ❌ | Codici per il saldo ore mensile della dashboard (Fase 4), default `["CRE", "OE-DIU", "SCN"]` |
+
+Username e password si impostano **solo** tramite `set_credentials` (keyring), non in `config.toml`.
+
+### `main.py` — versione legacy (`.env`)
+
+Il percorso legacy (`main.py`/`process.py`) continua a usare `.env`:
+
 ```bash
 cp env.template .env
 ```
@@ -60,6 +105,10 @@ HEADLESS=False                    # True per browser invisibile (solo con Creden
 | `USERNAME` | Solo con Credenziali UNISA | Email UniSA |
 | `PASSWORD` | Solo con Credenziali UNISA | Password account UniSA |
 | `HEADLESS` | ❌ | `True` per avviare Chrome in modalità headless (solo con Credenziali UNISA) |
+
+> `.env` resta valido anche per `cartellino_v2.py`: se non esiste ancora `config.toml`, viene
+> usato per la migrazione automatica one-shot descritta sopra (o come fallback puro se manca
+> anche un backend keyring disponibile, es. Linux headless senza Secret Service).
 
 ## 💻 Utilizzo
 
@@ -114,7 +163,9 @@ CartellinoUniSA/
 └── data/v2/
     └── {anno}/
         ├── input/
-        │   ├── cartellino.xlsx        ← scaricato da get.py
+        │   ├── cartellino.feather     ← scaricato da get.py (formato primario, Feather/pyarrow)
+        │   ├── cartellino.xlsx        ← solo legacy: se presente e manca il .feather, viene
+        │   │                            migrato automaticamente una tantum al primo avvio
         │   ├── date_escluse.txt       ← date da escludere/ridurre dal calcolo OE
         │   ├── riposi_usati.txt       ← fallback per riposi già fruiti (se no MIN_DATE)
         │   └── data_ticket.txt        ← data da cui i ticket sono stati pagati

@@ -84,35 +84,44 @@ presenti nel cartellino per quei codici — nessuna proiezione futura richiesta.
 - [x] Aggiornare eventuale CI esistente per usare `mise`/`uv` invece di `pip`
       (nessuna CI esistente nel repo, nulla da migrare)
 
-## Fase 2 — Credenziali sicure (OS keyring) + config utente
+## Fase 2 — Credenziali sicure (OS keyring) + config utente ✅
 
-- [ ] Modulo `cartellino/credentials.py` con `keyring.set_password`/`get_password`
-      (service name dedicato, es. `"cartellino-unisa"`) per USERNAME/PASSWORD UniSA
-- [ ] File di config TOML in cartella utente standard (via `platformdirs`) per:
-      `CURRENT_YEAR`, `MIN_DATE_RIPOSI_USATI`, `HEADLESS`, **formato di export** (xlsx/csv,
-      default xlsx), **codici eccezione dashboard** (default `["ERIT", "SCN"]`), **codici saldo
-      mensile** (default `["CRE", "OE-DIU", "SCN"]`)
-- [ ] Import automatico da `.env` legacy alla prima esecuzione v2 (offerto da TUI), con
-      raccomandazione di eliminare `.env` dopo la migrazione
-- [ ] Aggiornare `get.py` / `cartellino/config.py` per leggere da keyring/config
-- [ ] Aggiornare `env.template`, `README.md`, `CLAUDE.md`
+- [x] Modulo `cartellino/credentials.py` con `keyring.set_password`/`get_password`
+      (service name dedicato, `"cartellino-unisa"`) per USERNAME/PASSWORD UniSA
+- [x] File di config TOML in cartella utente standard (via `platformdirs`,
+      `cartellino/user_config.py::UserConfig`) per: `current_year`, `min_date_riposi_usati`,
+      `headless`, **formato di export** (xlsx/csv, default xlsx), **codici eccezione dashboard**
+      (default `["ERIT", "SCN"]`), **codici saldo mensile** (default `["CRE", "OE-DIU", "SCN"]`)
+- [x] Import automatico da `.env` legacy alla prima esecuzione v2
+      (`migrate_from_env_if_needed`, invocato da `Config.load()`), con raccomandazione di
+      eliminare `.env` dopo la migrazione. Nota: l'"offerto da TUI" del testo originale diventa
+      "automatico e silenzioso" finché la TUI (Fase 4) non esiste ancora
+- [x] Aggiornare `get.py` / `cartellino/config.py` per leggere da keyring/config
+      (`Config.load()`, con fallback su `Config.from_env()` se manca sia `config.toml` che `.env`)
+- [x] Aggiornare `env.template`, `README.md`, `CLAUDE.md`
 
-## Fase 3 — Storage dati: Feather per l'import, xlsx/csv solo on-demand
+## Fase 3 — Storage dati: Feather per l'import, xlsx/csv solo on-demand (parziale) ✅
 
-- [ ] `get.py`: dopo lo scraping, salvare il DataFrame grezzo in
+- [x] `get.py`: dopo lo scraping, salvare il DataFrame grezzo in
       `data/v2/{anno}/input/cartellino.feather` (via `df.to_feather`) invece di scrivere
       direttamente `cartellino.xlsx`
-- [ ] `cartellino/cartellino.py`: generalizzare `Cartellino.from_excel` in un metodo che legge
-      Feather come formato primario (`Cartellino.from_feather` o `Cartellino.load`), con
-      fallback di migrazione one-shot da un `cartellino.xlsx` legacy se il Feather non esiste
+- [x] `cartellino/cartellino.py`: generalizzato `Cartellino.from_excel`/`from_feather`/`load`,
+      con fallback di migrazione one-shot da un `cartellino.xlsx` legacy se il Feather non esiste
 - [ ] Tutte le pipeline di output (`Cartellino.salva`, `OreEccedenti.salva_dettaglio`,
       `salva_testo`, `CreditoOre.salva`, `Statistiche.salva`) smettono di scrivere
       automaticamente su disco ad ogni esecuzione: restano metodi disponibili, ma vengono
       invocati **on demand** dalla TUI/CLI (un'azione per report), nel formato scelto in
       Impostazioni (xlsx o csv — per csv, un file per foglio dove il report è multi-sheet)
-- [ ] Helper condiviso per estrarre ore da "Voci Base" dato un elenco di codici
-      (generalizzazione del pattern regex oggi in `OreEccedenti._elabora`), riusato per il
-      saldo mensile dashboard
+
+      **Deciso di rimandare** questo punto a quando esisteranno TUI (Fase 4) o CLI con flag per
+      report singolo (Fase 5): oggi `cartellino_v2.py` è l'unico entrypoint utilizzabile, e
+      disaccoppiare la scrittura automatica ora lo renderebbe silenzioso/inutile senza un modo
+      per invocare i report singolarmente. `Config.export_format` esiste già lato config per
+      quando questo punto verrà ripreso.
+- [x] Helper condiviso per estrarre ore da "Voci Base" dato un elenco di codici
+      (`cartellino/ore_helpers.py::estrai_ore_minuti`/`somma_ore_per_codici`, generalizzazione del
+      pattern regex prima duplicato in `OreEccedenti._elabora`), riusabile per il saldo mensile
+      dashboard (Fase 4)
 
 ## Fase 4 — Fondamenta TUI con Textual
 

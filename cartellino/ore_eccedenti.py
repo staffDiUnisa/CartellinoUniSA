@@ -5,6 +5,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
+from cartellino.ore_helpers import estrai_ore_minuti
 from model.ore_inserite import OreInserite
 from model.riposo_compensativo import RiposoCompensativo
 
@@ -109,12 +110,9 @@ class OreEccedenti:
             [print(d) for d in excluded]
             df = df[~df["date"].isin([d["data"] for d in excluded if not d["has_time"]])]
 
-        df["ore eccedenti"] = df["Voci Base"].apply(
-            lambda v: int(re.search(r'\d\d\.', v).group()[:-1])
-        )
-        df["minuti eccedenti"] = df["Voci Base"].apply(
-            lambda v: int(re.search(r'\.\d\d', v).group()[1:])
-        )
+        ore_minuti = df["Voci Base"].apply(estrai_ore_minuti)
+        df["ore eccedenti"] = ore_minuti.apply(lambda x: x[0])
+        df["minuti eccedenti"] = ore_minuti.apply(lambda x: x[1])
 
         for d in excluded:
             if d["has_time"]:

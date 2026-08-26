@@ -14,7 +14,6 @@ al posto di `pip`/`venv`. Dipendenze dichiarate in `pyproject.toml`, risolte in 
 ```bash
 mise install   # installa Python 3.12 e uv secondo .mise.toml
 mise run install   # equivalente a: uv sync
-cp env.template .env  # then edit with credentials
 ```
 
 Per eseguire lo script principale:
@@ -25,10 +24,29 @@ mise run app        # equivalente a: uv run python cartellino_v2.py
 uv run python cartellino_v2.py
 ```
 
-Required `.env` variables:
+### Credenziali e configurazione (`cartellino_v2.py` / pacchetto `cartellino/`)
+
+A partire dalla Fase 2 del TODO (v2.0.0), il percorso `cartellino_v2.py` legge la configurazione
+da `config.toml` (cartella utente standard via `platformdirs`, `Config.load()` /
+`cartellino/user_config.py`) e le credenziali UniSA dal **keyring nativo del SO** (libreria
+`keyring`, service name `"cartellino-unisa"`, vedi `cartellino/credentials.py`), non più da `.env`.
+
+Alla prima esecuzione, se non esiste ancora `config.toml` ma è presente un `.env` legacy con le
+variabili sotto, viene eseguita una **migrazione automatica one-shot**
+(`cartellino/user_config.py::migrate_from_env_if_needed`): `config.toml` viene creato e le
+credenziali salvate nel keyring; il messaggio a schermo consiglia poi di eliminare `.env`.
+
+Variabili `.env` legacy (usate solo per la migrazione, o come fallback puro se non è disponibile
+né `config.toml` né un backend keyring):
 - `USERNAME` / `PASSWORD` — UniSA credentials
 - `CURRENT_YEAR` — year to process (e.g. `2025`)
 - `MIN_DATE_RIPOSI_USATI` — cutoff date in `MM-DD` format for counting used compensatory rests
+- `HEADLESS` — `True` per Chrome headless (solo login Credenziali UNISA)
+
+Il vecchio percorso `main.py` / `process.py` (legacy, vedi sotto) continua a leggere `CURRENT_YEAR`
+e `MIN_DATE_RIPOSI_USATI` direttamente da `.env`/env vars: non è stato migrato a `config.toml`,
+perché fuori dallo scope della roadmap v2.0.0 (che riguarda solo `cartellino_v2.py` e il pacchetto
+`cartellino/`).
 
 ## Running
 
@@ -55,6 +73,26 @@ Download requires UniSA network access and Chrome Beta at `/Applications/Google 
 
 **`model/`** — Pydantic models: `RiposoCompensativo` (groups overtime entries toward a 7h12m threshold) and `OreInserite` (single day's overtime contribution).
 
+### Pacchetto `cartellino/` (percorso `cartellino_v2.py`, v2.0.0 in corso)
+
+- **`cartellino/credentials.py`** — wrapper sottile su `keyring` per le credenziali UniSA
+  (`get_credentials`/`set_credentials`/`delete_credentials`, service `"cartellino-unisa"`).
+- **`cartellino/user_config.py`** — dataclass `UserConfig` (letta/scritta come TOML in
+  `platformdirs.user_config_dir("cartellino-unisa")/config.toml`, via `tomllib`/`tomli_w`) e
+  `migrate_from_env_if_needed` per la migrazione one-shot da `.env` legacy.
+- **`cartellino/config.py`** — `Config.load()` è il punto d'ingresso principale: usa
+  `UserConfig`/migrazione, con fallback su `Config.from_env()` (puro `.env`/env vars) se non c'è
+  né `config.toml` né `.env` valido (utile per CI/ambienti scriptati).
+- **`cartellino/cartellino.py`** — `Cartellino.load()` legge il cartellino grezzo da **Feather**
+  (`cartellino.feather`, formato primario, via `pd.read_feather`/`to_feather`) invece che da xlsx;
+  se il Feather non esiste ma c'è un `cartellino.xlsx` legacy, esegue una migrazione one-shot
+  (legge l'xlsx, riscrive subito il Feather) così le esecuzioni successive non toccano più l'xlsx.
+  `get.py` (funzione `ottieni_cartellino`) scrive direttamente in Feather dopo lo scraping.
+- **`cartellino/ore_helpers.py`** — `estrai_ore_minuti`/`somma_ore_per_codici`: helper condiviso
+  per estrarre ore/minuti dal pattern `HH.MM` di "Voci Base", generalizzato da quanto usato in
+  `OreEccedenti._elabora` per `OE-DIU`; riusabile per qualunque codice con lo stesso formato
+  (es. `SCN`, `CRE` per il saldo mensile della dashboard, Fase 4).
+
 ## Data flow
 
 ```
@@ -71,6 +109,12 @@ data/{year}/output/statistiche.xlsx     ← multi-sheet: tickets, overtime, sick
 data/{year}/output/ore_giornaliere.xlsx
 data/{year}/output/ore_svolte_per_giorno/{MM}_{month}.xlsx
 ```
+
+Il diagramma sopra descrive il percorso legacy (`main.py`/`process.py`). Il percorso
+`cartellino_v2.py` (`data/v2/{year}/...`) usa lo stesso schema di output, ma per l'input usa
+**`data/v2/{year}/input/cartellino.feather`** come formato primario (vedi `Cartellino.load()`
+sopra); `cartellino.xlsx` nella stessa cartella è supportato solo come sorgente legacy per la
+migrazione one-shot al primo avvio.
 
 ## Key codes in the cartellino
 
