@@ -104,7 +104,7 @@ class DashboardScreen(Screen):
             Horizontal(
                 Button("Aggiorna cartellino [r]", id="btn-aggiorna"),
                 Button("Genera report [p]", id="btn-report"),
-                Button("Timesheet progetto [t]", id="btn-timesheet"),
+                Button("Genera timesheet [t]", id="btn-timesheet"),
                 Button("Impostazioni [s]", id="btn-impostazioni"),
                 classes="button-row",
             ),
