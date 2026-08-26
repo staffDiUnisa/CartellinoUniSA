@@ -100,24 +100,21 @@ presenti nel cartellino per quei codici — nessuna proiezione futura richiesta.
       (`Config.load()`, con fallback su `Config.from_env()` se manca sia `config.toml` che `.env`)
 - [x] Aggiornare `env.template`, `README.md`, `CLAUDE.md`
 
-## Fase 3 — Storage dati: Feather per l'import, xlsx/csv solo on-demand (parziale) ✅
+## Fase 3 — Storage dati: Feather per l'import, xlsx/csv solo on-demand ✅
 
 - [x] `get.py`: dopo lo scraping, salvare il DataFrame grezzo in
       `data/v2/{anno}/input/cartellino.feather` (via `df.to_feather`) invece di scrivere
       direttamente `cartellino.xlsx`
 - [x] `cartellino/cartellino.py`: generalizzato `Cartellino.from_excel`/`from_feather`/`load`,
       con fallback di migrazione one-shot da un `cartellino.xlsx` legacy se il Feather non esiste
-- [ ] Tutte le pipeline di output (`Cartellino.salva`, `OreEccedenti.salva_dettaglio`,
-      `salva_testo`, `CreditoOre.salva`, `Statistiche.salva`) smettono di scrivere
-      automaticamente su disco ad ogni esecuzione: restano metodi disponibili, ma vengono
-      invocati **on demand** dalla TUI/CLI (un'azione per report), nel formato scelto in
-      Impostazioni (xlsx o csv — per csv, un file per foglio dove il report è multi-sheet)
-
-      **Deciso di rimandare** questo punto a quando esisteranno TUI (Fase 4) o CLI con flag per
-      report singolo (Fase 5): oggi `cartellino_v2.py` è l'unico entrypoint utilizzabile, e
-      disaccoppiare la scrittura automatica ora lo renderebbe silenzioso/inutile senza un modo
-      per invocare i report singolarmente. `Config.export_format` esiste già lato config per
-      quando questo punto verrà ripreso.
+- [x] Tutte le pipeline di output (`Cartellino.salva`, `OreEccedenti.salva_dettaglio`,
+      `salva_testo`, `CreditoOre.salva`, `Statistiche.salva`) restano metodi disponibili,
+      invocati **on demand** (un'azione per report), nel formato scelto in Impostazioni (xlsx o
+      csv — per csv, un file per foglio dove il report è multi-sheet). Chiuso sia lato TUI
+      (`ReportsScreen`, Fase 4) sia lato CLI (`cartellino_v2.py --solo-report
+      cartellino,riposo,credito,statistiche,ore-giornaliere`, Fase 5/6):
+      `CartellinoProcessor.run(reports=...)` genera solo i report richiesti — `None` (default)
+      continua a generarli tutti, comportamento storico invariato per gli usi già scriptati.
 - [x] Helper condiviso per estrarre ore da "Voci Base" dato un elenco di codici
       (`cartellino/ore_helpers.py::estrai_ore_minuti`/`somma_ore_per_codici`, generalizzazione del
       pattern regex prima duplicato in `OreEccedenti._elabora`), riusabile per il saldo mensile
@@ -162,7 +159,8 @@ timesheet progetto direttamente dalla TUI (oggi resta un'operazione manuale sul 
 ## Fase 5 — Parità funzionale CLI non interattiva ✅
 
 - [x] Entrypoint CLI (Typer) con flag equivalenti (`--no-aggiorna-cartellino`,
-      `--timesheet-progetto`, `--auth-method {unisa,spid,cie}`, `--export-format {xlsx,csv}`)
+      `--timesheet-progetto`, `--auth-method {unisa,spid,cie}`, `--export-format {xlsx,csv}`,
+      `--solo-report {cartellino,riposo,credito,statistiche,ore-giornaliere}`)
 - [x] CLI e TUI condividono le stesse funzioni di dominio e lo stesso storage
       credenziali/config/dati (Fasi 2-3) — `timesheet_runner.py`/`export_utils.py` (Fase 4) già
       usati da entrambe; `CartellinoProcessor.run()` ora passa `cfg.export_format` ai 4 report

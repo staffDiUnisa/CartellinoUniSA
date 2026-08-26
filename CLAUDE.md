@@ -28,10 +28,15 @@ Flag non interattivi (`cartellino_v2.py`, nessun prompt se specificati): `--aggi
 `--no-aggiorna-cartellino`, `--auth-method {unisa,spid,cie}` (passato a
 `get.ottieni_cartellino(metodo=...)`, bypassa `scegli_metodo_autenticazione()`),
 `--export-format {xlsx,csv}` (sovrascrive `Config.export_format` per questa sola esecuzione,
-senza toccare `config.toml`), `--timesheet-progetto`. `CartellinoProcessor.run()` passa
-`cfg.export_format` ai quattro report configurabili (riposo compensativo, credito ore,
-statistiche, ore giornaliere) tramite `cartellino/export_utils.py::save_sheets` — condiviso con
-la TUI, insieme a `cartellino/timesheet_runner.py` per `--timesheet-progetto`.
+senza toccare `config.toml`), `--solo-report` (comma-separated tra
+`cartellino/processor.py::REPORT_KEYS` = `cartellino,riposo,credito,statistiche,ore-giornaliere`;
+omesso = tutti, comportamento storico invariato), `--timesheet-progetto`.
+`CartellinoProcessor.run(reports=...)` genera solo i report richiesti (`None` = tutti) e passa
+`cfg.export_format` ai quattro configurabili (riposo compensativo, credito ore, statistiche, ore
+giornaliere) tramite `cartellino/export_utils.py::save_sheets` — condiviso con la TUI
+(`ReportsScreen`, che invoca un report alla volta allo stesso modo), insieme a
+`cartellino/timesheet_runner.py` per `--timesheet-progetto`. Chiude il punto lasciato aperto in
+Fase 3 TODO.md (scrittura report "on demand" anche lato CLI, non solo TUI).
 
 Per la TUI (Fase 4 TODO v2.0.0, entrypoint consigliato, vedi sezione dedicata sotto):
 

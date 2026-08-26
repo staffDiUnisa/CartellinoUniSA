@@ -175,6 +175,9 @@ uv run python cartellino_v2.py --aggiorna-cartellino --auth-method spid
 # Genera i report in CSV invece di xlsx (default: quello configurato in config.toml/Impostazioni TUI)
 uv run python cartellino_v2.py --no-aggiorna-cartellino --export-format csv
 
+# Genera solo alcuni report (default: tutti)
+uv run python cartellino_v2.py --no-aggiorna-cartellino --solo-report statistiche,credito
+
 # Genera anche il timesheet di progetto (vedi sezione dedicata)
 uv run python cartellino_v2.py --no-aggiorna-cartellino --timesheet-progetto mio_progetto.yaml
 ```
@@ -184,6 +187,7 @@ uv run python cartellino_v2.py --no-aggiorna-cartellino --timesheet-progetto mio
 | `--aggiorna-cartellino`/`--no-aggiorna-cartellino` | flag | Scarica i dati aggiornati oppure usa solo quelli già presenti; se omesso, viene chiesto a schermo |
 | `--auth-method` | `unisa`, `spid`, `cie` | Metodo di autenticazione per il download; se omesso e il download è attivo, viene chiesto a schermo |
 | `--export-format` | `xlsx`, `csv` | Formato dei report generati; se omesso usa quello configurato (default `xlsx`) |
+| `--solo-report` | `cartellino`, `riposo`, `credito`, `statistiche`, `ore-giornaliere` (separati da virgola) | Genera solo i report indicati; se omesso li genera tutti |
 | `--timesheet-progetto` | nome file YAML | Genera anche il timesheet di progetto (vedi sezione dedicata) |
 
 ### `main.py` — versione legacy

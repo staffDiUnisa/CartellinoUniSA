@@ -12,6 +12,9 @@ TIMESHEET_FOLDER = Path("timesheet")
 
 _AUTH_METHOD_MAP = {"unisa": "Credenziali UNISA", "spid": "SPID", "cie": "CIE"}
 _EXPORT_FORMATS = ("xlsx", "csv")
+# Duplicato da cartellino.processor.REPORT_KEYS (non importato qui per non appesantire
+# l'avvio/--help con l'import di pandas eseguito lazy nel resto di questo file).
+REPORT_KEYS = ("cartellino", "riposo", "credito", "statistiche", "ore-giornaliere")
 
 app = typer.Typer(
     help="Versione OO dello script per l'estrazione dei dati dal cartellino.\n"
@@ -62,6 +65,17 @@ def main(
             ),
         ),
     ] = None,
+    solo_report: Annotated[
+        Optional[str],
+        typer.Option(
+            "--solo-report",
+            help=(
+                "Genera solo i report indicati, separati da virgola, tra: "
+                + ", ".join(REPORT_KEYS)
+                + ". Se omesso li genera tutti (comportamento di default)."
+            ),
+        ),
+    ] = None,
 ) -> None:
     if aggiorna_cartellino:
         metodo = None
@@ -75,6 +89,17 @@ def main(
         from get import ottieni_cartellino
         ottieni_cartellino(DATA_FOLDER, metodo=metodo)
 
+    reports = None
+    if solo_report is not None:
+        richiesti = {r.strip() for r in solo_report.split(",") if r.strip()}
+        non_validi = richiesti - set(REPORT_KEYS)
+        if non_validi:
+            raise typer.BadParameter(
+                f"Valori non validi: {', '.join(sorted(non_validi))}. Scegli tra: {', '.join(REPORT_KEYS)}.",
+                param_hint="--solo-report",
+            )
+        reports = richiesti
+
     from cartellino import CartellinoProcessor
     processor = CartellinoProcessor.from_env(data_folder=DATA_FOLDER)
     if export_format is not None:
@@ -84,7 +109,7 @@ def main(
                 param_hint="--export-format",
             )
         processor.config.export_format = export_format
-    processor.run()
+    processor.run(reports=reports)
 
     if timesheet_progetto is not None:
         from cartellino.timesheet_runner import esegui_timesheet_progetto, risolvi_percorso_timesheet
