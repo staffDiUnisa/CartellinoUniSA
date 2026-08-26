@@ -103,7 +103,7 @@ class DashboardScreen(Screen):
             Vertical(*sezione_widgets),
             Horizontal(
                 Button("Aggiorna cartellino [r]", id="btn-aggiorna"),
-                Button("Report [p]", id="btn-report"),
+                Button("Genera report [p]", id="btn-report"),
                 Button("Timesheet progetto [t]", id="btn-timesheet"),
                 Button("Impostazioni [s]", id="btn-impostazioni"),
                 classes="button-row",
