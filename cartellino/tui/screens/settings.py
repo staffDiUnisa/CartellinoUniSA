@@ -76,7 +76,7 @@ class SettingsScreen(Screen):
                 yield Input(value=user_config.output_folder or "", id="input-output-folder")
                 yield Button("Sfoglia...", id="btn-sfoglia-output-folder")
 
-            yield Label("Data da cui i ticket mensa sono pagati (data_ticket.txt, DD-MM-YYYY)")
+            yield Label("Buoni pasto accreditati fino al (data_ticket.txt, DD-MM-YYYY)")
             yield MaskedInput(
                 _DATA_TICKET_TEMPLATE,
                 value=self._leggi_data_ticket_esistente(config),
