@@ -134,7 +134,8 @@ timesheet di progetto. Usa lo stesso storage di `cartellino_v2.py`
     escapato (`rich.markup.escape`) perché può contenere `[...]` (es. path chromedriver) che
     romperebbero il parsing markup del `RichLog`.
   - `screens/onboarding.py`, `dashboard.py`, `update.py`, `settings.py`, `reports.py`,
-    `timesheet.py`, `folder_picker.py`, `date_escluse.py` — una schermata per ciascuna voce del
+    `timesheet.py`, `folder_picker.py`, `date_escluse.py`, `credentials.py` — una schermata per
+    ciascuna voce del
     TODO Fase 4 (più `folder_picker.py`, modale `DirectoryTree` riusata da Impostazioni per
     scegliere cartella dati/output); costruite sul layer di dominio esistente (`Cartellino`,
     `OreEccedenti`, `CreditoOre`, `Statistiche`, `OreGiornaliere`, `TimesheetProgetto`) senza
@@ -146,6 +147,10 @@ timesheet di progetto. Usa lo stesso storage di `cartellino_v2.py`
     Impostazioni) gestisce `date_escluse.txt`: aggiunta (`MaskedInput` data + ora opzionale) e
     rimozione per riga, stesso formato letto da `OreEccedenti._elabora`
     (`DD-MM-YYYY` = giornata intera esclusa, `DD-MM-YYYY HH:MM` = sottrae solo quell'orario).
+    `credentials.py` (`CredentialsScreen`, raggiunta dal pulsante "Modifica credenziali" in
+    Impostazioni) isola username/password in una schermata separata invece di campi inline;
+    ritorna `True`/`False` via `Screen.dismiss()` + callback così Impostazioni sa quando
+    aggiornare la riga di stato "Credenziali UniSA: impostate (username: ...)".
   - Nota implementativa: `DashboardScreen.on_screen_resume`/`_build_body` ricostruiscono i
     widget con `Vertical(*children)` (costruttore diretto), non con `with Vertical(): yield ...`
     — quel pattern di composizione funziona solo dentro una vera chiamata a `compose()` (si

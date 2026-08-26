@@ -17,7 +17,7 @@ from textual.widgets import (
     Switch,
 )
 
-from cartellino.credentials import delete_credentials, get_credentials, set_credentials
+from cartellino.credentials import delete_credentials, get_credentials
 from cartellino.tui.screens.folder_picker import FolderPickerScreen
 from cartellino.user_config import (
     DEFAULT_DASHBOARD_BALANCE_CODES,
@@ -85,18 +85,10 @@ class SettingsScreen(Screen):
 
             yield Button("Gestisci date escluse (date_escluse.txt)", id="btn-date-escluse")
 
-            credenziali_esistenti = get_credentials()
-            if credenziali_esistenti is not None:
-                username_esistente, _ = credenziali_esistenti
-                stato_cred = f"impostate (username: {username_esistente})"
-            else:
-                stato_cred = "non impostate"
-            yield Static(f"[b]Credenziali UniSA[/b]: {stato_cred}")
-            yield Label("Nuovo username (lascia vuoto per non modificare)")
-            yield Input(placeholder="mario.rossi", id="input-username")
-            yield Label("Nuova password (lascia vuoto per non modificare)")
-            yield Input(password=True, id="input-password")
-            yield Button("Rimuovi credenziali", id="btn-rimuovi-cred")
+            yield Static(self._testo_stato_credenziali(), id="stato-credenziali")
+            with Horizontal(classes="button-row"):
+                yield Button("Modifica credenziali", id="btn-modifica-cred")
+                yield Button("Rimuovi credenziali", id="btn-rimuovi-cred")
 
             yield Static("", id="settings-errore")
             yield Button("Salva", id="btn-salva", variant="primary")
@@ -109,13 +101,26 @@ class SettingsScreen(Screen):
         except FileNotFoundError:
             return ""
 
+    @staticmethod
+    def _testo_stato_credenziali() -> str:
+        credenziali_esistenti = get_credentials()
+        if credenziali_esistenti is not None:
+            username_esistente, _ = credenziali_esistenti
+            return f"[b]Credenziali UniSA[/b]: impostate (username: {username_esistente})"
+        return "[b]Credenziali UniSA[/b]: non impostate"
+
+    def _aggiorna_stato_credenziali(self) -> None:
+        self.query_one("#stato-credenziali", Static).update(self._testo_stato_credenziali())
+
     def on_button_pressed(self, event: Button.Pressed) -> None:
         if event.button.id == "btn-salva":
             self._salva()
+        elif event.button.id == "btn-modifica-cred":
+            self._apri_modifica_credenziali()
         elif event.button.id == "btn-rimuovi-cred":
             delete_credentials()
             log.info("Credenziali UniSA rimosse dal keyring.")
-            self.query_one("#settings-errore", Static).update("Credenziali rimosse.")
+            self._aggiorna_stato_credenziali()
         elif event.button.id == "btn-sfoglia-data-folder":
             self._sfoglia("#input-data-folder")
         elif event.button.id == "btn-sfoglia-output-folder":
@@ -123,6 +128,15 @@ class SettingsScreen(Screen):
         elif event.button.id == "btn-date-escluse":
             from cartellino.tui.screens.date_escluse import DateEscluseScreen
             self.app.push_screen(DateEscluseScreen())
+
+    def _apri_modifica_credenziali(self) -> None:
+        from cartellino.tui.screens.credentials import CredentialsScreen
+
+        def _dopo_modifica(salvato: bool | None) -> None:
+            if salvato:
+                self._aggiorna_stato_credenziali()
+
+        self.app.push_screen(CredentialsScreen(), callback=_dopo_modifica)
 
     def _sfoglia(self, input_id: str) -> None:
         campo = self.query_one(input_id, Input)
@@ -179,11 +193,6 @@ class SettingsScreen(Screen):
             data_folder=data_folder_valore,
             output_folder=output_folder_valore,
         ).save()
-
-        username = self.query_one("#input-username", Input).value.strip()
-        password = self.query_one("#input-password", Input).value
-        if username and password:
-            set_credentials(username, password)
 
         # Scrive data_ticket.txt nella NUOVA cartella dati (Config va ricaricato per
         # avere il path corretto, dato che data_folder può essere appena cambiato).
