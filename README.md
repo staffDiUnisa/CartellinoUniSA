@@ -1,7 +1,6 @@
 # 📊 Elaborazione Cartellino UniSA
 
 ![Release](https://img.shields.io/github/v/release/staffDiUnisa/CartellinoUniSA?include_prereleases&label=release&style=for-the-badge)
-[![Build](https://img.shields.io/github/actions/workflow/status/staffDiUnisa/CartellinoUniSA/release.yml?label=build&style=for-the-badge)](https://github.com/staffDiUnisa/CartellinoUniSA/actions/workflows/release.yml)
 ![License](https://img.shields.io/badge/License-GPL_3.0-blue?style=for-the-badge&logo=gnu&logoColor=white)
 ![Python](https://img.shields.io/badge/Python-3.12+-3776AB?style=for-the-badge&logo=python&logoColor=white)
 ![Textual](https://img.shields.io/badge/TUI-Textual-8A2BE2?style=for-the-badge)
