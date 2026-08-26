@@ -36,6 +36,61 @@ jobs:
       - name: "Build eseguibile standalone (onedir: dist/cartellino-unisa/)"
         run: uv run pyinstaller packaging/cartellino.spec --noconfirm
 
+      - name: Importa il certificato Developer ID in un keychain temporaneo (solo macOS)
+        if: matrix.os == 'macos-latest'
+        env:
+          MACOS_CERTIFICATE: ${{ secrets.MACOS_CERTIFICATE }}
+          MACOS_CERTIFICATE_PWD: ${{ secrets.MACOS_CERTIFICATE_PWD }}
+        run: |
+          echo "$MACOS_CERTIFICATE" | base64 --decode -o certificate.p12
+          security create-keychain -p actions-runner build.keychain
+          security default-keychain -s build.keychain
+          security unlock-keychain -p actions-runner build.keychain
+          security set-keychain-settings -lut 21600 build.keychain
+          security import certificate.p12 -k build.keychain -P "$MACOS_CERTIFICATE_PWD" -T /usr/bin/codesign
+          security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k actions-runner build.keychain
+          rm -f certificate.p12
+
+      - name: Firma tutte le librerie native e l'eseguibile (solo macOS)
+        # `--deep` su `codesign` non attraversa una cartella onedir "piatta" come
+        # quella prodotta da PyInstaller (non è un vero bundle/framework): vanno
+        # firmate esplicitamente tutte le .so/.dylib prima dell'eseguibile che le usa.
+        if: matrix.os == 'macos-latest'
+        run: |
+          find dist/cartellino-unisa -type f \( -name "*.so" -o -name "*.dylib" \) -print0 \
+            | xargs -0 -I{} codesign --force --timestamp --options runtime \
+                --entitlements packaging/entitlements.plist \
+                --sign "Developer ID Application" {}
+          codesign --force --timestamp --options runtime \
+            --entitlements packaging/entitlements.plist \
+            --sign "Developer ID Application" \
+            dist/cartellino-unisa/cartellino-unisa
+          codesign --verify --deep --strict --verbose=2 dist/cartellino-unisa/cartellino-unisa
+
+      - name: Notarizza presso Apple (solo macOS)
+        if: matrix.os == 'macos-latest'
+        env:
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_ID_PASSWORD: ${{ secrets.APPLE_ID_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: |
+          ditto -c -k --keepParent dist/cartellino-unisa notarize.zip
+          xcrun notarytool submit notarize.zip \
+            --apple-id "$APPLE_ID" \
+            --password "$APPLE_ID_PASSWORD" \
+            --team-id "$APPLE_TEAM_ID" \
+            --wait
+          rm -f notarize.zip
+
+      - name: Staple il ticket di notarizzazione (solo macOS)
+        # Best-effort: se lo stapling su un eseguibile "sciolto" (non un .app/.pkg/.dmg)
+        # non fosse supportato, la notarizzazione resta comunque valida — Gatekeeper
+        # farà solo una verifica online al primo avvio invece che offline.
+        if: matrix.os == 'macos-latest'
+        run: |
+          xcrun stapler staple dist/cartellino-unisa/cartellino-unisa \
+            || echo "::warning::Stapling fallito, la notarizzazione resta valida (verifica online al primo avvio)"
+
       - uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.asset_name }}

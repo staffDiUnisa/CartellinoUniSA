@@ -174,29 +174,40 @@ timesheet progetto direttamente dalla TUI (oggi resta un'operazione manuale sul 
 
 ## Fase 6 — Packaging multipiattaforma (PyInstaller + GitHub Actions) ✅
 
-- [x] `packaging/cartellino.spec` per PyInstaller (entrypoint `cartellino_tui.py`, onefile).
-      `keyring`/`pyarrow`/`selenium` non hanno bisogno di hidden-imports manuali: hanno già hook
-      PyInstaller propri che raccolgono submodule/metadata/data file da soli. Textual non ha
-      bisogno di hidden-imports, ma richiede `CartellinoApp._BASE_PATH` esplicito (basato su
-      `sys._MEIPASS` quando "frozen") perché altrimenti risolverebbe `CSS_PATH` con
-      `inspect.getfile()`, che non punta a un file reale una volta impacchettato — stesso
-      discorso per la lettura di `pyproject.toml` in `_app_version()`
-      (`cartellino/tui/app.py::_bundle_base()`). Build locale verificata su macOS arm64: il
-      binario si avvia senza errori di import/CSS.
+- [x] `packaging/cartellino.spec` per PyInstaller (entrypoint `cartellino_tui.py`, **onedir**,
+      non onefile — vedi nota sotto). `keyring`/`pyarrow`/`selenium` non hanno bisogno di
+      hidden-imports manuali: hanno già hook PyInstaller propri che raccolgono
+      submodule/metadata/data file da soli. Textual non ha bisogno di hidden-imports, ma
+      richiede `CartellinoApp._BASE_PATH` esplicito (basato su `sys._MEIPASS` quando "frozen")
+      perché altrimenti risolverebbe `CSS_PATH` con `inspect.getfile()`, che non punta a un file
+      reale una volta impacchettato — stesso discorso per la lettura di `pyproject.toml` in
+      `_app_version()` (`cartellino/tui/app.py::_bundle_base()`).
 - [x] `pyinstaller` aggiunto come `[dependency-groups] build` in `pyproject.toml` (non nelle
       dipendenze runtime — è uno strumento di packaging, non serve per usare l'app)
 - [x] Workflow `.github/workflows/release.yml`: build matrix macOS/Windows/Linux
-      (`uv sync --group build && uv run pyinstaller packaging/cartellino.spec`), allega i binari
-      **come draft** alla GitHub Release (trigger su push tag `v2.*`; pubblicazione manuale dopo
-      revisione, non automatica)
+      (`uv sync --group build && uv run pyinstaller packaging/cartellino.spec`), il job
+      `release` comprime ogni cartella onedir in uno zip e allega i binari **come draft** alla
+      GitHub Release (trigger su push tag `v2.*`; pubblicazione manuale dopo revisione, non
+      automatica). **Verificato con build reali su tag di prova** (`v2.0.0-rc1/rc2/rc3`, poi
+      eliminati): 3 bug trovati e corretti solo grazie a run CI reali, non riproducibili in
+      locale — (1) `pyarrow` falliva l'import nel binario onefile scaricato da Release pur
+      funzionando su una build locale (causa: librerie native estratte non firmate a runtime,
+      bloccate da macOS — risolto passando a onedir); (2) un `:` non quotato nel nome di uno
+      step rompeva il parsing YAML del workflow; (3) `zip` non è disponibile in Git Bash su
+      `windows-latest` (spostata la compressione nel job `release`, sempre ubuntu-latest).
 - [x] Documentato nel `README.md` (§ "Eseguibili standalone"): Chrome resta dipendenza esterna
-      obbligatoria; avvisi Gatekeeper (macOS)/SmartScreen (Windows) sui binari non
-      firmati/notarizzati, con istruzioni per sbloccarli
-
-Non verificato in questa sessione (nessun ambiente Windows/Linux disponibile): la build reale
-del workflow CI su Windows e Linux. Da controllare al primo tag `v2.*` effettivo — in
-particolare i missing-module warning platform-specific (`winreg`, `msvcrt`, ecc., innocui su
-macOS/Linux ma da rivedere se il build Windows dovesse davvero fallire).
+      obbligatoria; su Windows SmartScreen mostra comunque l'avviso (nessun certificato di firma
+      codice per Windows); su macOS l'eseguibile è firmato+notarizzato (vedi punto successivo),
+      quindi Gatekeeper non dovrebbe più bloccarlo.
+- [x] **Firma e notarizzazione macOS** (oltre a quanto previsto originariamente in questa fase):
+      il job `build (macos-latest, ...)` importa un certificato Developer ID Application da
+      secrets GitHub (`MACOS_CERTIFICATE`/`MACOS_CERTIFICATE_PWD`/`APPLE_ID`/
+      `APPLE_ID_PASSWORD`/`APPLE_TEAM_ID`), firma ogni `.so`/`.dylib` e l'eseguibile con
+      `packaging/entitlements.plist` (hardened runtime), notarizza con `notarytool submit --wait`
+      e prova lo stapling del ticket (best-effort). Procedura per ottenere/generare i secrets in
+      `ignored/signed_macos.md` (non versionato, contiene solo istruzioni, nessun segreto).
+      **Non ancora verificato con una build reale** (serve un nuovo tag di prova con i secrets
+      configurati per confermare firma+notarizzazione end-to-end).
 
 ## Fase 7 — Rilascio v2.0.0
 

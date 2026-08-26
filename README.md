@@ -440,14 +440,15 @@ supporto (Python, Textual, pandas/pyarrow, ecc.) stanno lì accanto.
 **Chrome resta comunque una dipendenza esterna obbligatoria** (il download del cartellino usa
 Selenium, che non è imbottigliabile in un eseguibile standalone): va installato separatamente.
 
-**Avvisi di sicurezza del sistema operativo**: i binari non sono firmati/notarizzati (nessun
-certificato sviluppatore a pagamento), quindi al primo avvio il sistema operativo mostra un
-avviso:
-- **macOS (Gatekeeper)**: "app non verificata"/"sviluppatore non identificato" — click destro
-  (o `Ctrl`+click) sull'eseguibile dentro la cartella estratta → **Apri**, poi conferma nel
-  dialogo che compare (necessario solo la prima volta)
-- **Windows (SmartScreen)**: "Windows ha protetto il PC" — **Ulteriori informazioni** → **Esegui
-  comunque**
+**Avvisi di sicurezza del sistema operativo**:
+- **macOS**: il binario è firmato con un certificato Developer ID e notarizzato da Apple
+  (`.github/workflows/release.yml`, richiede i secrets `MACOS_CERTIFICATE`,
+  `MACOS_CERTIFICATE_PWD`, `APPLE_ID`, `APPLE_ID_PASSWORD`, `APPLE_TEAM_ID`) — Gatekeeper non
+  dovrebbe più mostrare l'avviso "sviluppatore non identificato" (solo una verifica online al
+  primo avvio se lo stapling del ticket di notarizzazione non fosse andato a buon fine)
+- **Windows**: il binario **non** è firmato (nessun certificato di firma codice a pagamento),
+  quindi SmartScreen mostra "Windows ha protetto il PC" al primo avvio — **Ulteriori
+  informazioni** → **Esegui comunque**
 
 Per rigenerare l'eseguibile localmente (es. per verificare una modifica prima di taggare una
 release): `uv sync --group build && uv run pyinstaller packaging/cartellino.spec`, poi

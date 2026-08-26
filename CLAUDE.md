@@ -127,8 +127,22 @@ uv run pyinstaller packaging/cartellino.spec --noconfirm
   (ubuntu-latest, unico posto dove serve `zip`: assente in Git Bash su `windows-latest`) le
   scarica e comprime ciascuna in `<asset>.zip`, poi allega gli zip come **draft** alla GitHub
   Release (pubblicazione manuale dopo revisione).
-- Chrome resta dipendenza esterna obbligatoria (Selenium non è imbottigliabile); i binari non
-  sono firmati/notarizzati (avvisi Gatekeeper/SmartScreen, documentati in README.md).
+- Chrome resta dipendenza esterna obbligatoria (Selenium non è imbottigliabile).
+- **Firma e notarizzazione macOS** (job `build (macos-latest, ...)`, richiede i secrets
+  `MACOS_CERTIFICATE`/`MACOS_CERTIFICATE_PWD`/`APPLE_ID`/`APPLE_ID_PASSWORD`/`APPLE_TEAM_ID` —
+  procedura per generarli/ottenerli in `ignored/signed_macos.md`, non versionato):
+  1. Importa il certificato Developer ID `.p12` in un keychain temporaneo creato ad-hoc
+  2. Firma **ogni** `.so`/`.dylib` individualmente (`codesign --deep` non attraversa una
+     cartella onedir "piatta" come un vero bundle/framework), poi l'eseguibile, con
+     `packaging/entitlements.plist` (hardened runtime + `disable-library-validation`, necessario
+     perché le dylib vendored di pyarrow/numpy potrebbero non condividere la stessa identity)
+  3. `xcrun notarytool submit --wait` su uno zip temporaneo (creato con `ditto`, non `zip`, per
+     preservare i metadati di firma)
+  4. `xcrun stapler staple` sull'eseguibile (best-effort: se lo stapling su un binario "sciolto"
+     non fosse supportato, la notarizzazione resta comunque valida — solo verifica online al
+     primo avvio invece che offline)
+  Windows resta non firmato (nessun certificato acquistato): SmartScreen mostra comunque
+  l'avviso, documentato in README.md.
 
 ## Architecture
 
