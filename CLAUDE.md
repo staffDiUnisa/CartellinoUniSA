@@ -92,15 +92,27 @@ timesheet di progetto. Usa lo stesso storage di `cartellino_v2.py`
 
 ### Packaging (Fase 6 TODO v2.0.0)
 
-`packaging/cartellino.spec` — spec PyInstaller (onefile) per `cartellino_tui.py`:
+`packaging/cartellino.spec` — spec PyInstaller (**onedir**, non onefile — vedi sotto) per
+`cartellino_tui.py`:
 
 ```bash
 uv sync --group build   # installa pyinstaller (dependency-group "build", non nelle
                          # dipendenze runtime: pyinstaller serve solo per impacchettare)
 uv run pyinstaller packaging/cartellino.spec --noconfirm
-./dist/cartellino-unisa  # .exe su Windows
+./dist/cartellino-unisa/cartellino-unisa  # .exe su Windows; NON spostare l'eseguibile
+                                            # fuori dalla cartella (librerie accanto)
 ```
 
+- **Onedir, non onefile**: la prima versione dello spec produceva un eseguibile onefile
+  (`EXE(pyz, a.scripts, a.binaries, a.datas, ...)`), rotto su macOS — `pyarrow` (usato da
+  `pd.read_feather`) falliva l'import sul binario scaricato dalla Release
+  (`ImportError: Import pyarrow failed`), pur funzionando su una build fatta ed eseguita in
+  locale. Causa: in onefile le librerie native vengono estratte in una cartella temporanea *a
+  runtime*, non firmate — macOS (specie Apple Silicon) può bloccarle, in particolare per un
+  binario scaricato da browser (quarantena). Lo spec ora usa `EXE(..., exclude_binaries=True)` +
+  `COLLECT(...)`: le librerie stanno accanto all'eseguibile fin dalla build, niente estrazione
+  runtime. Il workflow comprime la cartella in uno zip per l'asset della Release
+  (`.github/workflows/release.yml`).
 - `keyring`, `pyarrow`, `selenium` hanno già hook PyInstaller propri (rispettivamente in
   `PyInstaller.hooks` e `_pyinstaller_hooks_contrib`) che raccolgono automaticamente
   submodule/metadata/data file — nessun `hiddenimports` manuale necessario per questi tre.
@@ -111,7 +123,8 @@ uv run pyinstaller packaging/cartellino.spec --noconfirm
   `_app_version()`. Il file `cartellino/tui/app.tcss` e `pyproject.toml` sono dichiarati come
   `datas` nello spec, con gli stessi percorsi relativi attesi da `_bundle_base()`.
 - `.github/workflows/release.yml`: build matrix macOS/Windows/Linux su push di un tag `v2.*`,
-  allega i binari come **draft** alla GitHub Release (pubblicazione manuale dopo revisione).
+  comprime la cartella onedir in `<asset>.zip` (`zip`, preinstallato anche su `windows-latest`),
+  allega gli zip come **draft** alla GitHub Release (pubblicazione manuale dopo revisione).
 - Chrome resta dipendenza esterna obbligatoria (Selenium non è imbottigliabile); i binari non
   sono firmati/notarizzati (avvisi Gatekeeper/SmartScreen, documentati in README.md).
 

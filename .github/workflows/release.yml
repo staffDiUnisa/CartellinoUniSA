@@ -20,13 +20,10 @@ jobs:
         include:
           - os: macos-latest
             asset_name: cartellino-unisa-macos
-            binary_name: cartellino-unisa
           - os: ubuntu-latest
             asset_name: cartellino-unisa-linux
-            binary_name: cartellino-unisa
           - os: windows-latest
-            asset_name: cartellino-unisa-windows.exe
-            binary_name: cartellino-unisa.exe
+            asset_name: cartellino-unisa-windows
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
@@ -36,19 +33,24 @@ jobs:
       - name: Installa le dipendenze (incluso il gruppo build per PyInstaller)
         run: uv sync --group build
 
-      - name: Build eseguibile standalone
+      - name: Build eseguibile standalone (onedir: dist/cartellino-unisa/)
         run: uv run pyinstaller packaging/cartellino.spec --noconfirm
 
-      - name: Prepara l'artefatto per il nome finale per-OS
+      - name: Comprimi la cartella onedir in un unico archivio zip
+        # Onedir (non onefile, vedi packaging/cartellino.spec) produce una cartella,
+        # non un singolo file: va compressa per poter essere allegata come asset
+        # della Release. `zip` è preinstallato sui runner GitHub-hosted, incluso
+        # windows-latest.
         shell: bash
         run: |
-          mkdir -p artifact
-          cp "dist/${{ matrix.binary_name }}" "artifact/${{ matrix.asset_name }}"
+          cd dist
+          zip -r "../${{ matrix.asset_name }}.zip" cartellino-unisa
+          cd ..
 
       - uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.asset_name }}
-          path: artifact/${{ matrix.asset_name }}
+          path: ${{ matrix.asset_name }}.zip
           if-no-files-found: error
 
   release:

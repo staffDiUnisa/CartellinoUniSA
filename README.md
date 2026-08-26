@@ -425,9 +425,17 @@ Vengono inoltre corretti automaticamente:
 A partire dalla v2.0.0, ogni tag `v2.*` genera automaticamente (GitHub Actions,
 `.github/workflows/release.yml`) un eseguibile standalone della TUI per macOS, Windows e Linux,
 allegato come bozza (draft) alla relativa [GitHub Release](https://github.com/staffDiUnisa/CartellinoUniSA/releases) —
-`cartellino-unisa-macos`, `cartellino-unisa-linux`, `cartellino-unisa-windows.exe`. Non serve
-installare Python/`mise`/`uv`: si scarica il binario del proprio sistema operativo e si esegue
-direttamente da terminale.
+`cartellino-unisa-macos.zip`, `cartellino-unisa-linux.zip`, `cartellino-unisa-windows.zip`. Non
+serve installare Python/`mise`/`uv`: si scarica lo zip del proprio sistema operativo, si estrae e
+si esegue il binario dentro la cartella estratta (`cartellino-unisa/cartellino-unisa`, `.exe` su
+Windows) da terminale — **non spostare l'eseguibile fuori dalla sua cartella**: le librerie di
+supporto (Python, Textual, pandas/pyarrow, ecc.) stanno lì accanto.
+
+> Perché una cartella (zip) e non un singolo eseguibile: la prima versione usava un eseguibile
+> "onefile", che su macOS si è rivelato rotto (`pyarrow` falliva l'import sul binario scaricato,
+> pur funzionando su una build locale) — le librerie native estratte a runtime in una cartella
+> temporanea non firmata vengono bloccate da macOS. La modalità "onedir" (cartella) evita questa
+> estrazione runtime.
 
 **Chrome resta comunque una dipendenza esterna obbligatoria** (il download del cartellino usa
 Selenium, che non è imbottigliabile in un eseguibile standalone): va installato separatamente.
@@ -436,14 +444,14 @@ Selenium, che non è imbottigliabile in un eseguibile standalone): va installato
 certificato sviluppatore a pagamento), quindi al primo avvio il sistema operativo mostra un
 avviso:
 - **macOS (Gatekeeper)**: "app non verificata"/"sviluppatore non identificato" — click destro
-  (o `Ctrl`+click) sul file → **Apri**, poi conferma nel dialogo che compare (necessario solo la
-  prima volta)
+  (o `Ctrl`+click) sull'eseguibile dentro la cartella estratta → **Apri**, poi conferma nel
+  dialogo che compare (necessario solo la prima volta)
 - **Windows (SmartScreen)**: "Windows ha protetto il PC" — **Ulteriori informazioni** → **Esegui
   comunque**
 
 Per rigenerare l'eseguibile localmente (es. per verificare una modifica prima di taggare una
 release): `uv sync --group build && uv run pyinstaller packaging/cartellino.spec`, poi
-`./dist/cartellino-unisa` (`.exe` su Windows).
+`./dist/cartellino-unisa/cartellino-unisa` (`.exe` su Windows).
 
 ## 🔧 Troubleshooting
 

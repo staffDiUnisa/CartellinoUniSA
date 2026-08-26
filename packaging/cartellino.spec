@@ -2,9 +2,22 @@
 """PyInstaller spec per l'eseguibile standalone della TUI (Fase 6 TODO.md).
 
 Uso: `uv run pyinstaller packaging/cartellino.spec` dalla root del repo (o via
-`mise run build`). Produce un eseguibile "onefile" (`dist/cartellino-unisa[.exe]`)
-che bundla Python + tutte le dipendenze: Chrome resta comunque una dipendenza
-esterna obbligatoria (Selenium non è imbottigliabile).
+`mise run build`). Produce una cartella "onedir" (`dist/cartellino-unisa/`) con
+l'eseguibile (`cartellino-unisa[.exe]`) e tutte le librerie di supporto accanto:
+Chrome resta comunque una dipendenza esterna obbligatoria (Selenium non è
+imbottigliabile).
+
+**Perché onedir e non onefile**: la prima versione di questo spec usava un
+eseguibile "onefile" (tutto in un unico file). Su macOS questo si è rivelato
+rotto: `pyarrow` (che pandas usa per `pd.read_feather`) falliva con
+`ImportError: Import pyarrow failed` sul binario scaricato dalla Release, pur
+funzionando su una build fatta ed eseguita in locale sulla stessa macchina.
+Causa nota di PyInstaller su macOS (soprattutto Apple Silicon): in modalità
+onefile le librerie native vengono estratte in una cartella temporanea *a
+runtime*, non firmate — macOS può rifiutarsi di caricarle, specialmente per un
+binario scaricato da browser (attributo di quarantena). In modalità onedir le
+librerie stanno accanto all'eseguibile fin dal momento della build, senza
+un'estrazione runtime in una nuova cartella temporanea ad ogni avvio.
 
 Note sui dati bundled:
 - `cartellino/tui/app.tcss`: il CSS della TUI. `CartellinoApp` (cartellino/tui/app.py)
@@ -49,20 +62,27 @@ pyz = PYZ(a.pure)  # noqa: F821
 exe = EXE(  # noqa: F821
     pyz,
     a.scripts,
-    a.binaries,
-    a.datas,
     [],
+    exclude_binaries=True,
     name="cartellino-unisa",
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,
     upx=True,
-    upx_exclude=[],
-    runtime_tmpdir=None,
     console=True,
     disable_windowed_traceback=False,
     argv_emulation=False,
     target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
+)
+
+coll = COLLECT(  # noqa: F821
+    exe,
+    a.binaries,
+    a.datas,
+    strip=False,
+    upx=True,
+    upx_exclude=[],
+    name="cartellino-unisa",
 )
