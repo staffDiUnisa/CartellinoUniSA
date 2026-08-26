@@ -36,21 +36,10 @@ jobs:
       - name: "Build eseguibile standalone (onedir: dist/cartellino-unisa/)"
         run: uv run pyinstaller packaging/cartellino.spec --noconfirm
 
-      - name: Comprimi la cartella onedir in un unico archivio zip
-        # Onedir (non onefile, vedi packaging/cartellino.spec) produce una cartella,
-        # non un singolo file: va compressa per poter essere allegata come asset
-        # della Release. `zip` è preinstallato sui runner GitHub-hosted, incluso
-        # windows-latest.
-        shell: bash
-        run: |
-          cd dist
-          zip -r "../${{ matrix.asset_name }}.zip" cartellino-unisa
-          cd ..
-
       - uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.asset_name }}
-          path: ${{ matrix.asset_name }}.zip
+          path: dist/cartellino-unisa/
           if-no-files-found: error
 
   release:
@@ -61,10 +50,16 @@ jobs:
         with:
           path: artifacts
 
-      - name: Appiattisce gli artefatti scaricati in un'unica cartella
+      - name: Comprime ogni cartella onedir scaricata in uno zip per asset
+        # I job di build girano anche su windows-latest, dove `zip` non è
+        # disponibile in Git Bash: la compressione va fatta qui (ubuntu-latest,
+        # `zip` sempre presente), non nei job di build.
         run: |
           mkdir -p release
-          find artifacts -type f -exec cp {} release/ \;
+          for dir in artifacts/*/; do
+            name="$(basename "$dir")"
+            (cd "$dir" && zip -r "../../release/${name}.zip" .)
+          done
           ls -la release
 
       - name: Crea la GitHub Release con i binari allegati

@@ -123,8 +123,10 @@ uv run pyinstaller packaging/cartellino.spec --noconfirm
   `_app_version()`. Il file `cartellino/tui/app.tcss` e `pyproject.toml` sono dichiarati come
   `datas` nello spec, con gli stessi percorsi relativi attesi da `_bundle_base()`.
 - `.github/workflows/release.yml`: build matrix macOS/Windows/Linux su push di un tag `v2.*`,
-  comprime la cartella onedir in `<asset>.zip` (`zip`, preinstallato anche su `windows-latest`),
-  allega gli zip come **draft** alla GitHub Release (pubblicazione manuale dopo revisione).
+  ogni job di build carica la cartella onedir grezza come artifact; il job `release`
+  (ubuntu-latest, unico posto dove serve `zip`: assente in Git Bash su `windows-latest`) le
+  scarica e comprime ciascuna in `<asset>.zip`, poi allega gli zip come **draft** alla GitHub
+  Release (pubblicazione manuale dopo revisione).
 - Chrome resta dipendenza esterna obbligatoria (Selenium non è imbottigliabile); i binari non
   sono firmati/notarizzati (avvisi Gatekeeper/SmartScreen, documentati in README.md).
 
