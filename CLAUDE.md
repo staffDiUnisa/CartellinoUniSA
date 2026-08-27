@@ -329,6 +329,16 @@ uv run pyinstaller packaging/cartellino.spec --noconfirm
     direttamente in `release/` senza passare dallo step di compressione zip, che resta solo per
     gli asset onedir storici (necessario perché `zip` non è disponibile in Git Bash su
     `windows-latest`, quindi la compressione va fatta sempre nel job `release`, `ubuntu-latest`).
+  - **Nome degli artefatti della release** (da `v2.0.2` in poi, sia draft che pubbliche): ogni
+    file allegato alla release (zip onedir, `.pkg`, `.exe`, `.deb`, `.rpm`) include versione e
+    commit nel nome, es. `cartellino-unisa-setup-2.0.2_rc5-27c435a.exe`. Calcolati una sola volta
+    nello step "Calcola versione e commit per il nome degli artefatti" (`release.yml`, job
+    `release`): `version_slug` da `GITHUB_REF_NAME` (tag) con `-` sostituito da `_` (es.
+    `v2.0.2-rc5` → `2.0.2_rc5` — l'underscore evita l'ambiguità con il `-` che separa poi versione
+    e sha nel nome file finale) e `short_sha` da `git rev-parse --short HEAD`. Lo step successivo
+    di compressione/copia usa questi due valori per rinominare esplicitamente ogni artefatto per
+    tipo (non un suffisso automatico generico sul nome originale, che per `.deb`/`.rpm` prodotti
+    da `fpm` avrebbe già contenuto una propria versione, duplicandola nel nome finale).
 
 ## Architecture
 

@@ -352,19 +352,42 @@ jobs:
         with:
           path: artifacts
 
+      - name: Calcola versione e commit per il nome degli artefatti
+        # Applicato a tutti gli asset della release (draft e pubbliche) da v2.0.2 in poi:
+        # <nome-base>-<versione>-<sha corto>.<ext>, es.
+        # cartellino-unisa-setup-2.0.2_rc5-27c435a.exe. "_" al posto di "-" tra numero di
+        # versione e suffisso rc, per non confondersi col "-" che separa versione e sha nel nome
+        # file (altrimenti "2.0.2-rc5-27c435a" sarebbe ambiguo su dove finisce la versione).
+        id: artifact_suffix
+        run: |
+          version_slug=$(echo "${GITHUB_REF_NAME#v}" | tr '-' '_')
+          short_sha=$(git rev-parse --short HEAD)
+          echo "suffix=${version_slug}-${short_sha}" >> "$GITHUB_OUTPUT"
+
       - name: Comprime le cartelle onedir e copia gli installer nativi già pronti
         # I job di build girano anche su windows-latest, dove `zip` non è
         # disponibile in Git Bash: la compressione va fatta qui (ubuntu-latest,
         # `zip` sempre presente), non nei job di build. Gli installer nativi
         # (.pkg/.exe/.deb/.rpm) sono invece già file singoli pronti alla
-        # pubblicazione: vanno solo copiati, non ri-zippati.
+        # pubblicazione: vanno solo copiati (rinominati con versione+sha), non ri-zippati.
+        env:
+          SUFFIX: ${{ steps.artifact_suffix.outputs.suffix }}
         run: |
           mkdir -p release
           for dir in artifacts/*/; do
             name="$(basename "$dir")"
             case "$name" in
-              cartellino-unisa-macos-pkg|cartellino-unisa-windows-installer|cartellino-unisa-linux-deb|cartellino-unisa-linux-rpm)
-                find "$dir" -type f -exec cp {} release/ \;
+              cartellino-unisa-macos-pkg)
+                cp "$dir"/*.pkg "release/cartellino-unisa-${SUFFIX}.pkg"
+                ;;
+              cartellino-unisa-windows-installer)
+                cp "$dir"/*.exe "release/cartellino-unisa-setup-${SUFFIX}.exe"
+                ;;
+              cartellino-unisa-linux-deb)
+                cp "$dir"/*.deb "release/cartellino-unisa-${SUFFIX}.deb"
+                ;;
+              cartellino-unisa-linux-rpm)
+                cp "$dir"/*.rpm "release/cartellino-unisa-${SUFFIX}.rpm"
                 ;;
               *)
                 # actions/upload-artifact + download-artifact non preservano
@@ -374,7 +397,7 @@ jobs:
                 if [ -f "$dir/cartellino-unisa" ]; then
                   chmod +x "$dir/cartellino-unisa"
                 fi
-                (cd "$dir" && zip -r "../../release/${name}.zip" .)
+                (cd "$dir" && zip -r "../../release/${name}-${SUFFIX}.zip" .)
                 ;;
             esac
           done
