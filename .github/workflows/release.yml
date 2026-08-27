@@ -43,8 +43,39 @@ jobs:
 
       - uses: jdx/mise-action@v4
 
-      - name: Installa le dipendenze (incluso il gruppo build per PyInstaller)
+      - name: Installa le dipendenze (incluso il gruppo build per PyInstaller/Pillow)
         run: uv sync --group build
+
+      - name: Genera l'icona .ico da resources/logo.png (usata su Windows)
+        # Gira su tutti gli OS (Pillow è cross-platform) anche se il risultato
+        # serve solo al job Windows (icon= in packaging/cartellino.spec e
+        # SetupIconFile in installer.iss): tenere lo script indipendente
+        # dall'OS lo rende testabile ovunque, il costo in più è trascurabile.
+        run: uv run python packaging/generate_icons.py
+
+      - name: Genera l'icona .icns da resources/logo.png (solo macOS, per il launcher .app)
+        # Usa i tool nativi macOS (sips/iconutil) invece di una libreria
+        # Python: producono un vero .icns multi-risoluzione senza dipendenze
+        # aggiuntive, e sono garantiti presenti sul runner macos-latest. La
+        # sorgente è 512x512: la risoluzione 1024 (icon_512x512@2x) viene
+        # quindi generata da un semplice upscale, leggermente meno nitida ma
+        # comunque valida — nessun asset a risoluzione più alta nel repo.
+        if: matrix.os == 'macos-latest'
+        run: |
+          set -e
+          ICONSET=packaging/build/icon.iconset
+          mkdir -p "$ICONSET"
+          sips -z 16 16     resources/logo.png --out "$ICONSET/icon_16x16.png"
+          sips -z 32 32     resources/logo.png --out "$ICONSET/icon_16x16@2x.png"
+          sips -z 32 32     resources/logo.png --out "$ICONSET/icon_32x32.png"
+          sips -z 64 64     resources/logo.png --out "$ICONSET/icon_32x32@2x.png"
+          sips -z 128 128   resources/logo.png --out "$ICONSET/icon_128x128.png"
+          sips -z 256 256   resources/logo.png --out "$ICONSET/icon_128x128@2x.png"
+          sips -z 256 256   resources/logo.png --out "$ICONSET/icon_256x256.png"
+          sips -z 512 512   resources/logo.png --out "$ICONSET/icon_256x256@2x.png"
+          sips -z 512 512   resources/logo.png --out "$ICONSET/icon_512x512.png"
+          sips -z 1024 1024 resources/logo.png --out "$ICONSET/icon_512x512@2x.png"
+          iconutil -c icns "$ICONSET" -o packaging/build/icon.icns
 
       - name: "Build eseguibile standalone (onedir: dist/cartellino-unisa/)"
         run: uv run pyinstaller packaging/cartellino.spec --noconfirm
@@ -106,7 +137,20 @@ jobs:
         run: |
           osacompile -o "build/Cartellino UniSA.app" packaging/macos/launcher.applescript
 
+          # Sostituisce l'icona di default dell'applet compilato con quella
+          # del progetto (packaging/build/icon.icns, generata sopra da
+          # resources/logo.png). osacompile chiama il file di default
+          # "applet.icns" e imposta CFBundleIconFile su "applet": basta
+          # sovrascrivere il file mantenendo lo stesso nome. Il bundle
+          # include anche un Assets.car (asset catalog) referenziato da
+          # CFBundleIconName: su macOS moderni questo ha precedenza su
+          # CFBundleIconFile se presente, quindi va rimosso insieme alla
+          # chiave, altrimenti l'icona sostituita verrebbe ignorata.
+          cp packaging/build/icon.icns "build/Cartellino UniSA.app/Contents/Resources/applet.icns"
+          rm -f "build/Cartellino UniSA.app/Contents/Resources/Assets.car"
+
           PLIST="build/Cartellino UniSA.app/Contents/Info.plist"
+          /usr/libexec/PlistBuddy -c "Delete :CFBundleIconName" "$PLIST" || true
           /usr/libexec/PlistBuddy -c "Set :CFBundleIdentifier org.antaresnet.cartellino-unisa.launcher" "$PLIST" \
             || /usr/libexec/PlistBuddy -c "Add :CFBundleIdentifier string org.antaresnet.cartellino-unisa.launcher" "$PLIST"
           /usr/libexec/PlistBuddy -c "Set :CFBundleName Cartellino UniSA" "$PLIST" \

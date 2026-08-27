@@ -28,6 +28,11 @@ Compression=lzma2
 SolidCompression=yes
 ArchitecturesInstallIn64BitMode=x64compatible
 ; Nessuna firma: vedi ignored/signed_windows.md
+; Icona del setup.exe stesso (Esplora risorse/procedura guidata): l'eseguibile
+; installato (cartellino-unisa.exe) ha già l'icona incorporata da PyInstaller
+; (packaging/cartellino.spec, icon= su Windows), quindi le voci sotto
+; [Icons] la ereditano automaticamente senza bisogno di IconFilename.
+SetupIconFile=..\build\icon.ico
 
 [Languages]
 Name: "italian"; MessagesFile: "compiler:Languages\Italian.isl"

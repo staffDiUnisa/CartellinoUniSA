@@ -248,9 +248,41 @@ uv run pyinstaller packaging/cartellino.spec --noconfirm
         giustifica la complessità aggiuntiva di due identifier/receipt separati.
         `packaging/macos/postinstall` non ha richiesto modifiche: usa già percorsi assoluti
         indipendenti da `--install-location`.
-      - **Nessuna icona personalizzata** per ora: nessun asset `.icns`/logo esiste nel repo;
-        l'app usa l'icona di default dell'applet AppleScript compilato (eventuale follow-up,
-        fuori scope).
+      - **Icona personalizzata** (v2.0.3): `resources/logo.png` (512x512, non versionato prima
+        d'ora) è la sorgente unica per le icone generate in CI, mai committata già convertita
+        (formati binari `.ico`/`.icns`, diff illeggibili — stesso principio già seguito per
+        l'AppleScript sorgente del launcher). `packaging/generate_icons.py`
+        (`uv run python packaging/generate_icons.py`, dipende da `pillow`, aggiunto al
+        dependency-group `build`) genera `packaging/build/icon.ico` (multi-risoluzione, per
+        Windows) da eseguire su qualunque OS; per macOS il workflow usa invece i tool nativi
+        `sips`/`iconutil` (nessuna dipendenza aggiuntiva, `.icns` più affidabile) per produrre
+        `packaging/build/icon.icns` da un iconset temporaneo — la risoluzione più alta
+        (1024, `icon_512x512@2x`) è un upscale della sorgente 512x512, unico asset disponibile.
+        `packaging/build/` è gitignored (matcha il pattern esistente `build/`, senza slash
+        iniziale — nessuna nuova regola necessaria).
+        - **macOS**: l'icona del launcher `Cartellino UniSA.app` (non della CLI sciolta, che
+          in Terminale non mostra comunque un'icona propria) viene sostituita **dopo**
+          `osacompile` e **prima** della firma, così viene notarizzata/staplata insieme al resto.
+          `osacompile` chiama di default l'icona `applet.icns` con `CFBundleIconFile = applet`:
+          basta sovrascrivere quel file con il nostro `.icns` mantenendo lo stesso nome. Il
+          bundle include però anche un `Assets.car` (asset catalog compilato) referenziato da
+          `CFBundleIconName`, che su macOS moderni ha **priorità** su `CFBundleIconFile` se
+          presente — verificato rimuovendo `Assets.car` e la chiave `CFBundleIconName` (via
+          `PlistBuddy -c "Delete :CFBundleIconName"`) su una build di prova locale: senza questo
+          passo l'icona sostituita verrebbe ignorata a favore del contenuto (default) dell'asset
+          catalog.
+        - **Windows**: l'icona viene incorporata direttamente nell'eseguibile da PyInstaller
+          (`icon=` in `EXE()`, `packaging/cartellino.spec` — condizionale a `sys.platform ==
+          "win32"`, dato che questo spec non produce un vero bundle `.app` via `BUNDLE()` e
+          quindi `icon=` non avrebbe effetto su macOS/Linux). Le voci `[Icons]` di
+          `installer.iss` puntano già a `cartellino-unisa.exe`, quindi ereditano l'icona
+          incorporata senza bisogno di `IconFilename` esplicito; `SetupIconFile` imposta invece
+          l'icona del `setup.exe` stesso (Esplora risorse/procedura guidata), file distinto
+          dall'eseguibile installato.
+        - **Linux**: nessuna icona per `.deb`/`.rpm` — richiederebbe un file `.desktop` e
+          l'installazione dell'icona nel tema icone di sistema (`/usr/share/icons/...`),
+          infrastruttura che non esiste ancora nel repo (l'app si lancia da riga di comando, non
+          da un launcher grafico) — fuori scope per questa modifica.
       - **Chiusura automatica, scelta del terminale, finestra massimizzata** (v2.0.3):
         `launcher.applescript` non apre più solo Terminal.app — dispatcher verso uno di tre
         blocchi (`launchInTerminalApp`/`launchInGhostty`/`launchInITerm2`) in base a un bundle id

@@ -57,9 +57,19 @@ uso della schermata che lo usa) prima di assumere che funzioni nel binario
 impacchettato solo perché funziona in `uv run`.
 """
 
+import sys
 from pathlib import Path
 
 REPO_ROOT = Path(SPECPATH).resolve().parent  # noqa: F821 (SPECPATH è iniettato da PyInstaller)
+
+# Icona dell'eseguibile: solo su Windows (`icon=` di EXE() imposta l'icona
+# della risorsa nel .exe; su macOS servirebbe un vero bundle .app tramite
+# BUNDLE(), che questo spec non produce — l'icona del launcher .app viene
+# invece impostata a parte nel workflow di release). Generata da
+# packaging/generate_icons.py (packaging/build/icon.ico, gitignored),
+# eseguito come step separato prima della build in CI.
+_icon_ico = REPO_ROOT / "packaging" / "build" / "icon.ico"
+icon = str(_icon_ico) if sys.platform == "win32" and _icon_ico.exists() else None
 
 datas = [
     (str(REPO_ROOT / "cartellino" / "tui" / "app.tcss"), "cartellino/tui"),
@@ -105,6 +115,7 @@ exe = EXE(  # noqa: F821
     target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
+    icon=icon,
 )
 
 coll = COLLECT(  # noqa: F821
