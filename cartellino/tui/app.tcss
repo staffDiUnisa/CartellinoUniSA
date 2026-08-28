@@ -25,6 +25,16 @@ Button:focus {
     margin-right: 1;
 }
 
+/* Righe di pulsanti che devono restare visibili/navigabili quando il terminale
+   si restringe: a differenza di .button-row (larghezza automatica, non va a capo),
+   .button-grid usa ItemGrid per andare a capo su più righe invece di far uscire i
+   pulsanti in eccesso dal viewport (issue GitHub #1, "Problemi di visualizzazione"). */
+.button-grid {
+    height: auto;
+    grid-gutter: 1;
+    margin-bottom: 1;
+}
+
 /* Menu di navigazione della Dashboard: un colore diverso per pulsante */
 #btn-aggiorna {
     background: blue;

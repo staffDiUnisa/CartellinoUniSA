@@ -1,7 +1,7 @@
 import logging
 
 from textual.app import ComposeResult
-from textual.containers import Horizontal, Vertical
+from textual.containers import Horizontal, ItemGrid, Vertical
 from textual.screen import Screen
 from textual.widgets import Button, DataTable, Footer, Header, MarkdownViewer, Static
 
@@ -24,6 +24,7 @@ _CATEGORIE = [
 ]
 _ID_TO_CHIAVE = {id_bottone: chiave for chiave, _, id_bottone in _CATEGORIE}
 _BTN_RIPOSI = "btn-stat-riposi"
+_BTN_EXPORT_RIPOSI = "btn-export-riposi"
 
 
 class StatisticheScreen(Screen):
@@ -44,9 +45,9 @@ class StatisticheScreen(Screen):
         cartellino = Cartellino.from_config(config)
         return Statistiche(cartellino=cartellino, config=config).calcola()
 
-    def _calcola_riposi_markdown(self) -> str:
+    def _riposi(self) -> tuple[OreEccedenti, list]:
         """Stessa fonte dati di `riposi_compensativi.txt` (`OreEccedenti.raggruppa`,
-        vedi `CartellinoProcessor.run`), resa come Markdown invece che scritta su file."""
+        vedi `CartellinoProcessor.run`), condivisa tra la vista Markdown e l'export su file."""
         config: Config = self.app.config
         cartellino = Cartellino.from_config(config)
         oe_proc = OreEccedenti(
@@ -62,6 +63,10 @@ class StatisticheScreen(Screen):
         else:
             riposi_usati = OreEccedenti.get_date_usate_from_file(config.riposi_usati_file)
         riposi = oe_proc.raggruppa(riposi_usati)
+        return oe_proc, riposi
+
+    def _calcola_riposi_markdown(self) -> str:
+        oe_proc, riposi = self._riposi()
         return oe_proc.riposi_markdown(riposi)
 
     def _build_body(self) -> list:
@@ -80,9 +85,14 @@ class StatisticheScreen(Screen):
 
         return [
             Static("Seleziona una categoria (i pulsanti senza dati sono disabilitati)."),
-            Horizontal(*bottoni, classes="button-row"),
+            ItemGrid(*bottoni, classes="button-grid", min_column_width=26),
             DataTable(id="stat-table"),
             MarkdownViewer(id="stat-riposi", show_table_of_contents=True),
+            Horizontal(
+                Button("Esporta riposi in txt", id=_BTN_EXPORT_RIPOSI),
+                classes="button-row",
+                id="riposi-export-row",
+            ),
         ]
 
     def _senza_oe(self) -> bool:
@@ -94,10 +104,14 @@ class StatisticheScreen(Screen):
 
     def on_mount(self) -> None:
         self.query_one("#stat-riposi", MarkdownViewer).display = False
+        self.query_one("#riposi-export-row").display = False
 
     def on_button_pressed(self, event: Button.Pressed) -> None:
         if event.button.id == _BTN_RIPOSI:
             self._mostra_riposi()
+            return
+        if event.button.id == _BTN_EXPORT_RIPOSI:
+            self._esporta_riposi()
             return
         chiave = _ID_TO_CHIAVE.get(event.button.id or "")
         if chiave is not None:
@@ -105,6 +119,7 @@ class StatisticheScreen(Screen):
 
     def _mostra(self, chiave: str) -> None:
         self.query_one("#stat-riposi", MarkdownViewer).display = False
+        self.query_one("#riposi-export-row").display = False
         tabella = self.query_one("#stat-table", DataTable)
         tabella.display = True
         tabella.clear(columns=True)
@@ -123,12 +138,25 @@ class StatisticheScreen(Screen):
         self.query_one("#stat-table", DataTable).display = False
         viewer = self.query_one("#stat-riposi", MarkdownViewer)
         viewer.display = True
+        self.query_one("#riposi-export-row").display = True
         try:
             markdown = self._calcola_riposi_markdown()
         except Exception as e:
             log.error(f"Errore nel caricamento dei riposi compensativi: {e}")
             markdown = f"Errore nel caricamento dei riposi compensativi: {e}"
         viewer.document.update(markdown)
+
+    def _esporta_riposi(self) -> None:
+        config: Config = self.app.config
+        output_file = config.output_folder / "riposi_compensativi.txt"
+        try:
+            oe_proc, riposi = self._riposi()
+            oe_proc.salva_testo(riposi, output_file)
+        except Exception as e:
+            log.error(f"Errore nell'esportazione dei riposi compensativi: {e}")
+            self.notify(f"Errore nell'esportazione: {e}", severity="error")
+            return
+        self.notify(f"Riposi compensativi esportati in {output_file}")
 
     def action_torna_indietro(self) -> None:
         self.app.pop_screen()
