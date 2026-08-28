@@ -21,35 +21,14 @@ Da ripetere ogni volta che viene chiesto di aggiornare questo file con le nuove 
 
 ## Backlog
 
-| Issue | Complessità | Impatto utente | Difficoltà / rischi principali |
-|---|:---:|:---:|---|
-| [#3 Verifica esistenza aggiornamenti](https://github.com/staffDiUnisa/CartellinoUniSA/issues/3) | **L** | Medio-Alto — comodità per restare aggiornati, non blocca il workflow principale | Vedi nota dedicata sotto |
+Nessuna issue aperta al momento. Storico delle voci implementate sotto.
 
-### #3 — Verifica esistenza aggiornamenti
+## Implementate
 
-Richiesta: controllo di nuove release sia on-demand che all'avvio (disattivabile da
-Impostazioni), con possibilità di scaricare la release trovata.
-
-- **Confronto versione**: riusa `_app_version()` (`cartellino/tui/app.py`) già esistente;
-  serve solo una chiamata a `GET /repos/.../releases/latest` (GitHub API) e un confronto
-  semver.
-- **Nuova dipendenza di rete**: nessuna libreria HTTP applicativa presente oggi (solo
-  `urllib3` transitiva di Selenium) — da aggiungere `requests`/`httpx`, o usare
-  `urllib.request` di stdlib per evitare la nuova dipendenza.
-- **Toggle in Impostazioni**: pattern diretto da clonare da `UserConfig.headless` +
-  relativo `Switch` in `settings.py` — basso rischio, basso sforzo.
-- **Check all'avvio non bloccante**: da lanciare come worker Textual (`@work`) da
-  `CartellinoApp.on_mount()`, stesso pattern già usato in `update.py` — deve fallire in modo
-  silenzioso se offline/rete assente, per non degradare l'avvio.
-- **Rischio principale — "scaricare la release"**: il binario è pacchettizzato **onedir**
-  (scelta esplicita, vedi `packaging/cartellino.spec`), quindi non sovrascrivibile file-per-file;
-  inoltre il `.pkg` macOS è firmato/notarizzato/staplato e il `.exe` Windows è in esecuzione
-  durante il check (non sovrascrivibile). Un vero self-update automatico è complesso e rischioso
-  su tutte e 3 le piattaforme. **Consigliato ridurre lo scope reale a**: notifica + apertura
-  della pagina Release (o download del solo asset nel browser), lasciando l'installazione
-  manuale come oggi — non un updater in-app che sostituisce l'eseguibile mentre gira.
-- **Nome**: evitare collisione con `UpdateScreen` esistente (aggiornamento *dati* cartellino,
-  non *app*) — nominare la nuova schermata in modo distinto.
-- Suggerita eventuale suddivisione in due milestone: (1) check + notifica con link alla
-  release (S/M, basso rischio), (2) download automatico assistito (L, rischio alto,
-  probabilmente da ridimensionare per i motivi sopra).
+- [#3 Verifica esistenza aggiornamenti](https://github.com/staffDiUnisa/CartellinoUniSA/issues/3) —
+  controllo release GitHub on-demand (pulsante "Controlla aggiornamenti" in Dashboard) e
+  all'avvio (disattivabile da Impostazioni, `UserConfig.check_updates_on_startup`), con apertura
+  della pagina Release nel browser per il download (nessun self-update automatico, per i rischi
+  di packaging — binario onedir, `.pkg` macOS firmato/notarizzato, `.exe` Windows in esecuzione).
+  Vedi `cartellino/update_checker.py` e `cartellino/tui/screens/app_update.py`; dettagli in
+  `CLAUDE.md`.

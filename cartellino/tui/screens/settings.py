@@ -85,6 +85,10 @@ class SettingsScreen(Screen):
                 yield Label("Download headless (solo Credenziali UNISA)")
                 yield Switch(value=user_config.headless, id="switch-headless")
 
+            with Vertical():
+                yield Label("Controlla aggiornamenti dell'app all'avvio")
+                yield Switch(value=user_config.check_updates_on_startup, id="switch-check-updates")
+
             yield Label("Cartella dati (dove viene salvato cartellino.feather)")
             with Horizontal():
                 yield Input(
@@ -213,6 +217,7 @@ class SettingsScreen(Screen):
             c.strip() for c in self.query_one("#input-codici-saldo", Input).value.split(",") if c.strip()
         ]
         headless = self.query_one("#switch-headless", Switch).value
+        check_updates_on_startup = self.query_one("#switch-check-updates", Switch).value
 
         UserConfig(
             current_year=int(anno_str),
@@ -223,6 +228,7 @@ class SettingsScreen(Screen):
             dashboard_balance_codes=codici_saldo or list(DEFAULT_DASHBOARD_BALANCE_CODES),
             data_folder=data_folder_valore,
             output_folder=output_folder_valore,
+            check_updates_on_startup=check_updates_on_startup,
         ).save()
 
         if sys.platform == "darwin":

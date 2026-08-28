@@ -1,6 +1,7 @@
 import logging
 from datetime import datetime, timedelta
 
+from textual import work
 from textual.app import ComposeResult
 from textual.containers import ItemGrid, Vertical, VerticalScroll
 from textual.screen import Screen
@@ -110,6 +111,7 @@ class DashboardScreen(Screen):
                 Button("Genera timesheet [t]", id="btn-timesheet"),
                 Button("Statistiche [v]", id="btn-statistiche-nav"),
                 Button("Impostazioni [s]", id="btn-impostazioni"),
+                Button("Controlla aggiornamenti", id="btn-controlla-aggiornamenti"),
                 classes="button-grid",
                 min_column_width=24,
             ),
@@ -197,6 +199,7 @@ class DashboardScreen(Screen):
             "btn-timesheet": self.action_apri_timesheet,
             "btn-statistiche-nav": self.action_apri_statistiche,
             "btn-impostazioni": self.action_apri_impostazioni,
+            "btn-controlla-aggiornamenti": self.action_controlla_aggiornamenti,
         }
         action = actions.get(event.button.id)
         if action:
@@ -221,3 +224,23 @@ class DashboardScreen(Screen):
     def action_apri_impostazioni(self) -> None:
         from cartellino.tui.screens.settings import SettingsScreen
         self.app.push_screen(SettingsScreen())
+
+    def action_controlla_aggiornamenti(self) -> None:
+        self._controlla_aggiornamenti()
+
+    @work(thread=True)
+    def _controlla_aggiornamenti(self) -> None:
+        from cartellino.tui.app import _app_version
+        from cartellino.update_checker import check_for_update
+
+        current_version = _app_version()
+        try:
+            release = check_for_update(current_version)
+        except Exception as e:
+            log.warning(f"Controllo aggiornamenti fallito: {e}")
+            release = None
+        self.app.call_from_thread(self._mostra_esito_aggiornamento, current_version, release)
+
+    def _mostra_esito_aggiornamento(self, current_version: str, release) -> None:
+        from cartellino.tui.screens.app_update import AppUpdateScreen
+        self.app.push_screen(AppUpdateScreen(current_version, release))

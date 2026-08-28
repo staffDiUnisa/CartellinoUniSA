@@ -41,6 +41,10 @@ class UserConfig:
     """Nome del tema Textual (es. `"nord"`, `"gruvbox"`) scelto dalla palette comandi
     (`^p` -> Theme) e persistito da `CartellinoApp`. `None` = tema di default di Textual,
     non ancora personalizzato dall'utente."""
+    check_updates_on_startup: bool = True
+    """Se True, `CartellinoApp.on_mount()` controlla in background l'esistenza di una nuova
+    release GitHub all'avvio (issue #3), oltre al controllo on-demand sempre disponibile dalla
+    Dashboard."""
 
     @classmethod
     def load(cls, path: Path | None = None) -> "UserConfig | None":
@@ -63,6 +67,7 @@ class UserConfig:
             data_folder=data.get("data_folder"),
             output_folder=data.get("output_folder"),
             theme=data.get("theme"),
+            check_updates_on_startup=data.get("check_updates_on_startup", True),
         )
 
     def save(self, path: Path | None = None) -> None:

@@ -3,6 +3,7 @@ import sys
 import tomllib
 from pathlib import Path
 
+from textual import work
 from textual.app import App
 from textual.binding import Binding
 
@@ -120,6 +121,32 @@ class CartellinoApp(App):
             self.push_screen(UpdateScreen())
         else:
             self.push_screen(DashboardScreen())
+            self._controlla_aggiornamenti_avvio()
+
+    def _controlla_aggiornamenti_avvio(self) -> None:
+        from cartellino.user_config import UserConfig
+
+        user_config = UserConfig.load()
+        if user_config is None or not user_config.check_updates_on_startup:
+            return
+        self._check_update_worker()
+
+    @work(thread=True)
+    def _check_update_worker(self) -> None:
+        from cartellino.update_checker import check_for_update
+
+        current_version = _app_version()
+        try:
+            release = check_for_update(current_version)
+        except Exception as e:
+            log.warning(f"Controllo aggiornamenti all'avvio fallito: {e}")
+            return
+        if release is not None:
+            self.call_from_thread(self._mostra_aggiornamento_disponibile, current_version, release)
+
+    def _mostra_aggiornamento_disponibile(self, current_version: str, release) -> None:
+        from cartellino.tui.screens.app_update import AppUpdateScreen
+        self.push_screen(AppUpdateScreen(current_version, release))
 
 
 def run(data_folder: Path = DATA_FOLDER) -> None:

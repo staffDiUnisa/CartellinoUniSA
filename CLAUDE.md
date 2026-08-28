@@ -485,6 +485,26 @@ uv run pyinstaller packaging/cartellino.spec --noconfirm
     via `recompose()`: un `recompose()` pieno ricreerebbe anche l'`Header`, lasciando in sospeso
     il suo task interno di set-title contro l'istanza appena rimossa e rompendo la gestione del
     prossimo evento in Textual.
+  - **Controllo aggiornamenti dell'app** (post-v2.0.0, issue GitHub #3): `cartellino/update_checker.py`
+    (`check_for_update(current_version) -> ReleaseInfo | None`), nessuna dipendenza da Textual —
+    chiama `GET /repos/staffDiUnisa/CartellinoUniSA/releases/latest` con `urllib.request` di
+    stdlib (nessuna nuova dipendenza runtime: niente `requests`/`httpx`) e confronta la tupla
+    `(major, minor, patch)` col tag della release più recente (l'endpoint `/releases/latest`
+    esclude di suo draft/prerelease, coerente con la convenzione del progetto di non taggare
+    mai una sezione CHANGELOG per le `-rcN`). **Niente self-update automatico**: il binario è
+    pacchettizzato **onedir** (non sostituibile file-per-file), il `.pkg` macOS è
+    firmato/notarizzato/staplato (non replicabile da un updater in-app) e l'`.exe` Windows non è
+    sovrascrivibile mentre è in esecuzione — la nuova schermata `cartellino/tui/screens/app_update.py`
+    (`AppUpdateScreen`, nome scelto per non confondersi con `UpdateScreen` che aggiorna i *dati*
+    del cartellino, non l'app) si limita a mostrare le note di rilascio e ad aprire la pagina
+    GitHub Release nel browser di sistema (`webbrowser.open`), lasciando l'installazione manuale
+    come oggi. Innescato in due punti, entrambi via worker Textual in thread
+    (`@work(thread=True)`, stesso pattern di `UpdateScreen._scarica`) per non bloccare la UI:
+    on-demand dal pulsante "Controlla aggiornamenti" in Dashboard, e all'avvio da
+    `CartellinoApp.on_mount()` (solo se non è il primo avvio/onboarding, e solo se
+    `UserConfig.check_updates_on_startup` — nuovo campo, default `True`, toggle in Impostazioni —
+    è vero); il check in avvio fallisce silenziosamente (nessuna notifica) se la rete non è
+    disponibile o l'API non risponde, per non degradare l'esperienza di avvio offline.
 
 ## Data flow
 
