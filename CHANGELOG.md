@@ -6,6 +6,13 @@ Release: aggiungi la sezione della prossima versione **prima** di taggare una re
 altrimenti la release verrà pubblicata senza descrizione delle novità (solo changelog
 auto-generato da GitHub).
 
+## v2.0.5
+
+- **Uniformità pulsanti nella TUI**: dimensioni minime e spaziatura dei pulsanti ora coerenti
+  su tutte le schermate (Impostazioni, Date escluse, Credenziali, Onboarding, Aggiorna
+  cartellino, Timesheet, Controllo aggiornamenti), non solo su Dashboard/Report/Statistiche
+  come prima.
+
 ## v2.0.4
 
 - **Verifica aggiornamenti dell'app**: controllo di nuove release GitHub sia on-demand
