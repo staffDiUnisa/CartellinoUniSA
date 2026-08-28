@@ -6,6 +6,13 @@ Release: aggiungi la sezione della prossima versione **prima** di taggare una re
 altrimenti la release verrà pubblicata senza descrizione delle novità (solo changelog
 auto-generato da GitHub).
 
+## v2.0.4
+
+- **Verifica aggiornamenti dell'app**: controllo di nuove release GitHub sia on-demand
+  (pulsante "Controlla aggiornamenti" in Dashboard) sia all'avvio (disattivabile da
+  Impostazioni). Se trovata una versione più recente, apre la pagina della release nel browser
+  per il download — l'installazione resta manuale come oggi, nessun self-update automatico.
+
 ## v2.0.3
 
 - **Fix layout non responsivo** (Dashboard e Statistiche): le righe di pulsanti ora vanno a capo
