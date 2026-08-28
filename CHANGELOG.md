@@ -6,6 +6,14 @@ Release: aggiungi la sezione della prossima versione **prima** di taggare una re
 altrimenti la release verrà pubblicata senza descrizione delle novità (solo changelog
 auto-generato da GitHub).
 
+## v2.0.3
+
+- **Fix layout non responsivo** (Dashboard e Statistiche): le righe di pulsanti ora vanno a capo
+  su più righe quando il terminale si restringe, invece di uscire dal viewport diventando
+  inaccessibili.
+- **Statistiche → Riposo compensativo**: nuovo pulsante per esportare i riposi compensativi in
+  `riposi_compensativi.txt`, senza dover passare dalla generazione report.
+
 ## v2.0.2
 
 - **Nuovo launcher `.app` per macOS**, incluso nello stesso installer `.pkg`: apre il terminale
