@@ -5,23 +5,44 @@
 > Sostituisce la precedente roadmap v2.0.0 (completata e rilasciata — consultabile nella storia
 > git di questo file, `git log -p TODO.md`).
 
-## Procedimento di aggiornamento
+## Procedimento di censimento
 
 Da ripetere ogni volta che viene chiesto di aggiornare questo file con le nuove issue:
 
 1. `gh issue list --state open` sul repo per l'elenco aggiornato.
-2. Per ogni issue aperta non ancora presente in tabella: aggiungere una riga con
-   titolo/link, e una sotto-sezione dedicata con la stima.
-3. Per ogni issue presente in tabella ma nel frattempo chiusa: rimuoverla dalla tabella (resta
-   comunque nello storico GitHub) e, se utile, annotarla come risolta con riferimento alla
-   versione/release che l'ha chiusa.
-4. Stima con la stessa scala usata di seguito: **Complessità** (S = 1-2 giorni, M = 3-5 giorni,
-   L = 6-10 giorni, XL = 10+ giorni, sviluppo part-time una persona sola), **Impatto utente**
-   (Basso/Medio/Alto), **Difficoltà/rischi principali** (in prosa, punti concreti).
+2. Per ogni issue aperta non ancora presente in tabella: aggiungere una riga con titolo/link e
+   **Stato** vuoto (nessuna decisione presa ancora), e una sotto-sezione dedicata con la stima
+   di **Complessità** (S = 1-2 giorni, M = 3-5 giorni, L = 6-10 giorni, XL = 10+ giorni,
+   sviluppo part-time una persona sola), **Impatto utente** (Basso/Medio/Alto) e
+   **Difficoltà/rischi principali** (in prosa, punti concreti).
+3. Le issue già presenti in tabella non vengono ristimate: si aggiorna solo l'elenco con le
+   nuove.
+
+## Stati delle issue e flusso di lavoro
+
+Quando viene chiesta la lista delle cose da fare, l'utente sceglie per ciascuna issue nel
+Backlog uno stato tra quelli sotto. Ogni cambio di stato aggiorna sia questo file sia la issue
+su GitHub (`gh issue comment`/`gh issue close`), come indicato:
+
+| Stato | Significato | Azione su GitHub | Azione su TODO.md |
+|:---:|---|---|---|
+| *(vuoto)* | Appena censita, nessuna decisione presa | Nessuna | Resta in Backlog, colonna Stato vuota |
+| **WIP** | Si passa alla fase di risoluzione | Commento: issue in lavorazione, sarà risolta con una prossima release | Colonna Stato → `WIP`, resta in Backlog |
+| **IGN** | Ignorata per ora | Nessuna azione — issue resta aperta così com'è | Colonna Stato → `IGN`, resta in Backlog |
+| **DEN** | Scartata, non verrà implementata | Commento con la motivazione fornita dall'utente, **poi chiusura automatica** della issue | Riga rimossa dal Backlog e aggiunta a **Rifiutate** con la motivazione |
+| **VER** | Implementazione completata, in fase di verifica | Commento: implementazione completata, in verifica | Colonna Stato → `VER`, resta in Backlog |
+| **CLO** | Verificata e chiusa | Commento con riferimento alla release che la risolve (o alla motivazione se non risolvibile), **poi chiusura** della issue | Riga rimossa dal Backlog e aggiunta a **Implementate** |
+
+Flusso tipico: *(vuoto)* → `WIP` → `VER` → `CLO`. `IGN` può essere scelto in qualunque momento
+per rimandare la decisione, senza uscire dal Backlog. `DEN` è uno stato terminale alternativo
+(da *(vuoto)* o da `IGN`) — a differenza di `CLO`, non richiede una release: la motivazione del
+rifiuto sostituisce il riferimento alla soluzione.
 
 ## Backlog
 
-Nessuna issue aperta al momento. Storico delle voci implementate sotto.
+| Issue | Stato | Complessità | Impatto utente | Difficoltà / rischi principali |
+|---|:---:|:---:|:---:|---|
+| _nessuna issue aperta al momento_ | | | | |
 
 ## Implementate
 
@@ -31,4 +52,8 @@ Nessuna issue aperta al momento. Storico delle voci implementate sotto.
   della pagina Release nel browser per il download (nessun self-update automatico, per i rischi
   di packaging — binario onedir, `.pkg` macOS firmato/notarizzato, `.exe` Windows in esecuzione).
   Vedi `cartellino/update_checker.py` e `cartellino/tui/screens/app_update.py`; dettagli in
-  `CLAUDE.md`.
+  `CLAUDE.md`. Risolto in `v2.0.4`.
+
+## Rifiutate
+
+_nessuna issue rifiutata al momento._
