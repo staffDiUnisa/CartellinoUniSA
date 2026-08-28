@@ -6,6 +6,7 @@ Button {
     background: blue;
     color: white;
     text-style: bold;
+    min-width: 20;
 }
 
 Button:hover {
@@ -19,10 +20,31 @@ Button:focus {
 .button-row {
     height: auto;
     width: auto;
+    margin-top: 1;
 }
 
 .button-row Button {
     margin-right: 1;
+}
+
+/* Righe che affiancano un campo (Input/MaskedInput) a un pulsante, es. "Sfoglia...":
+   a differenza di .button-row NON impostano width: auto sul contenitore, altrimenti
+   il campo si restringerebbe al contenuto invece di occupare lo spazio disponibile. */
+.field-row {
+    height: auto;
+    margin-top: 1;
+}
+
+.field-row Button {
+    margin-left: 1;
+}
+
+/* Input/MaskedInput hanno width: 100% di default: dentro .field-row va ridotta a
+   1fr, altrimenti reclamano tutta la riga e spingono il pulsante fuori dal viewport
+   (Horizontal ha overflow: hidden, quindi il pulsante sparirebbe silenziosamente). */
+.field-row Input,
+.field-row MaskedInput {
+    width: 1fr;
 }
 
 /* Righe di pulsanti che devono restare visibili/navigabili quando il terminale
@@ -32,6 +54,7 @@ Button:focus {
 .button-grid {
     height: auto;
     grid-gutter: 1;
+    margin-top: 1;
     margin-bottom: 1;
 }
 

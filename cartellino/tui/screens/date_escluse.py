@@ -50,7 +50,7 @@ class DateEscluseScreen(Screen):
             )
             with VerticalScroll(id="date-escluse-lista"):
                 yield from self._build_lista()
-            with Horizontal():
+            with Horizontal(classes="field-row"):
                 yield MaskedInput(_DATA_TEMPLATE, id="input-nuova-data")
                 yield MaskedInput(_ORA_TEMPLATE, id="input-nuova-ora")
                 yield Button("Aggiungi", id="btn-aggiungi", variant="primary")

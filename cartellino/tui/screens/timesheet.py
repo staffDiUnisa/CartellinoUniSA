@@ -2,7 +2,7 @@ import logging
 from pathlib import Path
 
 from textual.app import ComposeResult
-from textual.containers import Vertical
+from textual.containers import Horizontal, Vertical
 from textual.screen import Screen
 from textual.widgets import Button, Footer, Header, RichLog, Select, Static
 
@@ -36,7 +36,8 @@ class TimesheetScreen(Screen):
                     [(f.name, str(f)) for f in yaml_files],
                     id="select-timesheet",
                 )
-                yield Button("Genera", id="btn-genera", variant="primary")
+                with Horizontal(classes="button-row"):
+                    yield Button("Genera", id="btn-genera", variant="primary")
             yield RichLog(id="timesheet-log", wrap=True, markup=True)
         yield Footer()
 

@@ -90,7 +90,7 @@ class SettingsScreen(Screen):
                 yield Switch(value=user_config.check_updates_on_startup, id="switch-check-updates")
 
             yield Label("Cartella dati (dove viene salvato cartellino.feather)")
-            with Horizontal():
+            with Horizontal(classes="field-row"):
                 yield Input(
                     value=user_config.data_folder or str(config.data_folder),
                     id="input-data-folder",
@@ -98,7 +98,7 @@ class SettingsScreen(Screen):
                 yield Button("Sfoglia...", id="btn-sfoglia-data-folder")
 
             yield Label("Cartella output report (vuoto = predefinita: {cartella dati}/{anno}/output)")
-            with Horizontal():
+            with Horizontal(classes="field-row"):
                 yield Input(value=user_config.output_folder or "", id="input-output-folder")
                 yield Button("Sfoglia...", id="btn-sfoglia-output-folder")
 
@@ -109,7 +109,8 @@ class SettingsScreen(Screen):
                 id="input-data-ticket",
             )
 
-            yield Button("Gestisci date escluse (date_escluse.txt)", id="btn-date-escluse")
+            with Horizontal(classes="button-row"):
+                yield Button("Gestisci date escluse (date_escluse.txt)", id="btn-date-escluse")
 
             yield Static(self._testo_stato_credenziali(), id="stato-credenziali")
             with Horizontal(classes="button-row"):
@@ -117,7 +118,8 @@ class SettingsScreen(Screen):
                 yield Button("Rimuovi credenziali", id="btn-rimuovi-cred")
 
             yield Static("", id="settings-errore")
-            yield Button("Salva", id="btn-salva", variant="primary")
+            with Horizontal(classes="button-row"):
+                yield Button("Salva", id="btn-salva", variant="primary")
         yield Footer()
 
     @staticmethod

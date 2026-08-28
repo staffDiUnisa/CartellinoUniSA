@@ -2,7 +2,7 @@ import logging
 
 from textual import work
 from textual.app import ComposeResult
-from textual.containers import Vertical
+from textual.containers import Horizontal, Vertical
 from textual.screen import Screen
 from textual.widgets import Button, Footer, Header, RadioButton, RadioSet, RichLog, Static
 
@@ -36,7 +36,8 @@ class UpdateScreen(Screen):
                 yield Static(
                     "[dim]Credenziali UNISA non disponibile: non sei sulla rete universitaria.[/dim]"
                 )
-            yield Button("Avvia download", id="btn-avvia", variant="primary")
+            with Horizontal(classes="button-row"):
+                yield Button("Avvia download", id="btn-avvia", variant="primary")
             yield RichLog(id="update-log", wrap=True, markup=True)
         yield Footer()
 

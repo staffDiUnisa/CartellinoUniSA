@@ -2,7 +2,7 @@ import logging
 from datetime import datetime
 
 from textual.app import ComposeResult
-from textual.containers import Vertical
+from textual.containers import Horizontal, Vertical
 from textual.screen import Screen
 from textual.widgets import Button, Footer, Header, Input, Label, Static, Switch
 
@@ -40,7 +40,8 @@ class OnboardingScreen(Screen):
                 yield Label("Download headless (solo per Credenziali UNISA)")
                 yield Switch(id="switch-headless")
             yield Static("", id="onboarding-errore")
-            yield Button("Salva e continua", id="btn-salva", variant="primary")
+            with Horizontal(classes="button-row"):
+                yield Button("Salva e continua", id="btn-salva", variant="primary")
         yield Footer()
 
     def on_button_pressed(self, event: Button.Pressed) -> None:

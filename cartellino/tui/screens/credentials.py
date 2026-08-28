@@ -1,7 +1,7 @@
 import logging
 
 from textual.app import ComposeResult
-from textual.containers import Vertical
+from textual.containers import Horizontal, Vertical
 from textual.screen import Screen
 from textual.widgets import Button, Footer, Header, Input, Label, Static
 
@@ -26,7 +26,8 @@ class CredentialsScreen(Screen[bool]):
             yield Label("Password UniSA")
             yield Input(password=True, id="input-password")
             yield Static("", id="credentials-errore")
-            yield Button("Salva", id="btn-salva", variant="primary")
+            with Horizontal(classes="button-row"):
+                yield Button("Salva", id="btn-salva", variant="primary")
         yield Footer()
 
     def on_button_pressed(self, event: Button.Pressed) -> None:

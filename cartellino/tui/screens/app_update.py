@@ -1,7 +1,7 @@
 import webbrowser
 
 from textual.app import ComposeResult
-from textual.containers import Vertical
+from textual.containers import Horizontal, Vertical
 from textual.screen import Screen
 from textual.widgets import Button, Footer, Header, MarkdownViewer, Static
 
@@ -34,8 +34,10 @@ class AppUpdateScreen(Screen):
                     f"(attuale: {self._current_version})"
                 )
                 yield MarkdownViewer(self._release.body or "_Nessuna nota di rilascio._", show_table_of_contents=False)
-                yield Button("Apri pagina di download", id="btn-apri-download", variant="primary")
-            yield Button("Chiudi", id="btn-chiudi")
+            with Horizontal(classes="button-row"):
+                if self._release is not None:
+                    yield Button("Apri pagina di download", id="btn-apri-download", variant="primary")
+                yield Button("Chiudi", id="btn-chiudi")
         yield Footer()
 
     def on_button_pressed(self, event: Button.Pressed) -> None:

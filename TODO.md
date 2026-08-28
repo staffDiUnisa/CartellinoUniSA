@@ -42,7 +42,8 @@ rifiuto sostituisce il riferimento alla soluzione.
 
 | Issue | Stato | Complessità | Impatto utente | Difficoltà / rischi principali |
 |---|:---:|:---:|:---:|---|
-| _nessuna issue aperta al momento_ | | | | |
+| [#4 Miglioramento interfaccia](https://github.com/staffDiUnisa/CartellinoUniSA/issues/4) | VER | S | Medio | Audit di tutti i pulsanti nelle schermate `cartellino/tui/screens/` e nel CSS condiviso (`app.tcss`): dimensioni/spacing sono probabilmente impostati per schermata invece che con classi condivise, quindi va normalizzato senza rompere layout specifici (es. bottoni colorati per categoria in `statistiche.py`). Rischio principale: regressioni visive su schermate non riprovate manualmente (nessun test automatico sul rendering TUI). |
+| [#5 Documentazione](https://github.com/staffDiUnisa/CartellinoUniSA/issues/5) | IGN | L | Alto | Due deliverable distinti: struttura `docs/` in Markdown (guida utente + note architetturali, in parte già derivabile da `CLAUDE.md`) e setup ReadTheDocs (scelta toolchain — Sphinx/MkDocs —, config di build, hosting). Rischio principale: mantenere la documentazione sincronizzata con un progetto che cambia rapidamente (v2.x in evoluzione attiva) senza duplicare/disallinearsi da `CLAUDE.md`, che resta la fonte di verità per i dettagli implementativi. |
 
 ## Implementate
 
