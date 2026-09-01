@@ -10,10 +10,18 @@
 # per poter installare anche i launcher .app in /Applications nello stesso
 # pacchetto — questo script usa comunque path assoluti, indipendenti da
 # --install-location, quindi non richiede modifiche.
+#
+# `cartellino-unisa-gui` punta alla copia DENTRO il bundle .app
+# (Contents/MacOS/), non a /usr/local/cartellino-unisa/cartellino-unisa-gui:
+# quest'ultimo è un eseguibile "sciolto" senza identità di bundle macOS
+# valida, che va incontro allo stesso hang risolto per il lancio da
+# Finder/Launchpad in issue #6 (vedi commento nel workflow di release) — un
+# processo lanciato dalla riga di comando avrebbe lo stesso identico problema
+# se puntasse ancora lì.
 set -e
 
 mkdir -p /usr/local/bin
 ln -sf /usr/local/cartellino-unisa/cartellino-unisa /usr/local/bin/cartellino-unisa
-ln -sf /usr/local/cartellino-unisa/cartellino-unisa-gui /usr/local/bin/cartellino-unisa-gui
+ln -sf "/Applications/Cartellino UniSA.app/Contents/MacOS/cartellino-unisa-gui" /usr/local/bin/cartellino-unisa-gui
 
 exit 0

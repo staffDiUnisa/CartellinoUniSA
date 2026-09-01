@@ -199,16 +199,43 @@ jobs:
           codesign --verify --deep --strict --verbose=2 "build/Cartellino UniSA (Terminale).app"
 
       - name: Genera e firma il launcher GUI .app (solo macOS)
-        # A differenza del launcher TUI sopra (AppleScript che pilota un
-        # Terminale), la GUI PySide6 è già una finestra nativa: questo bundle
-        # (packaging/macos/gui_launcher/) esiste solo per darle un'icona/nome
-        # cliccabili da Finder/Launchpad, l'eseguibile è un semplice script di
-        # shell che fa `exec` del binario installato — niente AppleScript,
-        # niente picker "quale terminale", niente entitlement Apple Events
-        # (Fase 13 TODO_gui.md).
+        # Fino a v3.0.1, questo bundle (packaging/macos/gui_launcher/) era solo
+        # un'icona/nome cliccabili da Finder/Launchpad: l'eseguibile era un
+        # semplice script di shell che faceva `exec` del binario installato in
+        # /usr/local/cartellino-unisa/cartellino-unisa-gui. Bug reale
+        # riscontrato in produzione su v3.0.1 (issue GitHub #6): `exec`
+        # sostituisce l'immagine del processo ma NON la sua identità di bundle
+        # macOS — il processo risultante ha come percorso il binario "sciolto"
+        # in /usr/local, non più dentro Contents/MacOS/ di un vero .app, quindi
+        # CFBundleGetMainBundle() non trova alcun Info.plist. Senza
+        # un'identità di bundle valida, CoreFoundation non può usare la cache
+        # delle preferenze per-bundle e ogni lookup di localizzazione fatto da
+        # PySide6/Shiboken durante l'inizializzazione lazy dei tipi Qt (QLocale
+        # e affini) degrada a una query NON cache-ata via XPC a cfprefsd
+        # (~100ms ciascuna). PySide6 ne fa migliaia durante l'avvio — da qui i
+        # minuti di "app non risponde" segnalati (verificato: nei log di
+        # sistema, migliaia di eventi "Retrieve User by ID" durante l'hang,
+        # zero durante un avvio dallo stesso identico onedir eseguito da
+        # dentro un vero bundle .app).
+        #
+        # Fix: l'eseguibile PyInstaller reale (già firmato nello step sopra)
+        # e le sue librerie di supporto vengono copiati DENTRO
+        # Contents/MacOS e Contents/Frameworks di questo bundle, così il
+        # processo lanciato da Finder/Launchpad ha fin dall'inizio un percorso
+        # dentro un vero .app con un Info.plist valido accanto — nessun
+        # `exec` verso un percorso esterno. Verificato con una build locale
+        # non firmata: lo stesso onedir, lanciato da dentro una struttura
+        # Contents/MacOS + Contents/Frameworks, si avvia in ~1s invece di
+        # restare per minuti nel loop di lookup sopra.
         if: matrix.os == 'macos-latest'
         run: |
           cp -R packaging/macos/gui_launcher "build/Cartellino UniSA.app"
+          rm -f "build/Cartellino UniSA.app/Contents/MacOS/.gitkeep"
+          cp "dist/cartellino-unisa/cartellino-unisa-gui" \
+            "build/Cartellino UniSA.app/Contents/MacOS/cartellino-unisa-gui"
+          cp -R "dist/cartellino-unisa/_internal" \
+            "build/Cartellino UniSA.app/Contents/Frameworks"
+
           # Git non traccia le cartelle vuote: packaging/macos/gui_launcher/Contents/Resources/
           # non esiste dopo il checkout (era vuota nel sorgente, la sola icona ci va copiata
           # sotto), va ricreata esplicitamente prima di copiarci l'icona.
@@ -219,7 +246,14 @@ jobs:
           /usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString ${{ steps.version.outputs.value }}" "$PLIST"
           /usr/libexec/PlistBuddy -c "Set :CFBundleVersion ${{ steps.version.outputs.value }}" "$PLIST"
 
+          # Stesse entitlements dell'eseguibile grezzo (packaging/entitlements.plist,
+          # hardened runtime + disable-library-validation per le dylib vendored di
+          # pyarrow/numpy/PySide6): il main executable del bundle ora È quel
+          # binario, va risignato con le stesse entitlements o la firma
+          # "pulita" del bundle le sovrascriverebbe con nessuna, riportando il
+          # problema di library validation già risolto per l'eseguibile sciolto.
           codesign --force --timestamp --options runtime \
+            --entitlements packaging/entitlements.plist \
             --sign "Developer ID Application" \
             "build/Cartellino UniSA.app"
           codesign --verify --deep --strict --verbose=2 "build/Cartellino UniSA.app"

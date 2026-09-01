@@ -3,7 +3,7 @@
 <plist version="1.0">
 <dict>
     <key>CFBundleExecutable</key>
-    <string>cartellino-unisa-gui-launcher</string>
+    <string>cartellino-unisa-gui</string>
     <key>CFBundleIdentifier</key>
     <string>org.antaresnet.cartellino-unisa.gui</string>
     <key>CFBundleName</key>

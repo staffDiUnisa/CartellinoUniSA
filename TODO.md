@@ -17,6 +17,12 @@ Da ripetere ogni volta che viene chiesto di aggiornare questo file con le nuove 
    **Difficoltà/rischi principali** (in prosa, punti concreti).
 3. Le issue già presenti in tabella non vengono ristimate: si aggiorna solo l'elenco con le
    nuove.
+4. Per ogni issue nuova, e a ogni ricensimento anche per quelle già in tabella, valutare se
+   segnalare il flag **URG** (vedi sotto) — senza aspettare che sia l'utente a chiederlo — quando
+   ricorre almeno una di: bug che rompe una funzionalità già rilasciata (non solo in sviluppo),
+   nessun workaround disponibile per l'utente, o impatto utente Alto combinato con un
+   peggioramento visibile rispetto a una release precedente. Segnalare sempre all'utente, nel
+   messaggio di risposta, quali issue sono state marcate/rimosse da `URG` e perché.
 
 ## Stati delle issue e flusso di lavoro
 
@@ -38,6 +44,21 @@ per rimandare la decisione, senza uscire dal Backlog. `DEN` è uno stato termina
 (da *(vuoto)* o da `IGN`) — a differenza di `CLO`, non richiede una release: la motivazione del
 rifiuto sostituisce il riferimento alla soluzione.
 
+### Flag `URG`
+
+`URG` non è uno stato del flusso sopra ma un **flag di priorità ortogonale**, che segnala che la
+soluzione va prioritizzata rispetto al resto del Backlog. Si combina con lo stato corrente della
+riga invece di sostituirlo: in tabella compare come prefisso, es. colonna Stato → `URG` (issue
+ancora senza stato), `URG WIP`, `URG VER`. Non è applicabile a `IGN`/`DEN`/`CLO` (per definizione
+non più prioritarie/attive). Chi lo assegna:
+
+- Di norma è Claude a proporlo durante il censimento (vedi passo 4 sopra) o un ricensimento
+  successivo, segnalandolo esplicitamente all'utente — non richiede che l'utente lo chieda prima.
+- L'utente può comunque assegnarlo o rimuoverlo in qualunque momento su una riga specifica.
+
+Nessuna azione automatica su GitHub all'assegnazione (nessun commento/label) — è un segnale solo
+per la prioritizzazione interna in questo file.
+
 ## Sviluppo interno: GUI desktop (non da issue GitHub)
 
 È in fase di pianificazione una nuova interfaccia grafica desktop (PySide6/Qt), da affiancare
@@ -51,6 +72,7 @@ di complessità/impatto per ciascuna, in [`TODO_gui.md`](TODO_gui.md).
 | Issue | Stato | Complessità | Impatto utente | Difficoltà / rischi principali |
 |---|:-----:|:---:|:---:|---|
 | [#5 Documentazione](https://github.com/staffDiUnisa/CartellinoUniSA/issues/5) |  IGN  | L | Alto | Due deliverable distinti: struttura `docs/` in Markdown (guida utente + note architetturali, in parte già derivabile da `CLAUDE.md`) e setup ReadTheDocs (scelta toolchain — Sphinx/MkDocs —, config di build, hosting). Rischio principale: mantenere la documentazione sincronizzata con un progetto che cambia rapidamente (v2.x in evoluzione attiva) senza duplicare/disallinearsi da `CLAUDE.md`, che resta la fonte di verità per i dettagli implementativi. **Posticipata** a dopo lo sviluppo della GUI desktop (vedi [`TODO_gui.md`](TODO_gui.md)): scriverla ora significherebbe documentare la sola TUI e poi riscriverla per includere anche la GUI. |
+| [#6 Problemi GUI MacOS](https://github.com/staffDiUnisa/CartellinoUniSA/issues/6) | URG WIP | M | Alto | Segnalato su `v3.0.1`: l'app GUI installata via `.pkg` resta a rimbalzare nel dock e poi va in "non risponde". **Causa trovata e riprodotta** direttamente sulla macchina del segnalante (`sample`/`log show` sul processo bloccato): il launcher `Cartellino UniSA.app` faceva `exec` del binario "sciolto" in `/usr/local/cartellino-unisa/`, perdendo l'identità di bundle macOS — senza un `Info.plist` risolvibile, ogni lookup di localizzazione lazy di PySide6/Shiboken (migliaia durante l'avvio) degrada a una query non cache-ata via XPC a `cfprefsd` (~100ms l'una), accumulandosi a minuti. Dettagli completi e fix in `CLAUDE.md` (sezione "Bug reale in produzione (v3.0.1, issue GitHub #6)"): l'eseguibile e le sue librerie vengono ora copiati dentro `Contents/MacOS`/`Contents/Frameworks` del bundle invece di un `exec` verso l'esterno — verificato con una build locale non firmata (avvio in ~1s, zero query non cache-ate). Resta da verificare con una vera build/firma/notarizzazione CI (tag `-rcN`) prima di poter passare a `VER`. |
 
 ## Implementate
 

@@ -264,6 +264,39 @@ uv run pyinstaller packaging/cartellino.spec --noconfirm
         giustifica la complessità aggiuntiva di due identifier/receipt separati.
         `packaging/macos/postinstall` non ha richiesto modifiche: usa già percorsi assoluti
         indipendenti da `--install-location`.
+      - **Bug reale in produzione (v3.0.1, issue GitHub #6): GUI "non risponde" per minuti
+        all'avvio da Finder/Launchpad**. Fino a v3.0.1 il launcher `Cartellino UniSA.app` era solo
+        un'icona: il suo eseguibile era uno script di shell che faceva `exec` del binario
+        installato in `/usr/local/cartellino-unisa/cartellino-unisa-gui`. `exec` sostituisce
+        l'immagine del processo ma **non** la sua identità di bundle macOS — il processo
+        risultante ha come percorso un binario "sciolto" fuori da qualunque `Contents/MacOS/`,
+        quindi `CFBundleGetMainBundle()` non trova alcun `Info.plist`. Diagnosticato riproducendo
+        l'hang in locale (`sample`/`log show` sul processo bloccato): senza un'identità di bundle
+        valida, CoreFoundation non può usare la cache delle preferenze per-bundle, e ogni lookup
+        di localizzazione fatto da PySide6/Shiboken durante l'inizializzazione lazy dei tipi Qt
+        (`QLocale` e affini, migliaia di volte durante l'avvio) degrada a una query NON
+        cache-ata via XPC a `cfprefsd` (~100ms l'una, migliaia di eventi "Retrieve User by ID"
+        osservati nei log di sistema durante l'hang, contro **zero** nello stesso identico onedir
+        lanciato da dentro un vero bundle `.app`) — non un deadlock, ma un loop di lookup non
+        cacheati che si accumula a minuti. **Fix**: l'eseguibile PyInstaller reale (già firmato) e
+        le sue librerie di supporto (`_internal`) vengono copiati direttamente dentro
+        `Contents/MacOS` e `Contents/Frameworks` del bundle `Cartellino UniSA.app` (niente più
+        script/`exec` verso un percorso esterno), nello step "Genera e firma il launcher GUI .app"
+        di `release.yml` — verificato con una build locale non firmata: lo stesso identico onedir
+        si avvia in ~1s da dentro questa struttura invece di restare bloccato per minuti. La
+        firma del bundle va fatta con le stesse `packaging/entitlements.plist`
+        dell'eseguibile grezzo (hardened runtime + `disable-library-validation`): il main
+        executable del bundle ora è quel binario, e una firma "pulita" del bundle senza
+        entitlements le sovrascriverebbe con nessuna, reintroducendo il problema di library
+        validation per le dylib vendored di pyarrow/numpy/PySide6 già risolto altrove per
+        l'eseguibile sciolto. Il symlink `/usr/local/bin/cartellino-unisa-gui`
+        (`packaging/macos/postinstall`) punta ora alla copia **dentro** il bundle
+        (`/Applications/Cartellino UniSA.app/Contents/MacOS/cartellino-unisa-gui`), non più
+        all'eseguibile sciolto in `/usr/local/cartellino-unisa/`: quest'ultimo resta comunque
+        privo di identità di bundle valida e andrebbe incontro allo stesso hang se lanciato
+        direttamente. `packaging/macos/gui_launcher/Contents/MacOS/` nel repo contiene solo un
+        `.gitkeep` (git non traccia le cartelle vuote): l'eseguibile reale viene copiato lì da CI
+        ad ogni build, non è mai committato (stesso principio delle icone generate).
       - **Icona personalizzata** (v2.0.3): `resources/logo.png` (512x512, non versionato prima
         d'ora) è la sorgente unica per le icone generate in CI, mai committata già convertita
         (formati binari `.ico`/`.icns`, diff illeggibili — stesso principio già seguito per
