@@ -243,9 +243,29 @@
   rete non disponibili qui): download Selenium reale end-to-end, generazione report/timesheet
   reale su disco, interazione da tastiera/mouse reale (solo `grab()` programmatico, non click
   reali) — da fare con un giro di QA umano prima di una release definitiva.
-- **Prossimo passo**: Fase 15 (aggiornare `CLAUDE.md` con l'architettura `cartellino/gui/`, da
-  fare "a fine sviluppo" per non documentare un'API ancora instabile — valutare se questo è già
-  il momento giusto) oppure una release `-rc` di prova per validare la Fase 13 in CI reale.
+- **Fase 13 — validata su CI reale con `v3.0.0-rc1`/`v3.0.0-rc2`.**
+  - `v3.0.0-rc1`: nessuna run partita — il trigger del workflow era ancora `tags: ["v2.*"]`
+    (dimenticato in Fase 13, mai testato perché tutte le verifiche precedenti erano locali).
+    Generalizzato a `"v[0-9]*"`, così non va più aggiornato ad ogni bump major futuro. Tag
+    cancellato e ricreato sul commit col fix.
+  - Run per `v3.0.0-rc1` (dopo il fix del trigger): **macOS fallito**, Windows e Linux verdi. Causa:
+    `packaging/macos/gui_launcher/Contents/Resources/` era una cartella vuota nel sorgente — Git
+    non traccia le cartelle vuote, quindi dopo il checkout in CI non esisteva affatto, e
+    `cp packaging/build/icon.icns ".../Resources/icon.icns"` falliva con "No such file or
+    directory" (mai riprodotto nelle verifiche locali di Fase 13, perché lì la cartella esisteva
+    comunque sul filesystem anche se vuota/non tracciata — differenza tra un `cp -R` locale e un
+    checkout Git). Fix: `mkdir -p` esplicito prima della copia.
+  - `v3.0.0-rc2` (dopo il fix): **tutti e tre i build verdi** (macOS con firma/notarizzazione/
+    staple di entrambi i launcher — TUI e GUI — riuscita, Windows, Linux), job `release` completato
+    con successo, draft GitHub Release pubblicata con tutti e 7 gli asset attesi (`.pkg`, `.exe`,
+    `.deb`, `.rpm` + 3 zip onedir). Fase 13 ora **verificata end-to-end su CI reale**, non solo
+    in locale.
+  - Draft release `v3.0.0-rc2` lasciata su GitHub per ispezione manuale (non pubblicata): a
+    scelta dell'utente se cancellarla o tenerla per un test di installazione reale su una
+    macchina pulita prima della release definitiva.
+- **Prossimo passo**: Fase 15 (aggiornare `CLAUDE.md` con l'architettura `cartellino/gui/`) —
+  ora che la Fase 13 è validata su CI reale, questo è il momento naturale per farlo, dato che
+  packaging/CI e le API delle schermate sono stabili.
 
 ## Decisioni prese
 
