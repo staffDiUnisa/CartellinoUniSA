@@ -55,6 +55,8 @@ dependencies = [
     "platformdirs",
     "pyarrow",
     "tomli-w",
+    # Nuova dipendenza per la GUI desktop (vedi TODO_gui.md, Fase 0)
+    "pyside6",
 ]
 
 [tool.uv]

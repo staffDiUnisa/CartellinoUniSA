@@ -13,3 +13,7 @@ run = "uv run python cartellino_v2.py"
 [tasks.tui]
 description = "Esegue la TUI Textual (cartellino_tui.py)"
 run = "uv run python cartellino_tui.py"
+
+[tasks.gui]
+description = "Esegue la GUI desktop PySide6 (cartellino_gui.py, spike Fase 0 TODO_gui.md)"
+run = "uv run python cartellino_gui.py"

@@ -1,0 +1,8 @@
+/* Foglio di stile Qt base (Fase 1 TODO_gui.md), equivalente concettuale di
+   cartellino/tui/app.tcss. Vuoto/minimale per ora: solo lo scaffolding di
+   caricamento va verificato in questa fase, la palette/i dettagli visivi
+   arriveranno con le schermate reali (Fase 2+). */
+
+QMainWindow {
+    /* placeholder: nessuna personalizzazione ancora richiesta */
+}
