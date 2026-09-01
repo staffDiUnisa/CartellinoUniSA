@@ -6,6 +6,17 @@ Release: aggiungi la sezione della prossima versione **prima** di taggare una re
 altrimenti la release verrà pubblicata senza descrizione delle novità (solo changelog
 auto-generato da GitHub).
 
+## v3.0.2
+
+- **Fix GUI macOS "non risponde" all'avvio da Finder/Launchpad** (issue #6): il launcher
+  `Cartellino UniSA.app` faceva `exec` del binario installato in `/usr/local/cartellino-unisa/`,
+  perdendo l'identità di bundle macOS necessaria a PySide6/Shiboken per usare la cache delle
+  preferenze di sistema — ogni lookup di localizzazione durante l'avvio (migliaia di volte)
+  degradava a una query lenta non cache-ata, con l'app che restava bloccata per minuti.
+  L'eseguibile e le sue librerie sono ora impacchettati come un vero bundle `.app`
+  (`Contents/MacOS`/`Contents/Frameworks`/`Contents/Resources`), firmato e notarizzato
+  correttamente: l'avvio richiede ora circa un secondo.
+
 ## v3.0.1
 
 - **Fix installer `.pkg` macOS**: su una macchina con una versione precedente già installata,
