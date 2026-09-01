@@ -95,13 +95,18 @@ jobs:
           security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k actions-runner build.keychain
           rm -f certificate.p12
 
-      - name: Firma tutte le librerie native e l'eseguibile (solo macOS)
+      - name: Firma tutte le librerie native e gli eseguibili (solo macOS)
         # `--deep` su `codesign` non attraversa una cartella onedir "piatta" come
         # quella prodotta da PyInstaller (non è un vero bundle/framework): vanno
         # firmate esplicitamente tutti i Mach-O prima dell'eseguibile che li usa.
         # Filtrare solo per estensione (*.so/*.dylib) non basta: alcuni pacchetti
         # (es. selenium, con `selenium-manager`) includono binari nativi senza
         # estensione — vanno rilevati con `file` guardando il contenuto reale.
+        # Il loop firma già entrambi gli eseguibili (cartellino-unisa e
+        # cartellino-unisa-gui, Fase 13 TODO_gui.md, entrambi file di primo
+        # livello nell'onedir combinato): le due firme esplicite sotto sono
+        # ridondanti ma mantenute per lo stesso motivo per cui lo era già
+        # quella della sola CLI (verifica esplicita, non solo implicita nel loop).
         if: matrix.os == 'macos-latest'
         run: |
           find dist/cartellino-unisa -type f -print0 | while IFS= read -r -d '' f; do
@@ -115,9 +120,14 @@ jobs:
             --entitlements packaging/entitlements.plist \
             --sign "Developer ID Application" \
             dist/cartellino-unisa/cartellino-unisa
+          codesign --force --timestamp --options runtime \
+            --entitlements packaging/entitlements.plist \
+            --sign "Developer ID Application" \
+            dist/cartellino-unisa/cartellino-unisa-gui
           codesign --verify --deep --strict --verbose=2 dist/cartellino-unisa/cartellino-unisa
+          codesign --verify --deep --strict --verbose=2 dist/cartellino-unisa/cartellino-unisa-gui
 
-      - name: Genera e firma il launcher .app (solo macOS)
+      - name: Genera e firma il launcher TUI .app (solo macOS)
         # Compilato da un sorgente AppleScript versionato (non committiamo un
         # .app binario: diff illeggibili, specifico della versione Xcode/OS
         # del runner). `osacompile` produce un vero Mach-O
@@ -133,9 +143,15 @@ jobs:
         # ha un identifier generico (com.apple.ScriptEditor.id.*) e nessuna
         # versione: va patchato con PlistBuddy prima della firma, dato che
         # pkgbuild non firma il payload, solo l'installer package.
+        #
+        # Nome del bundle "Cartellino UniSA (Terminale).app" (non più
+        # "Cartellino UniSA.app", Fase 13 TODO_gui.md): quel nome è ora del
+        # nuovo launcher GUI (vedi step sotto), più naturale per un doppio
+        # click da Finder/Launchpad in un pacchetto che distribuisce sia TUI
+        # che GUI.
         if: matrix.os == 'macos-latest'
         run: |
-          osacompile -o "build/Cartellino UniSA.app" packaging/macos/launcher.applescript
+          osacompile -o "build/Cartellino UniSA (Terminale).app" packaging/macos/launcher.applescript
 
           # Sostituisce l'icona di default dell'applet compilato con quella
           # del progetto (packaging/build/icon.icns, generata sopra da
@@ -146,17 +162,17 @@ jobs:
           # CFBundleIconName: su macOS moderni questo ha precedenza su
           # CFBundleIconFile se presente, quindi va rimosso insieme alla
           # chiave, altrimenti l'icona sostituita verrebbe ignorata.
-          cp packaging/build/icon.icns "build/Cartellino UniSA.app/Contents/Resources/applet.icns"
-          rm -f "build/Cartellino UniSA.app/Contents/Resources/Assets.car"
+          cp packaging/build/icon.icns "build/Cartellino UniSA (Terminale).app/Contents/Resources/applet.icns"
+          rm -f "build/Cartellino UniSA (Terminale).app/Contents/Resources/Assets.car"
 
-          PLIST="build/Cartellino UniSA.app/Contents/Info.plist"
+          PLIST="build/Cartellino UniSA (Terminale).app/Contents/Info.plist"
           /usr/libexec/PlistBuddy -c "Delete :CFBundleIconName" "$PLIST" || true
           /usr/libexec/PlistBuddy -c "Set :CFBundleIdentifier org.antaresnet.cartellino-unisa.launcher" "$PLIST" \
             || /usr/libexec/PlistBuddy -c "Add :CFBundleIdentifier string org.antaresnet.cartellino-unisa.launcher" "$PLIST"
-          /usr/libexec/PlistBuddy -c "Set :CFBundleName Cartellino UniSA" "$PLIST" \
-            || /usr/libexec/PlistBuddy -c "Add :CFBundleName string Cartellino UniSA" "$PLIST"
-          /usr/libexec/PlistBuddy -c "Set :CFBundleDisplayName Cartellino UniSA" "$PLIST" \
-            || /usr/libexec/PlistBuddy -c "Add :CFBundleDisplayName string Cartellino UniSA" "$PLIST"
+          /usr/libexec/PlistBuddy -c "Set :CFBundleName Cartellino UniSA (Terminale)" "$PLIST" \
+            || /usr/libexec/PlistBuddy -c "Add :CFBundleName string Cartellino UniSA (Terminale)" "$PLIST"
+          /usr/libexec/PlistBuddy -c "Set :CFBundleDisplayName Cartellino UniSA (Terminale)" "$PLIST" \
+            || /usr/libexec/PlistBuddy -c "Add :CFBundleDisplayName string Cartellino UniSA (Terminale)" "$PLIST"
           /usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString ${{ steps.version.outputs.value }}" "$PLIST" \
             || /usr/libexec/PlistBuddy -c "Add :CFBundleShortVersionString string ${{ steps.version.outputs.value }}" "$PLIST"
           /usr/libexec/PlistBuddy -c "Set :CFBundleVersion ${{ steps.version.outputs.value }}" "$PLIST" \
@@ -165,44 +181,70 @@ jobs:
           codesign --force --timestamp --options runtime \
             --entitlements packaging/macos/launcher-entitlements.plist \
             --sign "Developer ID Application" \
+            "build/Cartellino UniSA (Terminale).app"
+          codesign --verify --deep --strict --verbose=2 "build/Cartellino UniSA (Terminale).app"
+
+      - name: Genera e firma il launcher GUI .app (solo macOS)
+        # A differenza del launcher TUI sopra (AppleScript che pilota un
+        # Terminale), la GUI PySide6 è già una finestra nativa: questo bundle
+        # (packaging/macos/gui_launcher/) esiste solo per darle un'icona/nome
+        # cliccabili da Finder/Launchpad, l'eseguibile è un semplice script di
+        # shell che fa `exec` del binario installato — niente AppleScript,
+        # niente picker "quale terminale", niente entitlement Apple Events
+        # (Fase 13 TODO_gui.md).
+        if: matrix.os == 'macos-latest'
+        run: |
+          cp -R packaging/macos/gui_launcher "build/Cartellino UniSA.app"
+          cp packaging/build/icon.icns "build/Cartellino UniSA.app/Contents/Resources/icon.icns"
+
+          PLIST="build/Cartellino UniSA.app/Contents/Info.plist"
+          /usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString ${{ steps.version.outputs.value }}" "$PLIST"
+          /usr/libexec/PlistBuddy -c "Set :CFBundleVersion ${{ steps.version.outputs.value }}" "$PLIST"
+
+          codesign --force --timestamp --options runtime \
+            --sign "Developer ID Application" \
             "build/Cartellino UniSA.app"
           codesign --verify --deep --strict --verbose=2 "build/Cartellino UniSA.app"
 
-      - name: Notarizza e staple il launcher .app (solo macOS)
+      - name: Notarizza e staple i launcher .app (solo macOS)
         # A differenza dell'eseguibile CLI sciolto (non staplabile), l'.app È
         # un formato supportato dallo stapler: un'app avviata con doppio
         # click da Finder non ha un contesto terminale che mostrerebbe un
         # eventuale errore di verifica online, va quindi resa verificabile
         # offline fin dal primo lancio — stessa ragione per cui il .pkg
-        # stesso viene staplato più sotto.
+        # stesso viene staplato più sotto. Entrambi i launcher (TUI e GUI,
+        # Fase 13 TODO_gui.md) seguono lo stesso trattamento.
         if: matrix.os == 'macos-latest'
         env:
           APPLE_ID: ${{ secrets.APPLE_ID }}
           APPLE_ID_PASSWORD: ${{ secrets.APPLE_ID_PASSWORD }}
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
         run: |
-          ditto -c -k --keepParent "build/Cartellino UniSA.app" notarize_app.zip
-          xcrun notarytool submit notarize_app.zip \
-            --apple-id "$APPLE_ID" \
-            --password "$APPLE_ID_PASSWORD" \
-            --team-id "$APPLE_TEAM_ID" \
-            --wait \
-            --output-format json | tee notarize_app_result.json
-          submission_id=$(jq -r '.id' notarize_app_result.json)
-          status=$(jq -r '.status' notarize_app_result.json)
-          echo "Notarizzazione .app: status=$status id=$submission_id"
-          if [ "$status" != "Accepted" ]; then
-            echo "--- Log dettagliato Apple (xcrun notarytool log) ---"
-            xcrun notarytool log "$submission_id" \
+          for app in "Cartellino UniSA (Terminale).app" "Cartellino UniSA.app"; do
+            zip_name=$(echo "$app" | tr -c '[:alnum:]' '_')
+            ditto -c -k --keepParent "build/$app" "${zip_name}.zip"
+            xcrun notarytool submit "${zip_name}.zip" \
               --apple-id "$APPLE_ID" \
               --password "$APPLE_ID_PASSWORD" \
-              --team-id "$APPLE_TEAM_ID" || true
-            echo "::error::Notarizzazione .app non accettata da Apple (status: $status) — vedi il log sopra"
-            exit 1
-          fi
-          rm -f notarize_app.zip notarize_app_result.json
+              --team-id "$APPLE_TEAM_ID" \
+              --wait \
+              --output-format json | tee "${zip_name}_result.json"
+            submission_id=$(jq -r '.id' "${zip_name}_result.json")
+            status=$(jq -r '.status' "${zip_name}_result.json")
+            echo "Notarizzazione '$app': status=$status id=$submission_id"
+            if [ "$status" != "Accepted" ]; then
+              echo "--- Log dettagliato Apple (xcrun notarytool log) ---"
+              xcrun notarytool log "$submission_id" \
+                --apple-id "$APPLE_ID" \
+                --password "$APPLE_ID_PASSWORD" \
+                --team-id "$APPLE_TEAM_ID" || true
+              echo "::error::Notarizzazione '$app' non accettata da Apple (status: $status) — vedi il log sopra"
+              exit 1
+            fi
+            rm -f "${zip_name}.zip" "${zip_name}_result.json"
 
-          xcrun stapler staple "build/Cartellino UniSA.app"
+            xcrun stapler staple "build/$app"
+          done
 
       - name: Notarizza presso Apple (solo macOS)
         # `notarytool submit --wait` esce con codice 0 anche se Apple rifiuta la
@@ -272,13 +314,16 @@ jobs:
           chmod +x packaging/macos/postinstall
 
           # Root sintetizzato: pkgbuild accetta una sola coppia
-          # --root/--install-location, quindi CLI e launcher .app vengono
-          # staged qui insieme per finire nello stesso .pkg (installazione
-          # sempre congiunta, nessuno scenario di install indipendente che
-          # giustifichi due componenti + productbuild).
+          # --root/--install-location, quindi CLI, GUI e i due launcher .app
+          # vengono staged qui insieme per finire nello stesso .pkg
+          # (installazione sempre congiunta, nessuno scenario di install
+          # indipendente che giustifichi più componenti + productbuild —
+          # stesso ragionamento esteso al secondo launcher, Fase 13
+          # TODO_gui.md).
           mkdir -p pkgroot/usr/local/cartellino-unisa
           mkdir -p pkgroot/Applications
           cp -R dist/cartellino-unisa/. pkgroot/usr/local/cartellino-unisa/
+          cp -R "build/Cartellino UniSA (Terminale).app" "pkgroot/Applications/Cartellino UniSA (Terminale).app"
           cp -R "build/Cartellino UniSA.app" "pkgroot/Applications/Cartellino UniSA.app"
 
           pkgbuild \

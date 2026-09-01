@@ -44,7 +44,13 @@ Source: "..\..\dist\cartellino-unisa\*"; DestDir: "{app}"; Flags: recursesubdirs
 [Tasks]
 Name: "desktopicon"; Description: "Crea un'icona sul Desktop"; Flags: unchecked
 
+; "Cartellino UniSA" è la GUI (cartellino-unisa-gui.exe, windowed, Fase 13
+; TODO_gui.md): comportamento atteso da un doppio click da Start Menu/Desktop.
+; La TUI/CLI (cartellino-unisa.exe, console) resta disponibile con una voce
+; separata "Cartellino UniSA (Terminale)" — nessuna icona sul Desktop per
+; quest'ultima, resta comunque lanciabile da riga di comando o dal Menu Start.
 [Icons]
-Name: "{group}\Cartellino UniSA"; Filename: "{app}\cartellino-unisa.exe"
+Name: "{group}\Cartellino UniSA"; Filename: "{app}\cartellino-unisa-gui.exe"
+Name: "{group}\Cartellino UniSA (Terminale)"; Filename: "{app}\cartellino-unisa.exe"
 Name: "{group}\Disinstalla Cartellino UniSA"; Filename: "{uninstallexe}"
-Name: "{autodesktop}\Cartellino UniSA"; Filename: "{app}\cartellino-unisa.exe"; Tasks: desktopicon
+Name: "{autodesktop}\Cartellino UniSA"; Filename: "{app}\cartellino-unisa-gui.exe"; Tasks: desktopicon

@@ -84,7 +84,15 @@ hiddenimports = [
     "textual.widgets._markdown_viewer",
 ]
 
-a = Analysis(  # noqa: F821
+# Distribuzione combinata (decisione #2 TODO_gui.md): un solo onedir include sia
+# la TUI/CLI (cartellino_tui.py, console) sia la GUI PySide6
+# (cartellino_gui.py, windowed). Due Analysis distinti (entrypoint ed
+# hiddenimports diversi: la GUI non usa Textual/selenium) uniti con MERGE, che
+# deduplica i binari/moduli condivisi (pandas, pyarrow, ecc.) nell'onedir
+# finale invece di raddoppiarli — verificato in fase di spike (Fase 0
+# TODO_gui.md) con una build locale, entrambi gli eseguibili funzionanti nella
+# stessa cartella.
+a_tui = Analysis(  # noqa: F821
     [str(REPO_ROOT / "cartellino_tui.py")],
     pathex=[str(REPO_ROOT)],
     binaries=[],
@@ -97,11 +105,40 @@ a = Analysis(  # noqa: F821
     noarchive=False,
     optimize=0,
 )
-pyz = PYZ(a.pure)  # noqa: F821
 
-exe = EXE(  # noqa: F821
-    pyz,
-    a.scripts,
+a_gui = Analysis(  # noqa: F821
+    [str(REPO_ROOT / "cartellino_gui.py")],
+    pathex=[str(REPO_ROOT)],
+    binaries=[],
+    datas=[(str(REPO_ROOT / "pyproject.toml"), ".")],
+    # Stessi hiddenimports selenium della TUI (Fase 4 TODO_gui.md,
+    # `cartellino/gui/workers.py` importa `get.ottieni_cartellino` per il
+    # download): stesso problema di lazy import via `__getattr__` (PEP 562)
+    # invisibile all'analisi statica di PyInstaller, vedi commento sopra.
+    hiddenimports=[
+        "selenium.webdriver.chrome.webdriver",
+        "selenium.webdriver.chrome.options",
+        "selenium.webdriver.chrome.service",
+    ],
+    hookspath=[],
+    hooksconfig={},
+    runtime_hooks=[],
+    excludes=[],
+    noarchive=False,
+    optimize=0,
+)
+
+MERGE(  # noqa: F821
+    (a_tui, "cartellino_tui", "cartellino-unisa"),
+    (a_gui, "cartellino_gui", "cartellino-unisa-gui"),
+)
+
+pyz_tui = PYZ(a_tui.pure)  # noqa: F821
+pyz_gui = PYZ(a_gui.pure)  # noqa: F821
+
+exe_tui = EXE(  # noqa: F821
+    pyz_tui,
+    a_tui.scripts,
     [],
     exclude_binaries=True,
     name="cartellino-unisa",
@@ -118,10 +155,35 @@ exe = EXE(  # noqa: F821
     icon=icon,
 )
 
+exe_gui = EXE(  # noqa: F821
+    pyz_gui,
+    a_gui.scripts,
+    [],
+    exclude_binaries=True,
+    name="cartellino-unisa-gui",
+    debug=False,
+    bootloader_ignore_signals=False,
+    strip=False,
+    upx=True,
+    # windowed (no console): la GUI non deve aprire una finestra di terminale
+    # accanto a sé, a differenza della TUI/CLI che dipende dal terminale
+    # dell'utente (vedi CLAUDE.md, launcher .app macOS per la TUI).
+    console=False,
+    disable_windowed_traceback=False,
+    argv_emulation=False,
+    target_arch=None,
+    codesign_identity=None,
+    entitlements_file=None,
+    icon=icon,
+)
+
 coll = COLLECT(  # noqa: F821
-    exe,
-    a.binaries,
-    a.datas,
+    exe_tui,
+    a_tui.binaries,
+    a_tui.datas,
+    exe_gui,
+    a_gui.binaries,
+    a_gui.datas,
     strip=False,
     upx=True,
     upx_exclude=[],

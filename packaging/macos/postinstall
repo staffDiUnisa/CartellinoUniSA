@@ -2,14 +2,18 @@
 # Eseguito da `pkgbuild` dopo l'installazione del payload in
 # /usr/local/cartellino-unisa: crea un symlink in /usr/local/bin così
 # `cartellino-unisa` è lanciabile da Terminale senza conoscere il percorso
-# di installazione.
+# di installazione. Stesso symlink anche per `cartellino-unisa-gui` (Fase 13
+# TODO_gui.md): non è il modo principale di lanciare la GUI (c'è il launcher
+# "Cartellino UniSA.app" in /Applications, doppio click da Finder/Launchpad),
+# ma resta comodo per chi preferisce lanciarla da riga di comando.
 # Nota: pkgbuild usa un root sintetizzato (pkgroot/) con --install-location /
-# per poter installare anche il launcher .app in /Applications nello stesso
+# per poter installare anche i launcher .app in /Applications nello stesso
 # pacchetto — questo script usa comunque path assoluti, indipendenti da
 # --install-location, quindi non richiede modifiche.
 set -e
 
 mkdir -p /usr/local/bin
 ln -sf /usr/local/cartellino-unisa/cartellino-unisa /usr/local/bin/cartellino-unisa
+ln -sf /usr/local/cartellino-unisa/cartellino-unisa-gui /usr/local/bin/cartellino-unisa-gui
 
 exit 0

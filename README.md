@@ -438,12 +438,14 @@ Vengono inoltre corretti automaticamente:
 ## 📦 Eseguibili standalone (senza Python)
 
 A partire dalla v2.0.0, ogni tag `v2.*` genera automaticamente (GitHub Actions,
-`.github/workflows/release.yml`) un eseguibile standalone della TUI per macOS, Windows e Linux,
-allegato alla relativa [GitHub Release](https://github.com/staffDiUnisa/CartellinoUniSA/releases/latest).
-Non serve installare Python, `mise` o `uv`: si scarica lo zip del proprio sistema operativo, si
-estrae e si esegue il binario dentro la cartella estratta — **non spostare l'eseguibile fuori
-dalla sua cartella**: le librerie di supporto (Python, Textual, pandas/pyarrow, ecc.) stanno lì
-accanto, servono per farlo funzionare.
+`.github/workflows/release.yml`) eseguibili standalone per macOS, Windows e Linux, allegati alla
+relativa [GitHub Release](https://github.com/staffDiUnisa/CartellinoUniSA/releases/latest). A
+partire dalla GUI desktop (vedi `TODO_gui.md`) ogni pacchetto include **due eseguibili**: la TUI
+(`cartellino-unisa`, interfaccia testuale) e la GUI (`cartellino-unisa-gui`, interfaccia
+grafica), stessa distribuzione combinata. Non serve installare Python, `mise` o `uv`: si scarica
+lo zip del proprio sistema operativo, si estrae ed esegue il binario preferito dentro la cartella
+estratta — **non spostare l'eseguibile fuori dalla sua cartella**: le librerie di supporto
+(Python, Textual, PySide6, pandas/pyarrow, ecc.) stanno lì accanto, servono per farlo funzionare.
 
 **Chrome resta comunque una dipendenza esterna obbligatoria** (il download del cartellino usa
 Selenium, che non è imbottigliabile in un eseguibile standalone): va installato separatamente,
@@ -455,12 +457,16 @@ qualunque sia il sistema operativo.
 
 1. Dalla pagina delle [Release](https://github.com/staffDiUnisa/CartellinoUniSA/releases/latest),
    scarica `cartellino-unisa.pkg`
-2. Doppio click, segui la procedura guidata (installa in `/usr/local/cartellino-unisa`, crea il
-   comando `cartellino-unisa` nel `PATH`, e aggiunge **Cartellino UniSA** ad `/Applications`)
-3. **Per chi preferisce non usare il Terminale manualmente**: apri **Launchpad** o
-   **Applicazioni** e fai doppio click su **Cartellino UniSA** — si aprirà automaticamente un
-   terminale con la CLI già avviata, a schermo massimizzato, e si chiuderà da solo quando esci
-   dalla TUI.
+2. Doppio click, segui la procedura guidata (installa in `/usr/local/cartellino-unisa`, crea i
+   comandi `cartellino-unisa`/`cartellino-unisa-gui` nel `PATH`, e aggiunge due voci ad
+   `/Applications`: **Cartellino UniSA** e **Cartellino UniSA (Terminale)**)
+3. **Interfaccia grafica (consigliata per chi non vuole usare il Terminale)**: apri **Launchpad**
+   o **Applicazioni** e fai doppio click su **Cartellino UniSA** — si apre direttamente la
+   finestra dell'app, senza passare dal Terminale.
+4. **Interfaccia testuale (TUI)**, per chi preferisce restare da riga di comando: apri
+   **Launchpad** o **Applicazioni** e fai doppio click su **Cartellino UniSA (Terminale)** — si
+   aprirà automaticamente un terminale con la TUI già avviata, a schermo massimizzato, e si
+   chiuderà da solo quando esci.
 
    Al primo avvio ti viene chiesto quale terminale usare tra quelli installati (**Terminale**
    nativo, **Ghostty**, **iTerm2** — non è invece possibile scegliere Warp: non ha alcun supporto
@@ -477,9 +483,9 @@ qualunque sia il sistema operativo.
    cartellino-unisa
    ```
 
-Il `.pkg` (e il launcher **Cartellino UniSA** che contiene) sono **firmati con certificato
-Developer ID e notarizzati/staplati da Apple**: Gatekeeper non dovrebbe mostrare alcun avviso,
-nemmeno offline.
+Il `.pkg` (ed entrambi i launcher **Cartellino UniSA**/**Cartellino UniSA (Terminale)** che
+contiene) sono **firmati con certificato Developer ID e notarizzati/staplati da Apple**:
+Gatekeeper non dovrebbe mostrare alcun avviso, nemmeno offline.
 
 > **Se il comando `cartellino-unisa` non viene trovato** (`command not found`): `/usr/local/bin`
 > è nel `PATH` di default su macOS, ma se il tuo shell profile lo sovrascrive esplicitamente
@@ -499,10 +505,14 @@ livello di sistema):
 
 1. Scarica `cartellino-unisa-macos.zip`, estrai (doppio click, oppure
    `unzip cartellino-unisa-macos.zip` da terminale)
-2. Apri il Terminale, entra nella cartella estratta ed esegui:
+2. Apri il Terminale, entra nella cartella estratta ed esegui la TUI:
    ```bash
    cd cartellino-unisa
    ./cartellino-unisa
+   ```
+   oppure la GUI (anche con doppio click dal Finder, essendo un'app windowed):
+   ```bash
+   ./cartellino-unisa-gui
    ```
 
 L'eseguibile dentro lo zip è anch'esso firmato e notarizzato: se comparisse comunque "app non
@@ -516,18 +526,22 @@ poi conferma nel dialogo (necessario solo la prima volta).
 
 1. Dalla pagina delle [Release](https://github.com/staffDiUnisa/CartellinoUniSA/releases/latest),
    scarica `cartellino-unisa-setup.exe`
-2. Doppio click, segui la procedura guidata (installa in Program Files, crea una voce nel Menu
-   Start)
-3. Avvia "Cartellino UniSA" dal Menu Start (apre una finestra terminale, essendo un'app testuale)
+2. Doppio click, segui la procedura guidata (installa in Program Files, crea due voci nel Menu
+   Start: **Cartellino UniSA** e **Cartellino UniSA (Terminale)**, più un'icona sul Desktop
+   opzionale per la prima)
+3. Avvia **Cartellino UniSA** dal Menu Start (o dal Desktop) per l'interfaccia grafica, oppure
+   **Cartellino UniSA (Terminale)** per la TUI (apre una finestra terminale, essendo un'app
+   testuale)
 
 **Opzione alternativa — zip della cartella onedir:**
 
 1. Scarica `cartellino-unisa-windows.zip`, estrai (click destro → **Estrai tutto...**)
-2. Apri PowerShell o il Prompt dei comandi, entra nella cartella estratta ed esegui:
+2. Apri PowerShell o il Prompt dei comandi, entra nella cartella estratta ed esegui la TUI:
    ```powershell
    cd cartellino-unisa
    .\cartellino-unisa.exe
    ```
+   oppure fai doppio click su `cartellino-unisa-gui.exe` per la GUI
 
 In entrambi i casi il binario **non è firmato** (nessun certificato di firma codice per Windows,
 vedi `ignored/signed_windows.md` per le opzioni valutate), quindi al primo avvio SmartScreen mostra
@@ -547,7 +561,8 @@ solo la prima volta).
    # oppure
    sudo rpm -i cartellino-unisa-<versione>.x86_64.rpm      # Fedora/RHEL/openSUSE
    ```
-3. Esegui da terminale: `cartellino-unisa`
+3. Esegui la TUI da terminale: `cartellino-unisa`, oppure la GUI: `cartellino-unisa-gui`
+   (nessuna icona/voce nel menu applicazioni per ora, vedi `TODO_gui.md`)
 
 **Opzione alternativa — zip della cartella onedir:**
 

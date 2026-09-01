@@ -1,0 +1,11 @@
+#!/bin/bash
+# Eseguibile del bundle "Cartellino UniSA.app" (launcher GUI, Fase 13
+# TODO_gui.md). A differenza del launcher TUI (packaging/macos/launcher.applescript,
+# che pilota un Terminale via AppleScript con scelta del terminale/chiusura
+# automatica) qui non serve niente di tutto ciò: la GUI PySide6 è già una
+# finestra nativa, questo bundle esiste solo per darle un'icona/nome cliccabili
+# da Finder/Launchpad — esegue direttamente il binario installato, path
+# assoluto (non il comando dal PATH, per lo stesso motivo del launcher TUI: un
+# Finder aperto subito dopo l'installazione potrebbe non avere ancora un PATH
+# aggiornato).
+exec /usr/local/cartellino-unisa/cartellino-unisa-gui "$@"
