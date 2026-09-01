@@ -128,6 +128,31 @@ a_gui = Analysis(  # noqa: F821
     optimize=0,
 )
 
+# Analisi GUI indipendente, PRIMA di MERGE (bug reale in produzione, issue #6:
+# vedi commento su BUNDLE più sotto per il perché serve una seconda Analysis
+# invece di riusare a_gui). MERGE() sotto trasforma alcune voci di a_gui in
+# entry 'DEPENDENCY' condivise con a_tui: BUNDLE() rifiuta esplicitamente
+# quelle entry ("MERGE DEPENDENCY entries are not supported in BUNDLE!"),
+# quindi non si può costruire il vero bundle .app dalla stessa Analysis
+# usata per l'onedir combinato — va rifatta identica ma isolata.
+a_gui_bundle = Analysis(  # noqa: F821
+    [str(REPO_ROOT / "cartellino_gui.py")],
+    pathex=[str(REPO_ROOT)],
+    binaries=[],
+    datas=[(str(REPO_ROOT / "pyproject.toml"), ".")],
+    hiddenimports=[
+        "selenium.webdriver.chrome.webdriver",
+        "selenium.webdriver.chrome.options",
+        "selenium.webdriver.chrome.service",
+    ],
+    hookspath=[],
+    hooksconfig={},
+    runtime_hooks=[],
+    excludes=[],
+    noarchive=False,
+    optimize=0,
+)
+
 MERGE(  # noqa: F821
     (a_tui, "cartellino_tui", "cartellino-unisa"),
     (a_gui, "cartellino_gui", "cartellino-unisa-gui"),
@@ -188,4 +213,65 @@ coll = COLLECT(  # noqa: F821
     upx=True,
     upx_exclude=[],
     name="cartellino-unisa",
+)
+
+# Bundle .app macOS per il launcher GUI (bug reale in produzione, v3.0.1,
+# issue #6): fino a v3.0.1 il launcher "Cartellino UniSA.app" faceva `exec`
+# del binario installato in /usr/local/cartellino-unisa/, un eseguibile
+# "sciolto" senza identità di bundle macOS valida (nessun Info.plist
+# risolvibile da CFBundleGetMainBundle()) — causava un hang di minuti
+# all'avvio da Finder/Launchpad: senza identità di bundle, CoreFoundation non
+# può cache-are le preferenze per-bundle, e ogni lookup di localizzazione
+# lazy di PySide6/Shiboken (migliaia durante l'avvio) degradava a una query
+# non cache-ata via XPC a cfprefsd (~100ms l'una). Dettagli completi in
+# CLAUDE.md.
+#
+# BUNDLE() (noop su Windows/Linux, PyInstaller stesso lo gestisce) costruisce
+# un vero .app con Contents/MacOS + Contents/Resources + Contents/Frameworks,
+# classificando ogni cartella dell'albero come dati-soli/binari-soli/mista e
+# cross-linkando con symlink invece di duplicare — necessario perché
+# `codesign` richiede che tutto ciò che sta *direttamente* dentro
+# Contents/Frameworks sia codice firmabile: un semplice `cp -R` dell'intero
+# onedir dentro Contents/Frameworks (primo tentativo, fallito in CI) mescola
+# dylib con file dati qualunque (es. selenium-manager.cdx.json) e fa fallire
+# la firma con "code object is not signed at all". Usa `a_gui_bundle` (vedi
+# sopra), non `a_gui`: BUNDLE() non supporta le entry 'DEPENDENCY' create da
+# MERGE().
+#
+# Nessuna identity qui (`codesign_identity=None`): la firma "vera"
+# (Developer ID Application, timestamp, entitlements) resta nello step
+# dedicato di release.yml, con gli stessi secrets già usati per gli
+# eseguibili grezzi — stesso pattern già in uso per exe_tui/exe_gui, che
+# PyInstaller firma ad-hoc qui e vengono ri-firmati per davvero in CI.
+pyz_gui_bundle = PYZ(a_gui_bundle.pure)  # noqa: F821
+
+exe_gui_bundle = EXE(  # noqa: F821
+    pyz_gui_bundle,
+    a_gui_bundle.scripts,
+    [],
+    exclude_binaries=True,
+    name="cartellino-unisa-gui",
+    debug=False,
+    bootloader_ignore_signals=False,
+    strip=False,
+    upx=True,
+    console=False,
+    disable_windowed_traceback=False,
+    argv_emulation=False,
+    target_arch=None,
+    codesign_identity=None,
+    entitlements_file=None,
+    icon=icon,
+)
+
+_icon_icns = REPO_ROOT / "packaging" / "build" / "icon.icns"
+
+app_gui = BUNDLE(  # noqa: F821
+    exe_gui_bundle,
+    a_gui_bundle.binaries,
+    a_gui_bundle.datas,
+    name="Cartellino UniSA.app",
+    icon=str(_icon_icns) if _icon_icns.exists() else None,
+    bundle_identifier="org.antaresnet.cartellino-unisa.gui",
+    version="0.0.0",  # sovrascritta con la versione reale via PlistBuddy in release.yml
 )

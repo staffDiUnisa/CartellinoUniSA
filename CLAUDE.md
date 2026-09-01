@@ -278,25 +278,52 @@ uv run pyinstaller packaging/cartellino.spec --noconfirm
         cache-ata via XPC a `cfprefsd` (~100ms l'una, migliaia di eventi "Retrieve User by ID"
         osservati nei log di sistema durante l'hang, contro **zero** nello stesso identico onedir
         lanciato da dentro un vero bundle `.app`) — non un deadlock, ma un loop di lookup non
-        cacheati che si accumula a minuti. **Fix**: l'eseguibile PyInstaller reale (già firmato) e
-        le sue librerie di supporto (`_internal`) vengono copiati direttamente dentro
-        `Contents/MacOS` e `Contents/Frameworks` del bundle `Cartellino UniSA.app` (niente più
-        script/`exec` verso un percorso esterno), nello step "Genera e firma il launcher GUI .app"
-        di `release.yml` — verificato con una build locale non firmata: lo stesso identico onedir
-        si avvia in ~1s da dentro questa struttura invece di restare bloccato per minuti. La
-        firma del bundle va fatta con le stesse `packaging/entitlements.plist`
-        dell'eseguibile grezzo (hardened runtime + `disable-library-validation`): il main
-        executable del bundle ora è quel binario, e una firma "pulita" del bundle senza
-        entitlements le sovrascriverebbe con nessuna, reintroducendo il problema di library
-        validation per le dylib vendored di pyarrow/numpy/PySide6 già risolto altrove per
-        l'eseguibile sciolto. Il symlink `/usr/local/bin/cartellino-unisa-gui`
-        (`packaging/macos/postinstall`) punta ora alla copia **dentro** il bundle
-        (`/Applications/Cartellino UniSA.app/Contents/MacOS/cartellino-unisa-gui`), non più
-        all'eseguibile sciolto in `/usr/local/cartellino-unisa/`: quest'ultimo resta comunque
-        privo di identità di bundle valida e andrebbe incontro allo stesso hang se lanciato
-        direttamente. `packaging/macos/gui_launcher/Contents/MacOS/` nel repo contiene solo un
-        `.gitkeep` (git non traccia le cartelle vuote): l'eseguibile reale viene copiato lì da CI
-        ad ogni build, non è mai committato (stesso principio delle icone generate).
+        cacheati che si accumula a minuti.
+        - **Primo tentativo (fallito in CI, non in locale)**: copiare "a mano" l'eseguibile e
+          l'intera `_internal` dentro `Contents/MacOS`/`Contents/Frameworks` del bundle risolveva
+          l'hang (verificato con una build locale non firmata), ma falliva la firma reale in CI:
+          `codesign --force ... "Cartellino UniSA.app"` restituiva `code object is not signed at
+          all` su un file `.json` qualunque dentro `Contents/Frameworks/selenium/...`. Riprodotto
+          in locale con la stessa identity Developer ID Application usata in CI: **qualunque file
+          non-Mach-O piazzato direttamente dentro `Contents/Frameworks` fa fallire la firma**, non
+          solo quel file specifico — `Frameworks` è per convenzione Apple "solo codice", e
+          `codesign` prova a validare come "codice" tutto ciò che trova lì, compresi file dati
+          arbitrari, che non possono avere una firma.
+        - **Fix reale**: usare `BUNDLE()` di PyInstaller stesso (`packaging/cartellino.spec`)
+          invece di costruire il bundle a mano nel workflow. `BUNDLE()` classifica ricorsivamente
+          ogni cartella dell'albero come dati-soli/binari-soli/mista: le cartelle "pure" vengono
+          fisicamente messe in `Contents/Resources` (dati) o `Contents/Frameworks` (binari) e
+          cross-linkate con un symlink nell'altra posizione — `Contents/Frameworks` finisce quindi
+          per contenere solo vero codice (o symlink verso `Resources`), soddisfacendo `codesign`,
+          mentre a runtime `sys._MEIPASS` risolve comunque tutto correttamente attraverso i
+          symlink. Verificato end-to-end in locale con la vera identity Developer ID Application:
+          `codesign --verify --deep --strict` passa pulito, e l'app si avvia in ~1s (zero query
+          non cache-ate) invece di restare bloccata per minuti.
+        - **`BUNDLE()` non supporta le entry `DEPENDENCY` di `MERGE()`** (asserzione esplicita nel
+          codice sorgente di PyInstaller): la `Analysis` della GUI (`a_gui`) usata per l'onedir
+          combinato CLI+GUI (`MERGE()`, per deduplicare i binari condivisi in `dist/cartellino-unisa/`)
+          non è utilizzabile per `BUNDLE()`. Lo spec definisce quindi una **seconda `Analysis`
+          identica ma indipendente** (`a_gui_bundle`, mai passata a `MERGE()`) usata solo per
+          costruire `Cartellino UniSA.app` — leggero aumento del tempo di build (una seconda
+          analisi/PYZ/EXE della GUI) e duplicazione di PySide6/Qt tra i due artefatti (onedir e
+          `.app`), stesso costo che avrebbe comunque avuto il primo tentativo con la copia manuale.
+        - La firma del bundle (in `release.yml`, dopo che `BUNDLE()` lo ha già firmato ad-hoc
+          durante la build, stesso pattern già in uso per `exe_tui`/`exe_gui`) va fatta con le
+          stesse `packaging/entitlements.plist` dell'eseguibile grezzo (hardened runtime +
+          `disable-library-validation`): il main executable del bundle è quel binario, e una firma
+          "pulita" del bundle senza entitlements le sovrascriverebbe con nessuna, reintroducendo
+          il problema di library validation per le dylib vendored di pyarrow/numpy/PySide6 già
+          risolto altrove per l'eseguibile sciolto.
+        - Il symlink `/usr/local/bin/cartellino-unisa-gui` (`packaging/macos/postinstall`) punta
+          ora alla copia **dentro** il bundle
+          (`/Applications/Cartellino UniSA.app/Contents/MacOS/cartellino-unisa-gui`), non più
+          all'eseguibile sciolto in `/usr/local/cartellino-unisa/`: quest'ultimo resta comunque
+          privo di identità di bundle valida e andrebbe incontro allo stesso hang se lanciato
+          direttamente.
+        - `packaging/macos/gui_launcher/` (il vecchio template `.app` con lo script `exec`) è
+          stato rimosso: `BUNDLE()` genera l'intero bundle (struttura, `Info.plist`, icona) da
+          zero in `dist/Cartellino UniSA.app` ad ogni build, copiato in `build/` e poi firmato
+          per davvero in `release.yml` — nessun template statico da mantenere in sincronia.
       - **Icona personalizzata** (v2.0.3): `resources/logo.png` (512x512, non versionato prima
         d'ora) è la sorgente unica per le icone generate in CI, mai committata già convertita
         (formati binari `.ico`/`.icns`, diff illeggibili — stesso principio già seguito per

@@ -199,9 +199,9 @@ jobs:
           codesign --verify --deep --strict --verbose=2 "build/Cartellino UniSA (Terminale).app"
 
       - name: Genera e firma il launcher GUI .app (solo macOS)
-        # Fino a v3.0.1, questo bundle (packaging/macos/gui_launcher/) era solo
-        # un'icona/nome cliccabili da Finder/Launchpad: l'eseguibile era un
-        # semplice script di shell che faceva `exec` del binario installato in
+        # Fino a v3.0.1, questo bundle era solo un'icona/nome cliccabili da
+        # Finder/Launchpad: l'eseguibile era un semplice script di shell che
+        # faceva `exec` del binario installato in
         # /usr/local/cartellino-unisa/cartellino-unisa-gui. Bug reale
         # riscontrato in produzione su v3.0.1 (issue GitHub #6): `exec`
         # sostituisce l'immagine del processo ma NON la sua identità di bundle
@@ -218,33 +218,37 @@ jobs:
         # zero durante un avvio dallo stesso identico onedir eseguito da
         # dentro un vero bundle .app).
         #
-        # Fix: l'eseguibile PyInstaller reale (già firmato nello step sopra)
-        # e le sue librerie di supporto vengono copiati DENTRO
-        # Contents/MacOS e Contents/Frameworks di questo bundle, così il
-        # processo lanciato da Finder/Launchpad ha fin dall'inizio un percorso
-        # dentro un vero .app con un Info.plist valido accanto — nessun
-        # `exec` verso un percorso esterno. Verificato con una build locale
-        # non firmata: lo stesso onedir, lanciato da dentro una struttura
-        # Contents/MacOS + Contents/Frameworks, si avvia in ~1s invece di
-        # restare per minuti nel loop di lookup sopra.
+        # Fix: packaging/cartellino.spec ora costruisce l'intero bundle
+        # "Cartellino UniSA.app" con BUNDLE() di PyInstoller (struttura
+        # Contents/MacOS + Contents/Resources + Contents/Frameworks,
+        # Info.plist, icona) invece del vecchio template statico
+        # packaging/macos/gui_launcher/ + script `exec`. Un primo tentativo
+        # (copiare a mano l'eseguibile + l'intera _internal dentro
+        # Contents/MacOS/Contents/Frameworks) risolveva l'hang ma falliva la
+        # firma reale in CI ("code object is not signed at all" su un file
+        # dati qualunque dentro Contents/Frameworks — codesign richiede che
+        # tutto ciò che sta *direttamente* in Frameworks sia codice
+        # firmabile): BUNDLE() evita il problema classificando ogni cartella
+        # come dati/binari/mista e cross-linkando con symlink invece di
+        # duplicare alla cieca. Verificato in locale con la vera identity
+        # Developer ID Application: firma pulita + avvio in ~1s (zero query
+        # non cache-ate) invece di minuti di hang. Dettagli completi in
+        # CLAUDE.md.
         if: matrix.os == 'macos-latest'
         run: |
-          cp -R packaging/macos/gui_launcher "build/Cartellino UniSA.app"
-          rm -f "build/Cartellino UniSA.app/Contents/MacOS/.gitkeep"
-          cp "dist/cartellino-unisa/cartellino-unisa-gui" \
-            "build/Cartellino UniSA.app/Contents/MacOS/cartellino-unisa-gui"
-          cp -R "dist/cartellino-unisa/_internal" \
-            "build/Cartellino UniSA.app/Contents/Frameworks"
+          cp -R "dist/Cartellino UniSA.app" "build/Cartellino UniSA.app"
 
-          # Git non traccia le cartelle vuote: packaging/macos/gui_launcher/Contents/Resources/
-          # non esiste dopo il checkout (era vuota nel sorgente, la sola icona ci va copiata
-          # sotto), va ricreata esplicitamente prima di copiarci l'icona.
-          mkdir -p "build/Cartellino UniSA.app/Contents/Resources"
-          cp packaging/build/icon.icns "build/Cartellino UniSA.app/Contents/Resources/icon.icns"
-
+          # BUNDLE() di PyInstoller genera un Info.plist minimale: ha
+          # CFBundleShortVersionString ma non CFBundleVersion (assente dal
+          # dict costruito da PyInstaller.building.osx.BUNDLE.assemble) —
+          # "Set" fallisce con exit code 1 su una chiave inesistente (avrebbe
+          # fatto fallire lo step, bash -e), va aggiunta con "Add" se manca,
+          # stesso pattern già usato sopra per il launcher TUI.
           PLIST="build/Cartellino UniSA.app/Contents/Info.plist"
-          /usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString ${{ steps.version.outputs.value }}" "$PLIST"
-          /usr/libexec/PlistBuddy -c "Set :CFBundleVersion ${{ steps.version.outputs.value }}" "$PLIST"
+          /usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString ${{ steps.version.outputs.value }}" "$PLIST" \
+            || /usr/libexec/PlistBuddy -c "Add :CFBundleShortVersionString string ${{ steps.version.outputs.value }}" "$PLIST"
+          /usr/libexec/PlistBuddy -c "Set :CFBundleVersion ${{ steps.version.outputs.value }}" "$PLIST" \
+            || /usr/libexec/PlistBuddy -c "Add :CFBundleVersion string ${{ steps.version.outputs.value }}" "$PLIST"
 
           # Stesse entitlements dell'eseguibile grezzo (packaging/entitlements.plist,
           # hardened runtime + disable-library-validation per le dylib vendored di
