@@ -50,7 +50,7 @@ di complessità/impatto per ciascuna, in [`TODO_gui.md`](TODO_gui.md).
 
 | Issue | Stato | Complessità | Impatto utente | Difficoltà / rischi principali |
 |---|:-----:|:---:|:---:|---|
-| [#5 Documentazione](https://github.com/staffDiUnisa/CartellinoUniSA/issues/5) |  WIP  | L | Alto | Due deliverable distinti: struttura `docs/` in Markdown (guida utente + note architetturali, in parte già derivabile da `CLAUDE.md`) e setup ReadTheDocs (scelta toolchain — Sphinx/MkDocs —, config di build, hosting). Rischio principale: mantenere la documentazione sincronizzata con un progetto che cambia rapidamente (v2.x in evoluzione attiva) senza duplicare/disallinearsi da `CLAUDE.md`, che resta la fonte di verità per i dettagli implementativi. **Posticipata** a dopo lo sviluppo della GUI desktop (vedi [`TODO_gui.md`](TODO_gui.md)): scriverla ora significherebbe documentare la sola TUI e poi riscriverla per includere anche la GUI. |
+| [#5 Documentazione](https://github.com/staffDiUnisa/CartellinoUniSA/issues/5) |  IGN  | L | Alto | Due deliverable distinti: struttura `docs/` in Markdown (guida utente + note architetturali, in parte già derivabile da `CLAUDE.md`) e setup ReadTheDocs (scelta toolchain — Sphinx/MkDocs —, config di build, hosting). Rischio principale: mantenere la documentazione sincronizzata con un progetto che cambia rapidamente (v2.x in evoluzione attiva) senza duplicare/disallinearsi da `CLAUDE.md`, che resta la fonte di verità per i dettagli implementativi. **Posticipata** a dopo lo sviluppo della GUI desktop (vedi [`TODO_gui.md`](TODO_gui.md)): scriverla ora significherebbe documentare la sola TUI e poi riscriverla per includere anche la GUI. |
 
 ## Implementate
 
