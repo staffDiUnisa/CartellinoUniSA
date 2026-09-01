@@ -6,6 +6,24 @@ Release: aggiungi la sezione della prossima versione **prima** di taggare una re
 altrimenti la release verrà pubblicata senza descrizione delle novità (solo changelog
 auto-generato da GitHub).
 
+## v3.0.0
+
+- **Nuova interfaccia grafica desktop (GUI)**, `cartellino_gui.py`, basata su
+  [PySide6](https://doc.qt.io/qtforpython-6/): affianca la TUI senza sostituirla, stesse
+  funzionalità (dashboard, aggiornamento con log in tempo reale, report on-demand, timesheet di
+  progetto, statistiche, impostazioni, gestione date escluse e credenziali), condividendo dati,
+  `config.toml` e credenziali con la TUI — sono due frontend sullo stesso strumento, non due
+  prodotti separati.
+- **Distribuzione combinata**: ogni pacchetto/installer per OS (`.pkg`/`.exe`/`.deb`/`.rpm` e gli
+  zip onedir storici) include ora sia l'eseguibile TUI/CLI (`cartellino-unisa`) sia quello GUI
+  (`cartellino-unisa-gui`).
+- **macOS**: il launcher `.app` esistente per la TUI è stato rinominato **Cartellino UniSA
+  (Terminale)** — il nome **Cartellino UniSA** ora appartiene al nuovo launcher della GUI,
+  comportamento atteso da un doppio click da Finder/Launchpad. Entrambi firmati con certificato
+  Developer ID e notarizzati/staplati da Apple.
+- **Windows**: il Menu Start ha ora due voci distinte, **Cartellino UniSA** (GUI, con icona sul
+  Desktop opzionale) e **Cartellino UniSA (Terminale)** (TUI).
+
 ## v2.0.5
 
 - **Uniformità pulsanti nella TUI**: dimensioni minime e spaziatura dei pulsanti ora coerenti
