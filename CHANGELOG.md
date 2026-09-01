@@ -6,6 +6,18 @@ Release: aggiungi la sezione della prossima versione **prima** di taggare una re
 altrimenti la release verrà pubblicata senza descrizione delle novità (solo changelog
 auto-generato da GitHub).
 
+## v3.1.0
+
+- **Compilazione automatica del PDF di richiesta riposo compensativo** (issue #7, solo GUI):
+  in Impostazioni si carica una tantum il proprio modulo PDF (AcroForm) pre-personalizzato con
+  i propri dati anagrafici; da Statistiche → Riposo compensativo, un pulsante "Richiedi riposo
+  compensativo" compila e salva il PDF per il prossimo riposo compensativo completo non ancora
+  usato — uso rigorosamente sequenziale, un solo riposo alla volta. Nuovo stato intermedio
+  "richiesto per `<data>`" tra "completo non ancora usato" e "usato" (che resta gestito come
+  prima da `riposi_usati.txt`/`SRC`). Le richieste pendenti si vedono in una tabella con
+  pulsanti "Scarica PDF" e "Annulla (e successive)" — annullare una richiesta annulla anche
+  tutte quelle successive già in coda, eliminando i PDF già generati.
+
 ## v3.0.2
 
 - **Fix GUI macOS "non risponde" all'avvio da Finder/Launchpad** (issue #6): il launcher

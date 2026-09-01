@@ -37,7 +37,9 @@ class Config:
     output_folder: Path = field(init=False)
     excluded_dates_file: Path = field(init=False)
     riposi_usati_file: Path = field(init=False)
+    riposi_richiesti_file: Path = field(init=False)
     data_ticket_file: Path = field(init=False)
+    template_riposo_file: Path = field(init=False)
 
     def __post_init__(self) -> None:
         self.input_folder = self.data_folder / str(self.current_year) / "input"
@@ -46,7 +48,12 @@ class Config:
         )
         self.excluded_dates_file = self.input_folder / "date_escluse.txt"
         self.riposi_usati_file = self.input_folder / "riposi_usati.txt"
+        self.riposi_richiesti_file = self.input_folder / "riposi_richiesti.txt"
         self.data_ticket_file = self.input_folder / "data_ticket.txt"
+        # Sotto data_folder (non per-anno come input_folder/output_folder): il
+        # template è personalizzato una tantum con i dati anagrafici dell'utente,
+        # non cambia da un anno all'altro insieme al resto dei dati.
+        self.template_riposo_file = self.data_folder / "template_riposo_compensativo.pdf"
 
         self.input_folder.mkdir(parents=True, exist_ok=True)
         self.output_folder.mkdir(parents=True, exist_ok=True)

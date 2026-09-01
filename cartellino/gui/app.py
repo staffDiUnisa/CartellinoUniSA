@@ -22,6 +22,7 @@ from cartellino.gui.screens.dashboard import DashboardScreen
 from cartellino.gui.screens.date_escluse import DateEscluseScreen
 from cartellino.gui.screens.onboarding import OnboardingScreen
 from cartellino.gui.screens.reports import ReportsScreen
+from cartellino.gui.screens.riposo_richiesto import RiposoRichiestoScreen
 from cartellino.gui.screens.settings import SettingsScreen
 from cartellino.gui.screens.statistiche import StatisticheScreen
 from cartellino.gui.screens.timesheet import TimesheetScreen
@@ -110,6 +111,7 @@ class MainWindow(QMainWindow):
         self.settings_screen.btn_date_escluse.setEnabled(True)
         self.settings_screen.btn_date_escluse.setToolTip("")
         self.settings_screen.btn_date_escluse.clicked.connect(self.show_date_escluse)
+        self.riposo_richiesto_screen = RiposoRichiestoScreen()
         for screen in (
             self.onboarding_screen,
             self.update_screen,
@@ -119,6 +121,7 @@ class MainWindow(QMainWindow):
             self.statistiche_screen,
             self.settings_screen,
             self.date_escluse_screen,
+            self.riposo_richiesto_screen,
         ):
             self.stack.addWidget(screen)
 
@@ -199,6 +202,10 @@ class MainWindow(QMainWindow):
     def show_date_escluse(self) -> None:
         self.date_escluse_screen.refresh()
         self.stack.setCurrentWidget(self.date_escluse_screen)
+
+    def show_riposo_richiesto(self) -> None:
+        self.riposo_richiesto_screen.refresh()
+        self.stack.setCurrentWidget(self.riposo_richiesto_screen)
 
 
 def run(data_folder: Path = DATA_FOLDER) -> None:

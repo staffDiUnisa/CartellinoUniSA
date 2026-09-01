@@ -105,6 +105,9 @@ class StatisticheScreen(QWidget):
         self.btn_export_riposi = QPushButton("Esporta riposi in txt")
         self.btn_export_riposi.clicked.connect(self._esporta_riposi)
         self.export_row.addWidget(self.btn_export_riposi)
+        self.btn_riposo_richiesto = QPushButton("Richiedi riposo compensativo")
+        self.btn_riposo_richiesto.clicked.connect(self._apri_riposo_richiesto)
+        self.export_row.addWidget(self.btn_riposo_richiesto)
         self.export_row.addStretch()
         self._export_row_widget = QWidget()
         self._export_row_widget.setLayout(self.export_row)
@@ -207,6 +210,11 @@ class StatisticheScreen(QWidget):
             QMessageBox.warning(self, "Statistiche", f"Errore nell'esportazione: {e}")
             return
         QMessageBox.information(self, "Statistiche", f"Riposi compensativi esportati in {output_file}")
+
+    def _apri_riposo_richiesto(self) -> None:
+        window = self.window()
+        if hasattr(window, "show_riposo_richiesto"):
+            window.show_riposo_richiesto()
 
     def _torna_indietro(self) -> None:
         window = self.window()

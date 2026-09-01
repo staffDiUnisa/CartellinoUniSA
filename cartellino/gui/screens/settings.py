@@ -15,6 +15,7 @@ La schermata più estesa del piano. Differenze intenzionali rispetto alla TUI:
 """
 
 import logging
+import shutil
 from datetime import datetime
 from pathlib import Path
 
@@ -50,6 +51,10 @@ class SettingsScreen(QWidget):
     def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
         self.data_folder = None
+        self._template_riposo_sorgente: str | None = None
+        """Percorso del PDF appena selezionato con "Sfoglia...", da copiare in
+        `Config.template_riposo_file` al salvataggio (vedi `_salva`). `None` finché
+        l'utente non sceglie un nuovo file."""
 
         outer_layout = QVBoxLayout(self)
         outer_layout.setContentsMargins(0, 0, 0, 0)
@@ -125,6 +130,16 @@ class SettingsScreen(QWidget):
         self.btn_date_escluse.setToolTip("Non ancora implementato in GUI (Fase 9, vedi TODO_gui.md)")
         layout.addWidget(self.btn_date_escluse)
 
+        layout.addWidget(QLabel("Template PDF richiesta riposo compensativo (issue #7)"))
+        template_row = QHBoxLayout()
+        self.input_template_riposo = QLineEdit()
+        self.input_template_riposo.setReadOnly(True)
+        self.btn_sfoglia_template_riposo = QPushButton("Sfoglia...")
+        self.btn_sfoglia_template_riposo.clicked.connect(self._sfoglia_template_riposo)
+        template_row.addWidget(self.input_template_riposo)
+        template_row.addWidget(self.btn_sfoglia_template_riposo)
+        layout.addLayout(template_row)
+
         self.stato_credenziali_label = QLabel("")
         layout.addWidget(self.stato_credenziali_label)
 
@@ -167,6 +182,8 @@ class SettingsScreen(QWidget):
         self.input_data_folder.setText(user_config.data_folder or (str(config.data_folder) if config else ""))
         self.input_output_folder.setText(user_config.output_folder or "")
         self.input_data_ticket.setText(self._leggi_data_ticket_esistente(config) if config else "")
+        self._template_riposo_sorgente = None
+        self._aggiorna_stato_template_riposo(config)
         self.errore_label.setText("")
         self._aggiorna_stato_credenziali()
 
@@ -176,6 +193,12 @@ class SettingsScreen(QWidget):
             return config.data_ticket_file.read_text().strip()
         except FileNotFoundError:
             return ""
+
+    def _aggiorna_stato_template_riposo(self, config: Config | None) -> None:
+        if config is not None and config.template_riposo_file.exists():
+            self.input_template_riposo.setText(f"Impostato ({config.template_riposo_file})")
+        else:
+            self.input_template_riposo.setText("Non impostato")
 
     @staticmethod
     def _testo_stato_credenziali() -> str:
@@ -203,6 +226,12 @@ class SettingsScreen(QWidget):
         path = QFileDialog.getExistingDirectory(self, "Seleziona cartella", start)
         if path:
             campo.setText(path)
+
+    def _sfoglia_template_riposo(self) -> None:
+        path, _ = QFileDialog.getOpenFileName(self, "Seleziona template PDF", str(Path.home()), "PDF (*.pdf)")
+        if path:
+            self._template_riposo_sorgente = path
+            self.input_template_riposo.setText(f"Da copiare al salvataggio: {path}")
 
     def _salva(self) -> None:
         anno_str = self.input_anno.text().strip()
@@ -250,11 +279,21 @@ class SettingsScreen(QWidget):
             check_updates_on_startup=check_updates_on_startup,
         ).save()
 
-        # Scrive data_ticket.txt nella NUOVA cartella dati (Config va ricaricato per
-        # avere il path corretto, dato che data_folder può essere appena cambiato).
-        if data_ticket_valore:
+        # data_ticket.txt e il template PDF vanno scritti nella NUOVA cartella dati
+        # (Config va ricaricato per avere i path corretti, dato che data_folder può
+        # essere appena cambiato in questo stesso salvataggio).
+        if data_ticket_valore or self._template_riposo_sorgente:
             nuovo_config = Config.load(data_folder=self.data_folder)
-            nuovo_config.data_ticket_file.write_text(data_ticket_valore + "\n")
+            if data_ticket_valore:
+                nuovo_config.data_ticket_file.write_text(data_ticket_valore + "\n")
+            if self._template_riposo_sorgente:
+                # Copiato (non solo referenziato) nella cartella dati: il file
+                # sorgente scelto con "Sfoglia..." può essere spostato/rinominato
+                # dall'utente in seguito, la richiesta di riposo deve continuare a
+                # funzionare — resta usato finché non viene sovrascritto da un
+                # nuovo caricamento.
+                shutil.copy(self._template_riposo_sorgente, nuovo_config.template_riposo_file)
+                self._template_riposo_sorgente = None
 
         log.info("Impostazioni salvate.")
         self.errore_label.setText("")

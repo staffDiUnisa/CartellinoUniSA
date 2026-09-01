@@ -61,7 +61,7 @@ wheels = [
 
 [[package]]
 name = "cartellino-unisa"
-version = "3.0.2"
+version = "3.1.0"
 source = { virtual = "." }
 dependencies = [
     { name = "annotated-types" },
@@ -87,6 +87,7 @@ dependencies = [
     { name = "pydantic" },
     { name = "pydantic-core" },
     { name = "pygments" },
+    { name = "pypdf" },
     { name = "pyside6" },
     { name = "pysocks" },
     { name = "python-dateutil" },
@@ -147,6 +148,7 @@ requires-dist = [
     { name = "pydantic" },
     { name = "pydantic-core" },
     { name = "pygments" },
+    { name = "pypdf" },
     { name = "pyside6" },
     { name = "pysocks" },
     { name = "python-dateutil" },
@@ -1175,6 +1177,15 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/26/60/d881fa1ba8c160c18d8e6f782bb16ec4640c08bc08fc50f704c368ad4f9e/pyinstaller_hooks_contrib-2026.7.tar.gz", hash = "sha256:5fbcaacb22c4f4aac869a127dce283f67a4b4cfcc37d496f2446603e6d68aefa", size = 175992, upload-time = "2026-08-24T21:26:58.713Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/0a/67/350377af7b50416344ab8792756d414eef7629c618a73e9a0b13bb1552d9/pyinstaller_hooks_contrib-2026.7-py3-none-any.whl", hash = "sha256:24257a04c7a5a7a034cf28e39dcee20fbeeb9f043076729480f2e1b69904408a", size = 459445, upload-time = "2026-08-24T21:26:57.274Z" },
+]
+
+[[package]]
+name = "pypdf"
+version = "6.16.2"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/44/66/54212e75406afd9f3e933d0dda23072f6aecc55c5a273077dc2e0b028b23/pypdf-6.16.2.tar.gz", hash = "sha256:595647f6191de6f402cfde1d0c455d6cbccbd509aac32b34783009c032de5d6e", size = 7008996, upload-time = "2026-08-23T13:50:07.135Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/13/f1/a2da3b55acd4ab737bf728c97edaaed5ec1d3c1236acb639dcdfa97e42c7/pypdf-6.16.2-py3-none-any.whl", hash = "sha256:c8b09a59399062fb45a1b8156c18a787a10a3dae03ac9674397a226712c94604", size = 385060, upload-time = "2026-08-23T13:50:05.349Z" },
 ]
 
 [[package]]

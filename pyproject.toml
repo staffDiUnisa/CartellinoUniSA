@@ -1,6 +1,6 @@
 [project]
 name = "cartellino-unisa"
-version = "3.0.2"
+version = "3.1.0"
 description = "Download ed elaborazione del cartellino presenze UniSA da presenze.unisa.it"
 readme = "README.md"
 requires-python = ">=3.12"
@@ -57,6 +57,8 @@ dependencies = [
     "tomli-w",
     # Nuova dipendenza per la GUI desktop (vedi TODO_gui.md, Fase 0)
     "pyside6",
+    # Nuova dipendenza per la compilazione PDF richiesta riposo (vedi TODO_riposo_richiesto.md, Fase 1)
+    "pypdf",
 ]
 
 [tool.uv]
