@@ -256,7 +256,24 @@ jobs:
           # binario, va risignato con le stesse entitlements o la firma
           # "pulita" del bundle le sovrascriverebbe con nessuna, riportando il
           # problema di library validation già risolto per l'eseguibile sciolto.
-          codesign --force --timestamp --options runtime \
+          #
+          # --deep è OBBLIGATORIO qui (bug reale trovato sulla v3.0.2rc2, non
+          # riproducibile con la sola verifica locale): senza, `codesign`
+          # firma solo l'eseguibile principale e sigilla le risorse, ma non
+          # ri-firma i singoli Mach-O che BUNDLE() ha copiato dentro
+          # Contents/Frameworks (restano con la firma ad-hoc messa da
+          # PyInstaller stesso durante la build). `codesign --verify --deep`
+          # passa comunque pulito su una firma ad-hoc (verifica solo che LA
+          # firma presente, qualunque sia, sia valida), quindi il problema
+          # non si vede in locale — ma la notarizzazione presso Apple (sotto)
+          # è molto più severa e rifiuta l'intero bundle con "Invalid":
+          # ogni Mach-O nidificato deve avere la Developer ID reale, un
+          # secure timestamp e l'hardened runtime, non solo l'eseguibile
+          # principale. Verificato in locale con la vera identity: senza
+          # --deep i file in Contents/Frameworks restano `flags=0x2(adhoc)`,
+          # con --deep diventano `flags=0x10000(runtime)` con Authority
+          # "Developer ID Application" e Timestamp validi.
+          codesign --force --deep --timestamp --options runtime \
             --entitlements packaging/entitlements.plist \
             --sign "Developer ID Application" \
             "build/Cartellino UniSA.app"

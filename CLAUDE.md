@@ -324,6 +324,21 @@ uv run pyinstaller packaging/cartellino.spec --noconfirm
           stato rimosso: `BUNDLE()` genera l'intero bundle (struttura, `Info.plist`, icona) da
           zero in `dist/Cartellino UniSA.app` ad ogni build, copiato in `build/` e poi firmato
           per davvero in `release.yml` — nessun template statico da mantenere in sincronia.
+        - **Terzo bug reale, trovato solo dalla notarizzazione vera in CI (v3.0.2rc2), non da
+          `codesign --verify` in locale**: `codesign --force --timestamp ... "Cartellino
+          UniSA.app"` (senza `--deep`) firma solo l'eseguibile principale e sigilla le risorse,
+          ma NON ri-firma i singoli Mach-O che `BUNDLE()` ha copiato dentro
+          `Contents/Frameworks` — restano con la firma ad-hoc (`flags=0x2(adhoc)`) messa da
+          PyInstaller durante la build. `codesign --verify --deep --strict` passa comunque pulito
+          su una firma ad-hoc (verifica solo che la firma presente sia valida, qualunque sia),
+          quindi il problema non si vede né in locale né nello step di verifica subito dopo la
+          firma — solo la notarizzazione presso Apple (molto più severa: richiede la vera
+          Developer ID, un secure timestamp e l'hardened runtime su OGNI Mach-O nidificato, non
+          solo sull'eseguibile principale) rifiuta l'intero bundle con `status: Invalid`. Fix:
+          aggiunto `--deep` al comando di firma. Verificato in locale con la vera identity
+          Developer ID Application: senza `--deep` i file in `Contents/Frameworks` restano
+          `flags=0x2(adhoc)`, con `--deep` diventano `flags=0x10000(runtime)` con `Authority`
+          "Developer ID Application" e `Timestamp` validi su ciascun file, non solo sull'eseguibile.
       - **Icona personalizzata** (v2.0.3): `resources/logo.png` (512x512, non versionato prima
         d'ora) è la sorgente unica per le icone generate in CI, mai committata già convertita
         (formati binari `.ico`/`.icns`, diff illeggibili — stesso principio già seguito per
