@@ -263,9 +263,21 @@
   - Draft release `v3.0.0-rc2` lasciata su GitHub per ispezione manuale (non pubblicata): a
     scelta dell'utente se cancellarla o tenerla per un test di installazione reale su una
     macchina pulita prima della release definitiva.
-- **Prossimo passo**: Fase 15 (aggiornare `CLAUDE.md` con l'architettura `cartellino/gui/`) —
-  ora che la Fase 13 è validata su CI reale, questo è il momento naturale per farlo, dato che
-  packaging/CI e le API delle schermate sono stabili.
+- **Fase 15 (documentazione) — completata.** `CLAUDE.md` aggiornato allo stesso livello di
+  dettaglio già presente per `cartellino/tui/`: nuova sottosezione `### Pacchetto cartellino/gui/`
+  in Architecture (app.py/workers.py/screens/, differenze intenzionali rispetto alla TUI, i bug
+  trovati in QA e come sono stati corretti), nuova sottosezione `### cartellino_gui.py` in
+  Running, e una sottosezione dedicata nel Packaging per le estensioni CI/packaging della Fase
+  12-13 (MERGE, due launcher macOS, il bug della cartella `Resources/` vuota trovato in
+  `v3.0.0-rc1`, il fix del trigger del workflow). `README.md`: nuova sezione
+  "`cartellino_gui.py` — interfaccia grafica (GUI)" in Utilizzo (stessa tabella schermate della
+  TUI), badge PySide6, riga di apertura aggiornata per menzionare tutti e tre i frontend
+  (GUI/TUI/CLI) — la sezione "Eseguibili standalone" era già stata aggiornata in Fase 13.
+- **Tutte le 15 fasi del piano completate.** Rimane solo quanto esplicitamente rimandato: `TODO.md`
+  issue #5 (documentazione utente/ReadTheDocs, posticipata fino a qui) e `pytest-qt` (opportunità
+  futura, mai stata nello scope). Prossimo passo naturale: decidere quando tagare la release
+  definitiva `v3.0.0` (non più `-rc`) — richiede aggiungere la sezione `## v3.0.0` in
+  `CHANGELOG.md` prima del tag, per convenzione del progetto.
 
 ## Decisioni prese
 

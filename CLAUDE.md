@@ -94,6 +94,22 @@ home dell'utente (`~/.cartellino_unisa/`, `%LOCALAPPDATA%\cartellino_unisa\` su 
 (Fase 6), lanciabile da qualunque cartella. Vedi il pacchetto `cartellino/tui/` sotto per i
 dettagli.
 
+### `cartellino_gui.py` — GUI desktop PySide6 (TODO_gui.md, v3.0.0)
+
+```bash
+mise run gui
+# oppure
+uv run python cartellino_gui.py
+```
+
+App PySide6 (pacchetto `cartellino/gui/`), affianca la TUI senza sostituirla — stessa scelta di
+"distribuzione combinata" descritta in `TODO_gui.md`: un solo pacchetto/installer per OS include
+entrambi gli eseguibili. Stessa struttura dati/cartella fissa della TUI (`APP_DATA_DIR` in
+`cartellino_gui.py`, `~/.cartellino_unisa/` su macOS/Linux, `%LOCALAPPDATA%\cartellino_unisa\` su
+Windows — **condivisa** con `cartellino_tui.py`, non separata: GUI e TUI sono due frontend sullo
+stesso `config.toml`/dati, non due prodotti indipendenti). Vedi il pacchetto `cartellino/gui/`
+sotto per i dettagli.
+
 ### Packaging (Fase 6 TODO v2.0.0)
 
 `packaging/cartellino.spec` — spec PyInstaller (**onedir**, non onefile — vedi sotto) per
@@ -371,6 +387,49 @@ uv run pyinstaller packaging/cartellino.spec --noconfirm
     di compressione/copia usa questi due valori per rinominare esplicitamente ogni artefatto per
     tipo (non un suffisso automatico generico sul nome originale, che per `.deb`/`.rpm` prodotti
     da `fpm` avrebbe già contenuto una propria versione, duplicandola nel nome finale).
+  - **Packaging combinato TUI+GUI** (Fase 12-13 TODO_gui.md, v3.0.0): `packaging/cartellino.spec`
+    usa due `Analysis`/`EXE` distinti (entrypoint ed hiddenimports diversi: la GUI non importa
+    Textual/selenium direttamente) uniti con `MERGE`, che deduplica i moduli/binari condivisi
+    (pandas, pyarrow, PySide6, ecc.) nell'onedir finale invece di raddoppiarli — un solo
+    `dist/cartellino-unisa/` con dentro sia `cartellino-unisa` (console) sia
+    `cartellino-unisa-gui` (windowed, `console=False` in `EXE()`). Nessun `hiddenimport`
+    aggiuntivo per PySide6 (hook PyInstaller propri, bundled in `PySide6-Essentials`/
+    `PySide6-Addons`); gli hiddenimports selenium vanno duplicati anche nell'`Analysis` della GUI
+    perché `cartellino/gui/workers.py` importa `get.py` per il download.
+    - **macOS, due launcher `.app` nello stesso `.pkg`**: il launcher AppleScript esistente
+      (sopra) è stato **rinominato** da "Cartellino UniSA.app" a
+      "Cartellino UniSA (Terminale).app" — quel nome ora appartiene al nuovo launcher GUI
+      (`packaging/macos/gui_launcher/`, decisione presa con l'utente prima di procedere: la GUI
+      eredita il nome "principale", comportamento atteso da un doppio click da Finder/Launchpad).
+      Il nuovo launcher non usa AppleScript: la GUI è già una finestra nativa, quindi
+      `Contents/MacOS/cartellino-unisa-gui-launcher` è un semplice script di shell che fa `exec`
+      del binario installato (path assoluto, stesso motivo del launcher TUI) — niente picker
+      "quale terminale", niente entitlement `com.apple.security.automation.apple-events` (nessun
+      Apple Event da inviare). Firmato con la stessa identity Developer ID Application, notarizzato
+      e staplato con lo stesso trattamento del launcher TUI (stesso loop nello step di
+      notarizzazione, non più due step quasi identici separati).
+    - **Bug reale trovato nella prima release-candidate reale (`v3.0.0-rc1`), non riproducibile
+      in locale**: `packaging/macos/gui_launcher/Contents/Resources/` era una cartella vuota nel
+      sorgente — Git non traccia le cartelle vuote, quindi dopo il checkout in CI la cartella non
+      esisteva affatto e `cp packaging/build/icon.icns ".../Resources/icon.icns"` falliva con
+      "No such file or directory". Le verifiche locali (build reali con `uv run pyinstaller`)
+      non l'avevano mai riscontrato perché lì la cartella esisteva comunque sul filesystem locale
+      (creata a mano durante lo sviluppo), anche se non tracciata da Git — solo un vero checkout
+      Git (come fa CI) espone il problema. Fix: `mkdir -p` esplicito prima della `cp`
+      nel workflow, non affidarsi a cartelle vuote committate. **Verificato che si ripete anche
+      per altre cartelle vuote nel repo**: nessun'altra riscontrata, ma è la lezione generale da
+      questo bug — una cartella vuota nel working tree locale non garantisce che esista dopo un
+      `git clone`/checkout.
+    - **Trigger del workflow**: `on.push.tags` era ancora `"v2.*"` (mai aggiornato prima di questa
+      fase, perché tutte le verifiche precedenti erano state fatte in locale, mai con un vero tag
+      pushato) — un tag `v3.0.0-rc1` non faceva partire alcuna run. Generalizzato a `"v[0-9]*"`
+      così non andrà più toccato ad ogni bump di versione major futuro.
+    - Symlink aggiuntivi (`cartellino-unisa-gui` in `/usr/local/bin`/`/opt/.../` a seconda dell'OS,
+      `packaging/macos/postinstall`/`packaging/linux/postinstall.sh`) e voci `[Icons]` aggiuntive
+      nell'installer Windows (`packaging/windows/installer.iss`, "Cartellino UniSA" ora punta a
+      `cartellino-unisa-gui.exe`, "Cartellino UniSA (Terminale)" a `cartellino-unisa.exe`) — nessuna
+      icona/voce desktop per la GUI su Linux (fuori scope, richiederebbe un file `.desktop` e
+      l'installazione nel tema icone di sistema, infrastruttura non ancora nel repo).
 
 ## Architecture
 
@@ -505,6 +564,75 @@ uv run pyinstaller packaging/cartellino.spec --noconfirm
     `UserConfig.check_updates_on_startup` — nuovo campo, default `True`, toggle in Impostazioni —
     è vero); il check in avvio fallisce silenziosamente (nessuna notifica) se la rete non è
     disponibile o l'API non risponde, per non degradare l'esperienza di avvio offline.
+
+### Pacchetto `cartellino/gui/` (percorso `cartellino_gui.py`, TODO_gui.md, v3.0.0)
+
+GUI desktop PySide6, affianca la TUI senza sostituirla (stesso layer di dominio riusato senza
+modifiche in tutte le schermate). Nessuna dipendenza da Textual: pattern di navigazione e widget
+sono Qt nativi, non un porting 1:1 dei widget Textual.
+
+- **`app.py`** — `MainWindow`, mirror di `CartellinoApp` ma con `QStackedWidget` al posto dello
+  screen stack di Textual: le schermate primarie (Onboarding/Update/Dashboard/Reports/Timesheet/
+  Statistiche/Settings/DateEscluse) vivono tutte nello stesso stack e la navigazione tra loro
+  cambia pagina (`stack.setCurrentWidget`), non impila finestre — i popup con valore di ritorno
+  (Credentials, App update) usano invece `QDialog` modali separati, fuori dallo stack.
+  `reload_config_and_route()` è la stessa identica logica di instradamento di
+  `CartellinoApp.reload_config_and_route` (Onboarding se manca `config.toml`, Update se manca il
+  feather, altrimenti Dashboard + controllo aggiornamenti all'avvio), riusata senza modifiche.
+  `_app_version()`/`_bundle_base()` risolvono `pyproject.toml` con lo stesso schema `sys._MEIPASS`
+  già usato da `cartellino/tui/app.py` per il binario PyInstaller.
+- **`workers.py`** — `QtLogHandler`+`DownloadWorker`+`UpdateCheckWorker`, mirror concettuale di
+  `RichLogHandler`+`@work(thread=True)`+`App.call_from_thread`: Qt gestisce nativamente la stessa
+  cosa, un `Signal` emesso da un thread diverso da quello del ricevente diventa automaticamente
+  una `QueuedConnection` (eseguita sul thread del ricevente), niente equivalente esplicito di
+  `call_from_thread` da scrivere a mano. `UpdateCheckWorker` è condiviso tra il pulsante
+  "Controlla aggiornamenti" della Dashboard e il controllo automatico all'avvio di `MainWindow`
+  (era prima duplicato in `dashboard.py` come classe privata, spostato qui quando è servito
+  anche a `app.py`).
+- **`screens/`** — una classe per schermata, mirror di `cartellino/tui/screens/`, costruite sullo
+  stesso layer di dominio esistente senza modificarne la logica di calcolo:
+  - `onboarding.py`/`settings.py`/`credentials.py` (`CredentialsDialog`, `QDialog` con
+    `QPushButton` custom "Salva"/"Annulla" — **non** `QDialogButtonBox` con pulsanti standard: le
+    stringhe standard di Qt come "Save"/"Cancel" restano in inglese senza caricare le traduzioni
+    Qt integrate, non bundled nell'app, incoerente con un progetto interamente in italiano; bug
+    reale trovato in QA, Fase 14 TODO_gui.md) usano `UserConfig.save()`/`set_credentials()`
+    riusati identici dalla TUI.
+  - `settings.py` **non** ha il campo "Terminale (solo macOS)" della TUI (non applicabile — lancio
+    come app nativa, nessun terminale da scegliere) e usa `QFileDialog.getExistingDirectory`
+    nativo per cartella dati/output al posto del `FolderPickerScreen` custom (semplificazione
+    prevista dal piano, `cartellino/tui/screens/folder_picker.py` non ha equivalente lato GUI).
+    "Gestisci date escluse" apre `date_escluse.py` (`QTableWidget` con un pulsante "Rimuovi" per
+    riga via `setCellWidget`, stesso formato file di `date_escluse.txt`).
+  - `dashboard.py`/`settings.py` avvolgono il contenuto in un `QScrollArea`
+    (`setWidgetResizable(True)`): senza, su una finestra piccola il layout costringeva la
+    finestra a crescere oltre lo schermo pur di mostrare tutti i widget invece di scorrere (bug
+    trovato in QA catturando screenshot a dimensioni ridotte, Fase 14 TODO_gui.md) — mirror del
+    `VerticalScroll` già usato dalle stesse due schermate nella TUI. Per la Dashboard solo il
+    testo delle sezioni scorre (`QScrollArea` dedicato attorno alla sola `sections_label`), i
+    pulsanti di navigazione restano sempre visibili in fondo, a differenza della TUI dove
+    scrollano via insieme al resto.
+  - `statistiche.py` usa `_DataFrameTableModel(QAbstractTableModel)` (piccolo modello scritto ad
+    hoc per esporre un `pd.DataFrame` a `QTableView`: nessun drop-in Qt equivalente alla
+    `DataTable` di Textual, che accetta righe direttamente) per le 7 categorie tabulari, e un
+    `QTextBrowser` con `setMarkdown()` (supporto Markdown nativo Qt) per l'ottavo pulsante
+    "Riposo compensativo" — stessa fonte dati `OreEccedenti.riposi_markdown()` della TUI.
+  - `update.py` esegue `get.ottieni_cartellino` in un `DownloadWorker` (`QThread`) con log in
+    tempo reale via `QtLogHandler` verso un `QPlainTextEdit`.
+  - `app_update.py` (`AppUpdateDialog`) mostra le note di rilascio in `QTextBrowser` Markdown e
+    apre la pagina GitHub Release con `QDesktopServices.openUrl` (non `webbrowser.open` — l'API Qt
+    nativa) — stesso "niente self-update automatico" della TUI, stessi motivi (onedir, `.pkg`
+    firmato/notarizzato, `.exe` in esecuzione). Sostituisce un `QMessageBox` usato
+    provvisoriamente prima che questo dialog venisse scritto (Fase 3 → Fase 11 TODO_gui.md). Il
+    ramo "nessun aggiornamento disponibile" ha un `layout.addStretch()` esplicito: senza, uno
+    spazio senza widget "expanding" da assorbire farebbe distribuire lo spazio extra tra i widget
+    invece che in fondo se l'utente ridimensiona manualmente il dialog (stesso bug di
+    `CredentialsDialog`, stessa causa, trovato e corretto nello stesso giro di QA).
+- **QA senza framework di test automatico** (`pytest-qt` resta un'opportunità futura, fuori
+  scope): verificato ogni schermata catturando uno screenshot reale con `QWidget.grab()` — funziona
+  anche con `QT_QPA_PLATFORM=offscreen` (rendering software Qt, non serve un vero window server),
+  utile per CI headless in futuro. Non sostituisce test automatici, ma è più affidabile di un
+  controllo solo testuale ("non va in crash") per bug di layout — è così che sono stati trovati i
+  bug di spaziatura/scroll sopra.
 
 ## Data flow
 

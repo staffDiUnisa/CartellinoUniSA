@@ -4,6 +4,7 @@
 ![License](https://img.shields.io/badge/License-GPL_3.0-blue?style=for-the-badge&logo=gnu&logoColor=white)
 ![Python](https://img.shields.io/badge/Python-3.12+-3776AB?style=for-the-badge&logo=python&logoColor=white)
 ![Textual](https://img.shields.io/badge/TUI-Textual-8A2BE2?style=for-the-badge)
+![PySide6](https://img.shields.io/badge/GUI-PySide6-41CD52?style=for-the-badge&logo=qt&logoColor=white)
 ![Selenium](https://img.shields.io/badge/Selenium-43B02A?style=for-the-badge&logo=selenium&logoColor=white)
 ![Pandas](https://img.shields.io/badge/Pandas-150458?style=for-the-badge&logo=pandas&logoColor=white)
 
@@ -11,7 +12,7 @@
 ![Windows](https://img.shields.io/badge/Windows-installer%20.exe-blue?style=flat-square&logo=windowsterminal&logoColor=white)
 ![Linux](https://img.shields.io/badge/Linux-.deb%20%2F%20.rpm-blue?style=flat-square&logo=linux&logoColor=white)
 
-Strumento Python per il download automatico e l'elaborazione del cartellino presenze da [presenze.unisa.it](https://presenze.unisa.it). Calcola ore eccedenti, riposi compensativi, credito ore mensile e genera timesheet per progetti di ricerca. Disponibile sia come **TUI** (interfaccia testuale interattiva) sia come **CLI** scriptabile, entrambe scaricabili come eseguibile standalone senza installare Python.
+Strumento Python per il download automatico e l'elaborazione del cartellino presenze da [presenze.unisa.it](https://presenze.unisa.it). Calcola ore eccedenti, riposi compensativi, credito ore mensile e genera timesheet per progetti di ricerca. Disponibile come **GUI** desktop (PySide6), **TUI** (interfaccia testuale interattiva) e **CLI** scriptabile — tutte scaricabili come eseguibile standalone senza installare Python.
 
 ## 🎯 Funzionalità
 
@@ -151,6 +152,37 @@ Schermate disponibili:
 | **Impostazioni** | `s` | Anno, data minima riposi, formato export, codici dashboard, cartella dati/output (con selettore), data ticket mensa, gestione date escluse (`date_escluse.txt`); credenziali UniSA modificabili in una schermata dedicata ("Modifica credenziali") |
 
 `Esc` torna alla schermata precedente, `q` esce dall'app.
+
+### `cartellino_gui.py` — interfaccia grafica (GUI)
+
+Interfaccia desktop basata su [PySide6](https://doc.qt.io/qtforpython-6/), pensata per chi
+preferisce non usare il terminale: stesse funzionalità della TUI, senza richiedere Python/uv se
+si usa l'eseguibile standalone (vedi sotto). Condivide dati, `config.toml` e credenziali con la
+TUI — sono due frontend sullo stesso layer di dominio, non due prodotti separati: la stessa
+cartella dati fissa nella home dell'utente (`~/.cartellino_unisa/` su macOS/Linux,
+`%LOCALAPPDATA%\cartellino_unisa\` su Windows) e lo stesso `data/v2/{anno}/`.
+
+```bash
+mise run gui
+# oppure
+uv run python cartellino_gui.py
+```
+
+Schermate disponibili (stesse della TUI, navigazione da pulsante invece che da scorciatoia da
+tastiera):
+
+| Schermata | Descrizione |
+|-----------|---------|
+| **Onboarding** | Mostrata automaticamente se manca `config.toml`; imposta anno, data minima riposi, credenziali (opzionali qui) |
+| **Dashboard** | Home: eccezioni del mese, saldo ore, riepilogo riposi compensativi, ferie/PMF usati, ticket da ricevere, data ultimo aggiornamento |
+| **Aggiornamento** | Scelta del metodo di autenticazione (Credenziali UNISA/SPID/CIE, UNISA disabilitata fuori rete) e download con log in tempo reale |
+| **Report** | Generazione on-demand di riposo compensativo, credito ore, statistiche, ore giornaliere, nel formato scelto in Impostazioni |
+| **Timesheet progetto** | Selezione (o "Sfoglia...") ed esecuzione di uno YAML esistente in `timesheet/` (vedi sezione dedicata più sotto) |
+| **Statistiche** | Visualizzazione a schermo (non export) delle categorie di `statistiche.xlsx`: Buoni pasto, Ferie, Permessi per motivi familiari, Entrata in ritardo, Straordinari, Visite Specialistiche, Malattia — un pulsante per categoria, disabilitato se la categoria non ha dati |
+| **Impostazioni** | Anno, data minima riposi, formato export, codici dashboard, cartella dati/output (con selettore nativo del sistema operativo), data ticket mensa, gestione date escluse (`date_escluse.txt`); credenziali UniSA modificabili in una finestra dedicata ("Modifica credenziali") |
+
+Assenti rispetto alla TUI: il campo "Terminale (solo macOS)" in Impostazioni (non applicabile,
+la GUI è già una finestra nativa, nessun terminale da scegliere all'avvio).
 
 ### `cartellino_v2.py` — CLI non interattiva
 
