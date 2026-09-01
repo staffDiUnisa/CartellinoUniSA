@@ -38,11 +38,19 @@ per rimandare la decisione, senza uscire dal Backlog. `DEN` è uno stato termina
 (da *(vuoto)* o da `IGN`) — a differenza di `CLO`, non richiede una release: la motivazione del
 rifiuto sostituisce il riferimento alla soluzione.
 
+## Sviluppo interno: GUI desktop (non da issue GitHub)
+
+È in fase di pianificazione una nuova interfaccia grafica desktop (PySide6/Qt), da affiancare
+alla TUI Textual esistente mantenendone le stesse funzionalità. Sviluppo di portata maggiore
+(nuovo frontend, packaging combinato CLI+TUI+GUI) che probabilmente giustifica un bump di
+versione major (v3.0.0, da confermare al momento del tag). Piano dettagliato a fasi, con analisi
+di complessità/impatto per ciascuna, in [`TODO_gui.md`](TODO_gui.md).
+
 ## Backlog
 
 | Issue | Stato | Complessità | Impatto utente | Difficoltà / rischi principali |
-|---|:---:|:---:|:---:|---|
-| [#5 Documentazione](https://github.com/staffDiUnisa/CartellinoUniSA/issues/5) | IGN | L | Alto | Due deliverable distinti: struttura `docs/` in Markdown (guida utente + note architetturali, in parte già derivabile da `CLAUDE.md`) e setup ReadTheDocs (scelta toolchain — Sphinx/MkDocs —, config di build, hosting). Rischio principale: mantenere la documentazione sincronizzata con un progetto che cambia rapidamente (v2.x in evoluzione attiva) senza duplicare/disallinearsi da `CLAUDE.md`, che resta la fonte di verità per i dettagli implementativi. |
+|---|:-----:|:---:|:---:|---|
+| [#5 Documentazione](https://github.com/staffDiUnisa/CartellinoUniSA/issues/5) |  WIP  | L | Alto | Due deliverable distinti: struttura `docs/` in Markdown (guida utente + note architetturali, in parte già derivabile da `CLAUDE.md`) e setup ReadTheDocs (scelta toolchain — Sphinx/MkDocs —, config di build, hosting). Rischio principale: mantenere la documentazione sincronizzata con un progetto che cambia rapidamente (v2.x in evoluzione attiva) senza duplicare/disallinearsi da `CLAUDE.md`, che resta la fonte di verità per i dettagli implementativi. **Posticipata** a dopo lo sviluppo della GUI desktop (vedi [`TODO_gui.md`](TODO_gui.md)): scriverla ora significherebbe documentare la sola TUI e poi riscriverla per includere anche la GUI. |
 
 ## Implementate
 
