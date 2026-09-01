@@ -2,7 +2,7 @@ name: Release
 
 # Fase 6 TODO.md: build multipiattaforma degli eseguibili standalone della TUI
 # (PyInstaller, packaging/cartellino.spec) e pubblicazione su GitHub Release.
-# Trigger: push di un tag `v2.*` (es. v2.0.0).
+# Trigger: push di un tag `v<major>.*` (es. v2.0.0, v3.0.0-rc1).
 #
 # Oltre agli zip onedir "grezzi" (storici), il job build produce anche un vero
 # installer per OS: .pkg firmato/notarizzato/staplato su macOS, setup.exe
@@ -12,7 +12,7 @@ name: Release
 on:
   push:
     tags:
-      - "v2.*"
+      - "v[0-9]*"
 
 permissions:
   contents: write
