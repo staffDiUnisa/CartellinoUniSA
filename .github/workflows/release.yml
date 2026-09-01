@@ -149,6 +149,20 @@ jobs:
         # nuovo launcher GUI (vedi step sotto), più naturale per un doppio
         # click da Finder/Launchpad in un pacchetto che distribuisce sia TUI
         # che GUI.
+        #
+        # CFBundleIdentifier cambiato da "org.antaresnet.cartellino-unisa.launcher"
+        # a "...launcher.terminale" (bug reale, v3.0.0): macOS traccia gli
+        # upgrade per identifier del componente, non per percorso/nome file.
+        # Con lo stesso identifier di prima (installazioni v2.0.x avevano
+        # "Cartellino UniSA.app" con questo identifier), l'installer cercava di
+        # "spostare" il nuovo bundle rinominato nel VECCHIO percorso senza
+        # suffisso — collidendo con il nuovo launcher GUI installato nello
+        # stesso pacchetto proprio in quel percorso ("Cartellino UniSA.app"
+        # couldn't be moved... "an item with the same name already exists",
+        # installazione fallita su una macchina con una v2.x precedente). Un
+        # identifier nuovo tronca il collegamento con la vecchia receipt,
+        # l'installer lo tratta come un componente nuovo verso il percorso
+        # giusto (quello dichiarato nel payload, non quello della receipt).
         if: matrix.os == 'macos-latest'
         run: |
           osacompile -o "build/Cartellino UniSA (Terminale).app" packaging/macos/launcher.applescript
@@ -167,8 +181,8 @@ jobs:
 
           PLIST="build/Cartellino UniSA (Terminale).app/Contents/Info.plist"
           /usr/libexec/PlistBuddy -c "Delete :CFBundleIconName" "$PLIST" || true
-          /usr/libexec/PlistBuddy -c "Set :CFBundleIdentifier org.antaresnet.cartellino-unisa.launcher" "$PLIST" \
-            || /usr/libexec/PlistBuddy -c "Add :CFBundleIdentifier string org.antaresnet.cartellino-unisa.launcher" "$PLIST"
+          /usr/libexec/PlistBuddy -c "Set :CFBundleIdentifier org.antaresnet.cartellino-unisa.launcher.terminale" "$PLIST" \
+            || /usr/libexec/PlistBuddy -c "Add :CFBundleIdentifier string org.antaresnet.cartellino-unisa.launcher.terminale" "$PLIST"
           /usr/libexec/PlistBuddy -c "Set :CFBundleName Cartellino UniSA (Terminale)" "$PLIST" \
             || /usr/libexec/PlistBuddy -c "Add :CFBundleName string Cartellino UniSA (Terminale)" "$PLIST"
           /usr/libexec/PlistBuddy -c "Set :CFBundleDisplayName Cartellino UniSA (Terminale)" "$PLIST" \

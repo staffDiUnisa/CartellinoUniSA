@@ -6,6 +6,16 @@ Release: aggiungi la sezione della prossima versione **prima** di taggare una re
 altrimenti la release verrà pubblicata senza descrizione delle novità (solo changelog
 auto-generato da GitHub).
 
+## v3.0.1
+
+- **Fix installer `.pkg` macOS**: su una macchina con una versione precedente già installata,
+  il `.pkg` di v3.0.0 falliva ("The installer encountered an error that caused the installation
+  to fail") perché il launcher TUI rinominato ("Cartellino UniSA (Terminale).app") aveva
+  mantenuto lo stesso identificatore del vecchio "Cartellino UniSA.app": macOS tracciava
+  l'aggiornamento per identificatore, non per nome file, e cercava di spostarlo nel vecchio
+  percorso — collidendo con il nuovo launcher della GUI installato nello stesso pacchetto.
+  Identificatore del launcher TUI cambiato per evitare l'ambiguità.
+
 ## v3.0.0
 
 - **Nuova interfaccia grafica desktop (GUI)**, `cartellino_gui.py`, basata su
