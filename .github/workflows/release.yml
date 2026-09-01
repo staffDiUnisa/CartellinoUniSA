@@ -195,6 +195,10 @@ jobs:
         if: matrix.os == 'macos-latest'
         run: |
           cp -R packaging/macos/gui_launcher "build/Cartellino UniSA.app"
+          # Git non traccia le cartelle vuote: packaging/macos/gui_launcher/Contents/Resources/
+          # non esiste dopo il checkout (era vuota nel sorgente, la sola icona ci va copiata
+          # sotto), va ricreata esplicitamente prima di copiarci l'icona.
+          mkdir -p "build/Cartellino UniSA.app/Contents/Resources"
           cp packaging/build/icon.icns "build/Cartellino UniSA.app/Contents/Resources/icon.icns"
 
           PLIST="build/Cartellino UniSA.app/Contents/Info.plist"
