@@ -72,10 +72,22 @@ di complessità/impatto per ciascuna, in [`TODO_gui.md`](TODO_gui.md).
 | Issue | Stato | Complessità | Impatto utente | Difficoltà / rischi principali |
 |---|:-----:|:---:|:---:|---|
 | [#5 Documentazione](https://github.com/staffDiUnisa/CartellinoUniSA/issues/5) |  IGN  | L | Alto | Due deliverable distinti: struttura `docs/` in Markdown (guida utente + note architetturali, in parte già derivabile da `CLAUDE.md`) e setup ReadTheDocs (scelta toolchain — Sphinx/MkDocs —, config di build, hosting). Rischio principale: mantenere la documentazione sincronizzata con un progetto che cambia rapidamente (v2.x in evoluzione attiva) senza duplicare/disallinearsi da `CLAUDE.md`, che resta la fonte di verità per i dettagli implementativi. **Posticipata** a dopo lo sviluppo della GUI desktop (vedi [`TODO_gui.md`](TODO_gui.md)): scriverla ora significherebbe documentare la sola TUI e poi riscriverla per includere anche la GUI. |
-| [#7 Compilazione pdf riposi compensativi](https://github.com/staffDiUnisa/CartellinoUniSA/issues/7) | VER | M | Medio | Richiesta: compilare automaticamente (almeno da GUI) il modulo PDF da consegnare in amministrazione per richiedere l'uso di un riposo compensativo, a partire da un template vuoto pre-compilato con i dati anagrafici che l'utente carica una tantum in Impostazioni — la riga da generare è del tipo "di poter usufruire di n. 7.12 ore di riposo compensativo dalle... alle... del giorno <data>". Richiede anche un nuovo stato per i riposi compensativi ("richiesto uso per <data>", oltre a quelli già usati/disponibili) e va rispettato l'ordine rigorosamente sequenziale di utilizzo indicato dal segnalante. Rischio principale: non è chiaro dal solo testo della issue se il PDF allegato (`template_riposo_compensativo.pdf`) ha campi modulo compilabili (AcroForm, integrazione più semplice e robusta con una libreria come `pypdf`) o è un layout fisso su cui sovrapporre testo a coordinate fisse (fragile, si rompe se l'utente carica un template con impaginazione leggermente diversa) — va ispezionato il PDF allegato prima di stimare con più precisione. Tocca anche il modello dati esistente di `RiposoCompensativo` per il nuovo stato "richiesto". |
 
 ## Implementate
 
+- [#7 Compilazione pdf riposi compensativi](https://github.com/staffDiUnisa/CartellinoUniSA/issues/7) —
+  compilazione automatica, da GUI, del modulo PDF di richiesta riposo compensativo (piano
+  dettagliato in [`TODO_riposo_richiesto.md`](TODO_riposo_richiesto.md)): in Impostazioni si
+  carica una tantum il proprio template PDF (AcroForm) già pre-personalizzato con i dati
+  anagrafici; da Statistiche → Riposo compensativo, il pulsante "Richiedi riposo compensativo"
+  compila e salva il PDF per il prossimo riposo compensativo completo non ancora usato — uso
+  rigorosamente sequenziale, un solo riposo alla volta, come richiesto dal segnalante. Nuovo
+  stato intermedio "richiesto per `<data>`" (`RiposoCompensativo.data_richiesta`) tra "completo
+  non ancora usato" e "usato" (quest'ultimo resta gestito come prima da
+  `riposi_usati.txt`/`SRC`). Le richieste pendenti si vedono in una tabella con pulsanti
+  "Scarica PDF" e "Annulla (e successive)" — annullare una richiesta annulla anche tutte quelle
+  successive già in coda, eliminando i PDF già generati. Verificato dal segnalante. Risolto in
+  `v3.1.0`.
 - [#6 Problemi GUI MacOS](https://github.com/staffDiUnisa/CartellinoUniSA/issues/6) — la GUI
   installata via `.pkg` restava a rimbalzare nel dock e andava in "non risponde" per minuti
   all'avvio da Finder/Launchpad: il launcher `Cartellino UniSA.app` faceva `exec` del binario
