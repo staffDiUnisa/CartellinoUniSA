@@ -666,9 +666,14 @@ uv run pyinstaller packaging/cartellino.spec
 4. Push: `git push origin feature/nuova-funzionalita`
 5. Apri una Pull Request
 
+## 👤 Autore
+
+Progetto open source sviluppato da **Andrea Bruno** — [bruand81.it](https://bruand81.it).
+
 ## 📄 Licenza
 
-Distribuito sotto licenza GPL 3.0. Vedi [LICENSE](LICENSE) per i dettagli.
+Distribuito sotto licenza GPL 3.0. Vedi [LICENSE](LICENSE) per i dettagli. Il codice sorgente è
+pubblicamente disponibile su GitHub, in linea con la natura open source del progetto.
 
 ## ⚠️ Disclaimer
 
