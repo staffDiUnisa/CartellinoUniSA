@@ -28,3 +28,23 @@ def somma_ore_per_codici(df: pd.DataFrame, codici: list[str]) -> pd.DataFrame:
     filtrato["ore"] = ore_minuti.apply(lambda x: x[0])
     filtrato["minuti"] = ore_minuti.apply(lambda x: x[1])
     return filtrato
+
+
+# Codici il cui valore va sottratto (non sommato) nel calcolo di un saldo —
+# oggi solo SCN, uno scostamento negativo (issue GitHub #8: es. base +00:07,
+# SCN 00:26 -> saldo corretto -00:19). Hardcoded volutamente invece di un
+# meccanismo di configurazione generico: è un fatto noto sul sistema di
+# rilevazione presenze, non una preferenza dell'utente, e ad oggi ha un solo
+# membro noto. Se in futuro emergessero altri codici con la stessa semantica,
+# aggiungerli qui; se l'insieme crescesse oltre 1-2 elementi, valutare di
+# spostarlo in configurazione.
+SUBTRACTIVE_CODES = {"SCN"}
+
+
+def calcola_saldo_minuti(df: pd.DataFrame, codici: list[str]) -> int:
+    """Somma con segno, in minuti, le ore/minuti dei `codici` indicati nel
+    DataFrame già filtrato (es. per mese/anno). I codici in
+    `SUBTRACTIVE_CODES` vengono sottratti anziché sommati."""
+    filtrato = somma_ore_per_codici(df, codici)
+    segno = filtrato["Codice"].apply(lambda c: -1 if c in SUBTRACTIVE_CODES else 1)
+    return int((segno * (filtrato["ore"] * 60 + filtrato["minuti"])).sum())

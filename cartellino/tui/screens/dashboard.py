@@ -9,7 +9,7 @@ from textual.widgets import Button, Footer, Header, Static
 
 from cartellino.cartellino import Cartellino
 from cartellino.ore_eccedenti import OreEccedenti
-from cartellino.ore_helpers import somma_ore_per_codici
+from cartellino.ore_helpers import calcola_saldo_minuti, somma_ore_per_codici
 from cartellino.statistiche import Statistiche
 
 log = logging.getLogger(__name__)
@@ -134,12 +134,21 @@ class DashboardScreen(Screen):
     @staticmethod
     def _sezione_saldo(cartellino: Cartellino, config, now: datetime) -> str:
         codici = config.dashboard_balance_codes
-        df = somma_ore_per_codici(cartellino.df, codici)
-        df = df[(df["date"].dt.month == now.month) & (df["date"].dt.year == now.year)]
-        totale_minuti = int((df["ore"] * 60 + df["minuti"]).sum())
-        ore, minuti = divmod(totale_minuti, 60)
-        segno = "-" if totale_minuti < 0 else ""
-        return f"[b]Saldo ore del mese ({', '.join(codici)})[/b]\n  {segno}{abs(ore):02}:{abs(minuti):02}"
+        df = cartellino.df[
+            (cartellino.df["date"].dt.month == now.month) & (cartellino.df["date"].dt.year == now.year)
+        ]
+        totale_minuti = calcola_saldo_minuti(df, codici)
+        ore, minuti = divmod(abs(totale_minuti), 60)
+        if totale_minuti < 0:
+            colore, segno = "red", "-"
+        elif totale_minuti > 0:
+            colore, segno = "green", ""
+        else:
+            colore, segno = "blue", ""
+        return (
+            f"[b]Saldo ore del mese ({', '.join(codici)})[/b]\n"
+            f"  [{colore}]{segno}{ore:02}:{minuti:02}[/{colore}]"
+        )
 
     @staticmethod
     def _sezione_riposi(cartellino: Cartellino, config) -> str:
