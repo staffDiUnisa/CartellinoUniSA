@@ -445,8 +445,14 @@ jobs:
         run: choco install innosetup -y --no-progress
 
       - name: "Costruisce l'installer .exe (solo Windows, non firmato)"
-        # Vedi ignored/signed_windows.md (non versionato) per le opzioni
-        # valutate per aggiungere la firma in futuro.
+        # La firma NON è automatizzata in CI: il certificato OV gratuito per
+        # progetti open-source (Certum SimplySign) richiede un 2FA via app
+        # mobile ad ogni sessione, incompatibile con un runner GitHub-hosted
+        # headless. La firma è un passo manuale post-build, eseguito da un
+        # maintainer con packaging/windows/sign-release.ps1 sul draft della
+        # release prodotto da questo workflow — procedura completa in
+        # packaging/windows/SIGNING.md. Vedi anche ignored/signed_windows.md
+        # (non versionato) per le altre opzioni valutate prima di questa.
         if: matrix.os == 'windows-latest'
         shell: cmd
         run: |
