@@ -56,9 +56,11 @@ class UpdateScreen(QWidget):
             layout.addWidget(nota)
 
         button_row = QHBoxLayout()
-        self.btn_indietro = QPushButton("Indietro")
+        self.btn_indietro = QPushButton("⬅️ Indietro")
+        self.btn_indietro.setObjectName("btn-indietro")
         self.btn_indietro.clicked.connect(self._torna_indietro)
-        self.btn_avvia = QPushButton("Avvia download")
+        self.btn_avvia = QPushButton("⬇️ Avvia download")
+        self.btn_avvia.setObjectName("btn-avvia")
         self.btn_avvia.clicked.connect(self._avvia)
         button_row.addWidget(self.btn_indietro)
         button_row.addStretch()

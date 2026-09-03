@@ -27,10 +27,10 @@ class ReportsScreen(Screen):
                 f"Formato export: {self.app.config.export_format} (modificabile in Impostazioni)"
             )
             with Horizontal(classes="button-row"):
-                yield Button("Riposo compensativo", id="btn-riposo")
-                yield Button("Credito ore", id="btn-credito")
-                yield Button("Statistiche", id="btn-statistiche")
-                yield Button("Ore giornaliere", id="btn-ore-giornaliere")
+                yield Button("🛌 Riposo compensativo", id="btn-riposo")
+                yield Button("🧮 Credito ore", id="btn-credito")
+                yield Button("📊 Statistiche", id="btn-statistiche")
+                yield Button("🕓 Ore giornaliere", id="btn-ore-giornaliere")
             yield RichLog(id="reports-log", wrap=True, markup=True)
         yield Footer()
 

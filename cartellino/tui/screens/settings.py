@@ -95,12 +95,12 @@ class SettingsScreen(Screen):
                     value=user_config.data_folder or str(config.data_folder),
                     id="input-data-folder",
                 )
-                yield Button("Sfoglia...", id="btn-sfoglia-data-folder")
+                yield Button("📁 Sfoglia...", id="btn-sfoglia-data-folder")
 
             yield Label("Cartella output report (vuoto = predefinita: {cartella dati}/{anno}/output)")
             with Horizontal(classes="field-row"):
                 yield Input(value=user_config.output_folder or "", id="input-output-folder")
-                yield Button("Sfoglia...", id="btn-sfoglia-output-folder")
+                yield Button("📁 Sfoglia...", id="btn-sfoglia-output-folder")
 
             yield Label("Buoni pasto accreditati fino al (data_ticket.txt, DD-MM-YYYY)")
             yield MaskedInput(
@@ -110,16 +110,16 @@ class SettingsScreen(Screen):
             )
 
             with Horizontal(classes="button-row"):
-                yield Button("Gestisci date escluse (date_escluse.txt)", id="btn-date-escluse")
+                yield Button("🚫 Gestisci date escluse (date_escluse.txt)", id="btn-date-escluse")
 
             yield Static(self._testo_stato_credenziali(), id="stato-credenziali")
             with Horizontal(classes="button-row"):
-                yield Button("Modifica credenziali", id="btn-modifica-cred")
-                yield Button("Rimuovi credenziali", id="btn-rimuovi-cred")
+                yield Button("🔑 Modifica credenziali", id="btn-modifica-cred")
+                yield Button("🗑️ Rimuovi credenziali", id="btn-rimuovi-cred")
 
             yield Static("", id="settings-errore")
             with Horizontal(classes="button-row"):
-                yield Button("Salva", id="btn-salva", variant="primary")
+                yield Button("💾 Salva", id="btn-salva", variant="primary")
         yield Footer()
 
     @staticmethod

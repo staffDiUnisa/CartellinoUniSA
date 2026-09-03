@@ -143,3 +143,79 @@ Button:focus {
 #btn-stat-malattia:hover {
     background: sienna;
 }
+
+/* Dashboard: pulsante senza colore dedicato finora (issue #9) */
+#btn-controlla-aggiornamenti {
+    background: steelblue;
+}
+#btn-controlla-aggiornamenti:hover {
+    background: cornflowerblue;
+}
+
+/* Schermata Report e categoria "Riposo compensativo" in Statistiche: navigazione
+   verso una sezione informativa, stesso colore per coerenza (issue #9) */
+#btn-riposo,
+#btn-credito,
+#btn-statistiche,
+#btn-ore-giornaliere,
+#btn-stat-riposi {
+    background: teal;
+}
+#btn-riposo:hover,
+#btn-credito:hover,
+#btn-statistiche:hover,
+#btn-ore-giornaliere:hover,
+#btn-stat-riposi:hover {
+    background: darkcyan;
+}
+
+/* Esportazione riposi in txt (issue #9) */
+#btn-export-riposi {
+    background: cadetblue;
+}
+#btn-export-riposi:hover {
+    background: steelblue;
+}
+
+/* Impostazioni/config: sfoglia cartella, gestisci date escluse, modifica
+   credenziali (issue #9) */
+#btn-date-escluse,
+#btn-modifica-cred,
+#btn-sfoglia-data-folder,
+#btn-sfoglia-output-folder {
+    background: purple;
+}
+#btn-date-escluse:hover,
+#btn-modifica-cred:hover,
+#btn-sfoglia-data-folder:hover,
+#btn-sfoglia-output-folder:hover {
+    background: mediumpurple;
+}
+
+/* Azioni distruttive/annulla (issue #9) */
+#btn-rimuovi-cred,
+#fp-annulla,
+.date-esclusa-rimuovi {
+    background: crimson;
+}
+#btn-rimuovi-cred:hover,
+#fp-annulla:hover,
+.date-esclusa-rimuovi:hover {
+    background: indianred;
+}
+
+/* Azioni positive: aggiungi (issue #9) */
+#btn-aggiungi {
+    background: darkgreen;
+}
+#btn-aggiungi:hover {
+    background: green;
+}
+
+/* Chiudi/neutro (issue #9) */
+#btn-chiudi {
+    background: gray;
+}
+#btn-chiudi:hover {
+    background: darkgray;
+}

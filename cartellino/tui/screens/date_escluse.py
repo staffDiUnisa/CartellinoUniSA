@@ -53,7 +53,7 @@ class DateEscluseScreen(Screen):
             with Horizontal(classes="field-row"):
                 yield MaskedInput(_DATA_TEMPLATE, id="input-nuova-data")
                 yield MaskedInput(_ORA_TEMPLATE, id="input-nuova-ora")
-                yield Button("Aggiungi", id="btn-aggiungi", variant="primary")
+                yield Button("➕ Aggiungi", id="btn-aggiungi", variant="primary")
             yield Static("", id="date-escluse-errore")
         yield Footer()
 
@@ -88,7 +88,7 @@ class DateEscluseScreen(Screen):
             righe.append(
                 Horizontal(
                     Static(testo, classes="date-esclusa-testo"),
-                    Button("Rimuovi", id=f"rimuovi-{i}", classes="date-esclusa-rimuovi"),
+                    Button("🗑️ Rimuovi", id=f"rimuovi-{i}", classes="date-esclusa-rimuovi"),
                     classes="date-esclusa-riga",
                 )
             )

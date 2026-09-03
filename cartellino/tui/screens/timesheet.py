@@ -37,7 +37,7 @@ class TimesheetScreen(Screen):
                     id="select-timesheet",
                 )
                 with Horizontal(classes="button-row"):
-                    yield Button("Genera", id="btn-genera", variant="primary")
+                    yield Button("📐 Genera", id="btn-genera", variant="primary")
             yield RichLog(id="timesheet-log", wrap=True, markup=True)
         yield Footer()
 

@@ -30,15 +30,16 @@ from cartellino.statistiche import Statistiche
 
 log = logging.getLogger(__name__)
 
-# (chiave del foglio in Statistiche.calcola(), etichetta pulsante)
+# (chiave del foglio in Statistiche.calcola(), etichetta pulsante, id widget —
+# stessi id della controparte TUI in cartellino/tui/screens/statistiche.py)
 _CATEGORIE = [
-    ("statistica_ticket", "Buoni pasto"),
-    ("ferie", "Ferie"),
-    ("permessi_gravi_motivi", "Permessi per motivi familiari"),
-    ("entrata_ritardo", "Entrata in ritardo"),
-    ("straordinari", "Straordinari"),
-    ("visite_specialistiche", "Visite Specialistiche"),
-    ("malattia", "Malattia"),
+    ("statistica_ticket", "🎫 Buoni pasto", "btn-stat-ticket"),
+    ("ferie", "🏖️ Ferie", "btn-stat-ferie"),
+    ("permessi_gravi_motivi", "📝 Permessi per motivi familiari", "btn-stat-pmf"),
+    ("entrata_ritardo", "⏰ Entrata in ritardo", "btn-stat-erit"),
+    ("straordinari", "⏱️ Straordinari", "btn-stat-straordinari"),
+    ("visite_specialistiche", "🩺 Visite Specialistiche", "btn-stat-vsg"),
+    ("malattia", "🤒 Malattia", "btn-stat-malattia"),
 ]
 
 
@@ -79,7 +80,8 @@ class StatisticheScreen(QWidget):
         layout = QVBoxLayout(self)
 
         top_row = QHBoxLayout()
-        self.btn_indietro = QPushButton("Indietro")
+        self.btn_indietro = QPushButton("⬅️ Indietro")
+        self.btn_indietro.setObjectName("btn-indietro")
         self.btn_indietro.clicked.connect(self._torna_indietro)
         top_row.addWidget(self.btn_indietro)
         top_row.addStretch()
@@ -102,10 +104,12 @@ class StatisticheScreen(QWidget):
         layout.addWidget(self.riposi_viewer, stretch=1)
 
         self.export_row = QHBoxLayout()
-        self.btn_export_riposi = QPushButton("Esporta riposi in txt")
+        self.btn_export_riposi = QPushButton("📤 Esporta riposi in txt")
+        self.btn_export_riposi.setObjectName("btn-export-riposi")
         self.btn_export_riposi.clicked.connect(self._esporta_riposi)
         self.export_row.addWidget(self.btn_export_riposi)
-        self.btn_riposo_richiesto = QPushButton("Richiedi riposo compensativo")
+        self.btn_riposo_richiesto = QPushButton("🧾 Richiedi riposo compensativo")
+        self.btn_riposo_richiesto.setObjectName("btn-riposo-richiesto")
         self.btn_riposo_richiesto.clicked.connect(self._apri_riposo_richiesto)
         self.export_row.addWidget(self.btn_riposo_richiesto)
         self.export_row.addStretch()
@@ -129,17 +133,19 @@ class StatisticheScreen(QWidget):
 
         self.info_label.setText("Seleziona una categoria (i pulsanti senza dati sono disabilitati).")
         col = 0
-        for chiave, etichetta in _CATEGORIE:
+        for chiave, etichetta, id_bottone in _CATEGORIE:
             df = sheets.get(chiave)
             vuoto = df is None or df.empty
             btn = QPushButton(etichetta)
+            btn.setObjectName(id_bottone)
             btn.setEnabled(not vuoto)
             btn.clicked.connect(lambda _checked=False, c=chiave: self._mostra(c))
             self.buttons_grid.addWidget(btn, col // 3, col % 3)
             self._categoria_buttons[chiave] = btn
             col += 1
 
-        btn_riposi = QPushButton("Riposo compensativo")
+        btn_riposi = QPushButton("🛌 Riposo compensativo")
+        btn_riposi.setObjectName("btn-stat-riposi")
         btn_riposi.setEnabled(not self._senza_oe())
         btn_riposi.clicked.connect(self._mostra_riposi)
         self.buttons_grid.addWidget(btn_riposi, col // 3, col % 3)

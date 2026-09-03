@@ -37,7 +37,7 @@ class UpdateScreen(Screen):
                     "[dim]Credenziali UNISA non disponibile: non sei sulla rete universitaria.[/dim]"
                 )
             with Horizontal(classes="button-row"):
-                yield Button("Avvia download", id="btn-avvia", variant="primary")
+                yield Button("⬇️ Avvia download", id="btn-avvia", variant="primary")
             yield RichLog(id="update-log", wrap=True, markup=True)
         yield Footer()
 

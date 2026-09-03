@@ -14,13 +14,13 @@ log = logging.getLogger(__name__)
 
 # (chiave del foglio in Statistiche.calcola(), etichetta pulsante, id widget)
 _CATEGORIE = [
-    ("statistica_ticket", "Buoni pasto", "btn-stat-ticket"),
-    ("ferie", "Ferie", "btn-stat-ferie"),
-    ("permessi_gravi_motivi", "Permessi per motivi familiari", "btn-stat-pmf"),
-    ("entrata_ritardo", "Entrata in ritardo", "btn-stat-erit"),
-    ("straordinari", "Straordinari", "btn-stat-straordinari"),
-    ("visite_specialistiche", "Visite Specialistiche", "btn-stat-vsg"),
-    ("malattia", "Malattia", "btn-stat-malattia"),
+    ("statistica_ticket", "🎫 Buoni pasto", "btn-stat-ticket"),
+    ("ferie", "🏖️ Ferie", "btn-stat-ferie"),
+    ("permessi_gravi_motivi", "📝 Permessi per motivi familiari", "btn-stat-pmf"),
+    ("entrata_ritardo", "⏰ Entrata in ritardo", "btn-stat-erit"),
+    ("straordinari", "⏱️ Straordinari", "btn-stat-straordinari"),
+    ("visite_specialistiche", "🩺 Visite Specialistiche", "btn-stat-vsg"),
+    ("malattia", "🤒 Malattia", "btn-stat-malattia"),
 ]
 _ID_TO_CHIAVE = {id_bottone: chiave for chiave, _, id_bottone in _CATEGORIE}
 _BTN_RIPOSI = "btn-stat-riposi"
@@ -81,7 +81,7 @@ class StatisticheScreen(Screen):
             df = sheets.get(chiave)
             vuoto = df is None or df.empty
             bottoni.append(Button(etichetta, id=id_bottone, disabled=vuoto))
-        bottoni.append(Button("Riposo compensativo", id=_BTN_RIPOSI, disabled=self._senza_oe()))
+        bottoni.append(Button("🛌 Riposo compensativo", id=_BTN_RIPOSI, disabled=self._senza_oe()))
 
         return [
             Static("Seleziona una categoria (i pulsanti senza dati sono disabilitati)."),
@@ -89,7 +89,7 @@ class StatisticheScreen(Screen):
             DataTable(id="stat-table"),
             MarkdownViewer(id="stat-riposi", show_table_of_contents=True),
             Horizontal(
-                Button("Esporta riposi in txt", id=_BTN_EXPORT_RIPOSI),
+                Button("📤 Esporta riposi in txt", id=_BTN_EXPORT_RIPOSI),
                 classes="button-row",
                 id="riposi-export-row",
             ),

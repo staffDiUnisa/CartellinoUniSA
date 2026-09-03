@@ -75,7 +75,8 @@ class OnboardingScreen(QWidget):
         layout.addWidget(self.errore_label)
 
         button_row = QHBoxLayout()
-        self.btn_salva = QPushButton("Salva e continua")
+        self.btn_salva = QPushButton("💾 Salva e continua")
+        self.btn_salva.setObjectName("btn-salva")
         self.btn_salva.clicked.connect(self._salva)
         button_row.addStretch()
         button_row.addWidget(self.btn_salva)

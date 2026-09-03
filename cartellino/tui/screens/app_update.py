@@ -36,8 +36,8 @@ class AppUpdateScreen(Screen):
                 yield MarkdownViewer(self._release.body or "_Nessuna nota di rilascio._", show_table_of_contents=False)
             with Horizontal(classes="button-row"):
                 if self._release is not None:
-                    yield Button("Apri pagina di download", id="btn-apri-download", variant="primary")
-                yield Button("Chiudi", id="btn-chiudi")
+                    yield Button("🌐 Apri pagina di download", id="btn-apri-download", variant="primary")
+                yield Button("✖️ Chiudi", id="btn-chiudi")
         yield Footer()
 
     def on_button_pressed(self, event: Button.Pressed) -> None:

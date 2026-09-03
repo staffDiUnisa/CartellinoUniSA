@@ -41,7 +41,7 @@ class OnboardingScreen(Screen):
                 yield Switch(id="switch-headless")
             yield Static("", id="onboarding-errore")
             with Horizontal(classes="button-row"):
-                yield Button("Salva e continua", id="btn-salva", variant="primary")
+                yield Button("💾 Salva e continua", id="btn-salva", variant="primary")
         yield Footer()
 
     def on_button_pressed(self, event: Button.Pressed) -> None:

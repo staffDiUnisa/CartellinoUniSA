@@ -34,8 +34,8 @@ class FolderPickerScreen(ModalScreen[Optional[Path]]):
             yield Input(value=str(self._start), id="fp-input")
             yield _SoloCartelle(self._start, id="fp-tree")
             with Horizontal(classes="button-row"):
-                yield Button("Conferma", id="fp-conferma", variant="primary")
-                yield Button("Annulla", id="fp-annulla")
+                yield Button("✅ Conferma", id="fp-conferma", variant="primary")
+                yield Button("✖️ Annulla", id="fp-annulla")
 
     def on_directory_tree_directory_selected(self, event: DirectoryTree.DirectorySelected) -> None:
         self.query_one("#fp-input", Input).value = str(event.path)

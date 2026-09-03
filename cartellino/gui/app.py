@@ -14,7 +14,7 @@ import sys
 import tomllib
 from pathlib import Path
 
-from PySide6.QtWidgets import QApplication, QMainWindow, QStackedWidget
+from PySide6.QtWidgets import QApplication, QMainWindow, QMessageBox, QStackedWidget
 
 from cartellino.config import Config
 from cartellino.gui.screens.app_update import AppUpdateDialog
@@ -206,6 +206,22 @@ class MainWindow(QMainWindow):
     def show_riposo_richiesto(self) -> None:
         self.riposo_richiesto_screen.refresh()
         self.stack.setCurrentWidget(self.riposo_richiesto_screen)
+
+    def closeEvent(self, event) -> None:
+        """Conferma prima di chiudere (issue #9): copre in modo uniforme la X
+        della finestra, Alt+F4 e Cmd+Q, non solo il pulsante "Esci" della
+        Dashboard (che richiama `self.close()`, innescando questo stesso
+        metodo — nessuna logica di conferma duplicata)."""
+        risposta = QMessageBox.question(
+            self,
+            "Esci",
+            "Vuoi davvero uscire da CartellinoUniSA?",
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+        )
+        if risposta != QMessageBox.StandardButton.Yes:
+            event.ignore()
+        else:
+            event.accept()
 
 
 def run(data_folder: Path = DATA_FOLDER) -> None:

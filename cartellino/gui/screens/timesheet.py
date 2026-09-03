@@ -34,7 +34,8 @@ class TimesheetScreen(QWidget):
         layout = QVBoxLayout(self)
 
         top_row = QHBoxLayout()
-        self.btn_indietro = QPushButton("Indietro")
+        self.btn_indietro = QPushButton("⬅️ Indietro")
+        self.btn_indietro.setObjectName("btn-indietro")
         self.btn_indietro.clicked.connect(self._torna_indietro)
         top_row.addWidget(self.btn_indietro)
         top_row.addStretch()
@@ -48,9 +49,11 @@ class TimesheetScreen(QWidget):
         layout.addWidget(self.combo_timesheet)
 
         button_row = QHBoxLayout()
-        self.btn_sfoglia = QPushButton("Sfoglia...")
+        self.btn_sfoglia = QPushButton("📁 Sfoglia...")
+        self.btn_sfoglia.setObjectName("btn-sfoglia")
         self.btn_sfoglia.clicked.connect(self._sfoglia)
-        self.btn_genera = QPushButton("Genera")
+        self.btn_genera = QPushButton("📐 Genera")
+        self.btn_genera.setObjectName("btn-genera")
         self.btn_genera.clicked.connect(self._genera)
         button_row.addWidget(self.btn_sfoglia)
         button_row.addStretch()

@@ -1,8 +1,203 @@
-/* Foglio di stile Qt base (Fase 1 TODO_gui.md), equivalente concettuale di
-   cartellino/tui/app.tcss. Vuoto/minimale per ora: solo lo scaffolding di
-   caricamento va verificato in questa fase, la palette/i dettagli visivi
-   arriveranno con le schermate reali (Fase 2+). */
+/* Foglio di stile Qt globale (Fase 1 TODO_gui.md), equivalente concettuale di
+   cartellino/tui/app.tcss. Palette dei pulsanti allineata 1:1 (stessi id,
+   stessi colori) a quella TCSS della TUI, introdotta con issue #9 ("Miglioramenti
+   UI"): ogni QPushButton ha un `setObjectName` nel relativo screen file, usato qui
+   come selettore. */
 
 QMainWindow {
-    /* placeholder: nessuna personalizzazione ancora richiesta */
+    /* placeholder: nessuna personalizzazione aggiuntiva richiesta */
+}
+
+QPushButton {
+    background-color: blue;
+    color: white;
+    font-weight: bold;
+    padding: 4px 10px;
+    border: none;
+    border-radius: 3px;
+}
+QPushButton:hover {
+    background-color: royalblue;
+}
+QPushButton:disabled {
+    background-color: gray;
+    color: lightgray;
+}
+
+/* Dashboard: menu di navigazione, un colore diverso per pulsante (stessi id
+   della TUI in app.tcss) */
+QPushButton#btn-aggiorna {
+    background-color: blue;
+}
+QPushButton#btn-aggiorna:hover {
+    background-color: royalblue;
+}
+
+QPushButton#btn-report {
+    background-color: darkgreen;
+}
+QPushButton#btn-report:hover {
+    background-color: green;
+}
+
+QPushButton#btn-timesheet {
+    background-color: darkorange;
+}
+QPushButton#btn-timesheet:hover {
+    background-color: orange;
+}
+
+QPushButton#btn-statistiche-nav {
+    background-color: teal;
+}
+QPushButton#btn-statistiche-nav:hover {
+    background-color: darkcyan;
+}
+
+QPushButton#btn-impostazioni {
+    background-color: purple;
+}
+QPushButton#btn-impostazioni:hover {
+    background-color: mediumpurple;
+}
+
+QPushButton#btn-controlla-aggiornamenti {
+    background-color: steelblue;
+}
+QPushButton#btn-controlla-aggiornamenti:hover {
+    background-color: cornflowerblue;
+}
+
+/* Uscita dalla GUI (issue #9): innesca MainWindow.closeEvent con conferma */
+QPushButton#btn-esci {
+    background-color: firebrick;
+}
+QPushButton#btn-esci:hover {
+    background-color: darkred;
+}
+
+/* Schermata Statistiche: un colore diverso per categoria (stessi id della TUI) */
+QPushButton#btn-stat-ticket {
+    background-color: darkgoldenrod;
+}
+QPushButton#btn-stat-ticket:hover {
+    background-color: goldenrod;
+}
+
+QPushButton#btn-stat-ferie {
+    background-color: darkgreen;
+}
+QPushButton#btn-stat-ferie:hover {
+    background-color: green;
+}
+
+QPushButton#btn-stat-pmf {
+    background-color: darkorange;
+}
+QPushButton#btn-stat-pmf:hover {
+    background-color: orange;
+}
+
+QPushButton#btn-stat-erit {
+    background-color: purple;
+}
+QPushButton#btn-stat-erit:hover {
+    background-color: mediumpurple;
+}
+
+QPushButton#btn-stat-straordinari {
+    background-color: crimson;
+}
+QPushButton#btn-stat-straordinari:hover {
+    background-color: indianred;
+}
+
+QPushButton#btn-stat-vsg {
+    background-color: darkslateblue;
+}
+QPushButton#btn-stat-vsg:hover {
+    background-color: slateblue;
+}
+
+QPushButton#btn-stat-malattia {
+    background-color: saddlebrown;
+}
+QPushButton#btn-stat-malattia:hover {
+    background-color: sienna;
+}
+
+/* Schermata Report e categoria "Riposo compensativo" in Statistiche:
+   navigazione verso una sezione informativa, stesso colore per coerenza */
+QPushButton#btn-riposo,
+QPushButton#btn-credito,
+QPushButton#btn-statistiche,
+QPushButton#btn-ore-giornaliere,
+QPushButton#btn-stat-riposi {
+    background-color: teal;
+}
+QPushButton#btn-riposo:hover,
+QPushButton#btn-credito:hover,
+QPushButton#btn-statistiche:hover,
+QPushButton#btn-ore-giornaliere:hover,
+QPushButton#btn-stat-riposi:hover {
+    background-color: darkcyan;
+}
+
+/* Esportazione riposi in txt */
+QPushButton#btn-export-riposi {
+    background-color: cadetblue;
+}
+QPushButton#btn-export-riposi:hover {
+    background-color: steelblue;
+}
+
+/* Impostazioni/config: sfoglia cartelle/template, gestisci date escluse,
+   modifica credenziali */
+QPushButton#btn-sfoglia-data-folder,
+QPushButton#btn-sfoglia-output-folder,
+QPushButton#btn-sfoglia-template-riposo,
+QPushButton#btn-date-escluse,
+QPushButton#btn-modifica-cred {
+    background-color: purple;
+}
+QPushButton#btn-sfoglia-data-folder:hover,
+QPushButton#btn-sfoglia-output-folder:hover,
+QPushButton#btn-sfoglia-template-riposo:hover,
+QPushButton#btn-date-escluse:hover,
+QPushButton#btn-modifica-cred:hover {
+    background-color: mediumpurple;
+}
+
+/* Azioni distruttive/annulla */
+QPushButton#btn-rimuovi-cred,
+QPushButton#btn-rimuovi,
+QPushButton#btn-annulla,
+QPushButton#btn-annulla-successive {
+    background-color: crimson;
+}
+QPushButton#btn-rimuovi-cred:hover,
+QPushButton#btn-rimuovi:hover,
+QPushButton#btn-annulla:hover,
+QPushButton#btn-annulla-successive:hover {
+    background-color: indianred;
+}
+
+/* Azioni positive: aggiungi/richiedi */
+QPushButton#btn-aggiungi,
+QPushButton#btn-richiedi {
+    background-color: darkgreen;
+}
+QPushButton#btn-aggiungi:hover,
+QPushButton#btn-richiedi:hover {
+    background-color: green;
+}
+
+/* Indietro/chiudi/neutro */
+QPushButton#btn-indietro,
+QPushButton#btn-chiudi {
+    background-color: gray;
+}
+QPushButton#btn-indietro:hover,
+QPushButton#btn-chiudi:hover {
+    background-color: darkgray;
 }

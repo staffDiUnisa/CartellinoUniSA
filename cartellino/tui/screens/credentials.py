@@ -27,7 +27,7 @@ class CredentialsScreen(Screen[bool]):
             yield Input(password=True, id="input-password")
             yield Static("", id="credentials-errore")
             with Horizontal(classes="button-row"):
-                yield Button("Salva", id="btn-salva", variant="primary")
+                yield Button("💾 Salva", id="btn-salva", variant="primary")
         yield Footer()
 
     def on_button_pressed(self, event: Button.Pressed) -> None:

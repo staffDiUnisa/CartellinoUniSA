@@ -72,7 +72,7 @@ class DashboardScreen(Screen):
                     f"{config.current_year}.\n\n"
                     "Premi 'r' o il pulsante qui sotto per avviare il primo download."
                 ),
-                Button("Aggiorna cartellino", id="btn-aggiorna", variant="primary"),
+                Button("🔄 Aggiorna cartellino", id="btn-aggiorna", variant="primary"),
             ]
 
         try:
@@ -80,7 +80,7 @@ class DashboardScreen(Screen):
         except Exception as e:
             return [
                 Static(f"[red]Errore nella lettura del cartellino: {e}[/red]"),
-                Button("Aggiorna cartellino", id="btn-aggiorna", variant="primary"),
+                Button("🔄 Aggiorna cartellino", id="btn-aggiorna", variant="primary"),
             ]
 
         now = datetime.now()
@@ -106,12 +106,12 @@ class DashboardScreen(Screen):
         return [
             Vertical(*sezione_widgets),
             ItemGrid(
-                Button("Aggiorna cartellino [r]", id="btn-aggiorna"),
-                Button("Genera report [p]", id="btn-report"),
-                Button("Genera timesheet [t]", id="btn-timesheet"),
-                Button("Statistiche [v]", id="btn-statistiche-nav"),
-                Button("Impostazioni [s]", id="btn-impostazioni"),
-                Button("Controlla aggiornamenti", id="btn-controlla-aggiornamenti"),
+                Button("🔄 Aggiorna cartellino [r]", id="btn-aggiorna"),
+                Button("📄 Genera report [p]", id="btn-report"),
+                Button("📐 Genera timesheet [t]", id="btn-timesheet"),
+                Button("📊 Statistiche [v]", id="btn-statistiche-nav"),
+                Button("⚙️ Impostazioni [s]", id="btn-impostazioni"),
+                Button("⬆️ Controlla aggiornamenti", id="btn-controlla-aggiornamenti"),
                 classes="button-grid",
                 min_column_width=24,
             ),
