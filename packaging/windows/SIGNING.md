@@ -3,7 +3,12 @@
 `cartellino-unisa-setup-*.exe` (generato da `packaging/windows/installer.iss` via Inno Setup, nel
 job `build (windows-latest, ...)` di `.github/workflows/release.yml`) viene pubblicato **non
 firmato** dalla CI. La firma è un passo manuale, eseguito da un maintainer dopo il push del tag,
-tramite [`packaging/windows/sign-release.ps1`](sign-release.ps1).
+tramite [`packaging/windows/sign-release.ps1`](sign-release.ps1) da una macchina Windows.
+
+> Firmi da un Mac? `signtool.exe` è Windows-only (non basta avere PowerShell installato) — usa
+> invece [`sign-release-macos.sh`](sign-release-macos.sh), documentato in
+> [`SIGNING-macos.md`](SIGNING-macos.md), che attende automaticamente il draft della CI e firma
+> con `osslsigncode` + PKCS#11.
 
 ## Perché la firma non è automatizzata in CI
 
