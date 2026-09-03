@@ -6,6 +6,21 @@ Release: aggiungi la sezione della prossima versione **prima** di taggare una re
 altrimenti la release verrà pubblicata senza descrizione delle novità (solo changelog
 auto-generato da GitHub).
 
+## v3.2.0
+
+- **Corretto il calcolo del "Saldo ore del mese" in Dashboard** (issue #8): il codice `SCN`
+  (uno scostamento negativo) veniva sommato invece che sottratto, mostrando sempre un saldo
+  maggiore o uguale a zero. Ora il segno è corretto e il valore è evidenziato in blu, verde o
+  rosso a seconda che sia zero, positivo o negativo, sia in TUI che in GUI.
+- **Icone e colori sui pulsanti di tutte le schermate, TUI e GUI** (issue #9): ogni pulsante ha
+  ora un'icona significativa e un colore coerente con la sua funzione, per orientarsi più
+  facilmente. Aggiunto un pulsante "Esci" nella Dashboard della GUI, con richiesta di conferma
+  prima di chiudere l'applicazione (vale anche chiudendo dalla X della finestra, Alt+F4 o Cmd+Q).
+- **Documentazione utente completa** (issue #5): nuova struttura `docs/` (installazione,
+  configurazione, utilizzo di CLI/TUI/GUI, formati dei file di input/output, timesheet e
+  rendiconto di progetto, troubleshooting) pubblicata anche su ReadTheDocs, ad affiancare il
+  README esistente.
+
 ## v3.1.0
 
 - **Compilazione automatica del PDF di richiesta riposo compensativo** (issue #7, solo GUI):
