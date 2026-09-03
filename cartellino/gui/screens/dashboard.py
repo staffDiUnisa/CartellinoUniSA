@@ -16,7 +16,8 @@ restano invece sempre visibili, non scorrono via col testo.
 import logging
 from datetime import datetime, timedelta
 
-from PySide6.QtCore import Qt, Signal
+from PySide6.QtCore import Qt, QUrl, Signal
+from PySide6.QtGui import QDesktopServices
 from PySide6.QtWidgets import (
     QGridLayout,
     QHBoxLayout,
@@ -36,6 +37,8 @@ from cartellino.statistiche import Statistiche
 from cartellino.update_checker import ReleaseInfo
 
 log = logging.getLogger(__name__)
+
+DOCS_URL = "https://cartellino-unisa.readthedocs.io/"
 
 
 def _categorizza_riposo(riposo) -> tuple[str, str]:
@@ -89,6 +92,9 @@ class DashboardScreen(QWidget):
         self.btn_controlla_aggiornamenti = QPushButton("⬆️ Controlla aggiornamenti")
         self.btn_controlla_aggiornamenti.setObjectName("btn-controlla-aggiornamenti")
         self.btn_controlla_aggiornamenti.clicked.connect(self._controlla_aggiornamenti)
+        self.btn_documentazione = QPushButton("📚 Documentazione")
+        self.btn_documentazione.setObjectName("btn-documentazione")
+        self.btn_documentazione.clicked.connect(lambda: QDesktopServices.openUrl(QUrl(DOCS_URL)))
         self.btn_esci = QPushButton("🚪 Esci")
         self.btn_esci.setObjectName("btn-esci")
         self.btn_esci.clicked.connect(lambda: self.window().close())
@@ -103,7 +109,8 @@ class DashboardScreen(QWidget):
         buttons.addWidget(self.btn_statistiche, 1, 0)
         buttons.addWidget(self.btn_impostazioni, 1, 1)
         buttons.addWidget(self.btn_controlla_aggiornamenti, 1, 2)
-        buttons.addWidget(self.btn_esci, 2, 0)
+        buttons.addWidget(self.btn_documentazione, 2, 0)
+        buttons.addWidget(self.btn_esci, 2, 1)
         self._layout.addLayout(buttons)
         self._layout.addStretch()
 

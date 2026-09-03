@@ -158,14 +158,16 @@ Button:focus {
 #btn-credito,
 #btn-statistiche,
 #btn-ore-giornaliere,
-#btn-stat-riposi {
+#btn-stat-riposi,
+#btn-documentazione {
     background: teal;
 }
 #btn-riposo:hover,
 #btn-credito:hover,
 #btn-statistiche:hover,
 #btn-ore-giornaliere:hover,
-#btn-stat-riposi:hover {
+#btn-stat-riposi:hover,
+#btn-documentazione:hover {
     background: darkcyan;
 }
 

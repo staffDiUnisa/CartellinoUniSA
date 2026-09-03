@@ -132,14 +132,16 @@ QPushButton#btn-riposo,
 QPushButton#btn-credito,
 QPushButton#btn-statistiche,
 QPushButton#btn-ore-giornaliere,
-QPushButton#btn-stat-riposi {
+QPushButton#btn-stat-riposi,
+QPushButton#btn-documentazione {
     background-color: teal;
 }
 QPushButton#btn-riposo:hover,
 QPushButton#btn-credito:hover,
 QPushButton#btn-statistiche:hover,
 QPushButton#btn-ore-giornaliere:hover,
-QPushButton#btn-stat-riposi:hover {
+QPushButton#btn-stat-riposi:hover,
+QPushButton#btn-documentazione:hover {
     background-color: darkcyan;
 }
 

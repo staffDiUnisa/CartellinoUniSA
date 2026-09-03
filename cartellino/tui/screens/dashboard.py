@@ -1,4 +1,5 @@
 import logging
+import webbrowser
 from datetime import datetime, timedelta
 
 from textual import work
@@ -13,6 +14,8 @@ from cartellino.ore_helpers import calcola_saldo_minuti, somma_ore_per_codici
 from cartellino.statistiche import Statistiche
 
 log = logging.getLogger(__name__)
+
+DOCS_URL = "https://cartellino-unisa.readthedocs.io/"
 
 
 def _categorizza_riposo(riposo) -> tuple[str, str]:
@@ -112,6 +115,7 @@ class DashboardScreen(Screen):
                 Button("📊 Statistiche [v]", id="btn-statistiche-nav"),
                 Button("⚙️ Impostazioni [s]", id="btn-impostazioni"),
                 Button("⬆️ Controlla aggiornamenti", id="btn-controlla-aggiornamenti"),
+                Button("📚 Documentazione", id="btn-documentazione"),
                 classes="button-grid",
                 min_column_width=24,
             ),
@@ -209,6 +213,7 @@ class DashboardScreen(Screen):
             "btn-statistiche-nav": self.action_apri_statistiche,
             "btn-impostazioni": self.action_apri_impostazioni,
             "btn-controlla-aggiornamenti": self.action_controlla_aggiornamenti,
+            "btn-documentazione": self.action_apri_documentazione,
         }
         action = actions.get(event.button.id)
         if action:
@@ -236,6 +241,9 @@ class DashboardScreen(Screen):
 
     def action_controlla_aggiornamenti(self) -> None:
         self._controlla_aggiornamenti()
+
+    def action_apri_documentazione(self) -> None:
+        webbrowser.open(DOCS_URL)
 
     @work(thread=True)
     def _controlla_aggiornamenti(self) -> None:
