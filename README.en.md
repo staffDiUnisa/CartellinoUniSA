@@ -9,7 +9,7 @@
 ![Pandas](https://img.shields.io/badge/Pandas-150458?style=for-the-badge&logo=pandas&logoColor=white)
 
 ![macOS](https://img.shields.io/badge/macOS-pkg%20firmato%20%26%20notarizzato-success?style=flat-square&logo=apple&logoColor=white)
-![Windows](https://img.shields.io/badge/Windows-installer%20.exe-blue?style=flat-square&logo=windowsterminal&logoColor=white)
+![Windows](https://img.shields.io/badge/Windows-installer%20.exe%20signed-success?style=flat-square&logo=windowsterminal&logoColor=white)
 ![Linux](https://img.shields.io/badge/Linux-.deb%20%2F%20.rpm-blue?style=flat-square&logo=linux&logoColor=white)
 
 > This is the English translation of the project's README, provided for reference (e.g. for
@@ -602,9 +602,15 @@ dialog (needed only the first time).
    ```
    or double-click `cartellino-unisa-gui.exe` for the GUI
 
-In both cases the binary **is not signed** (no code-signing certificate for Windows, see
-`ignored/signed_windows.md` for the options evaluated), so on first launch SmartScreen shows
-"Windows protected your PC": click **More info** → **Run anyway** (needed only the first time).
+The `cartellino-unisa-setup.exe` installer **is signed** (free Certum certificate for open-source
+projects) — signing alone doesn't remove the SmartScreen warning from day one (reputation builds
+up over time based on download volume), but if it shows up you can check that the publisher listed
+is "Open Source Developer Andrea Bruno": click **More info** → **Run anyway** (needed only the
+first time).
+
+The executable inside the onedir zip (alternative option above), however, **is not signed**: it
+always shows the SmartScreen warning, with no verified publisher to check — same steps (**More
+info** → **Run anyway**), but prefer the installer when possible.
 
 ### 🐧 Linux
 

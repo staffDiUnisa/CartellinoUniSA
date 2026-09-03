@@ -9,7 +9,7 @@
 ![Pandas](https://img.shields.io/badge/Pandas-150458?style=for-the-badge&logo=pandas&logoColor=white)
 
 ![macOS](https://img.shields.io/badge/macOS-pkg%20firmato%20%26%20notarizzato-success?style=flat-square&logo=apple&logoColor=white)
-![Windows](https://img.shields.io/badge/Windows-installer%20.exe-blue?style=flat-square&logo=windowsterminal&logoColor=white)
+![Windows](https://img.shields.io/badge/Windows-installer%20.exe%20firmato-success?style=flat-square&logo=windowsterminal&logoColor=white)
 ![Linux](https://img.shields.io/badge/Linux-.deb%20%2F%20.rpm-blue?style=flat-square&logo=linux&logoColor=white)
 
 Strumento Python per il download automatico e l'elaborazione del cartellino presenze da [presenze.unisa.it](https://presenze.unisa.it). Calcola ore eccedenti, riposi compensativi, credito ore mensile e genera timesheet per progetti di ricerca. Disponibile come **GUI** desktop (PySide6), **TUI** (interfaccia testuale interattiva) e **CLI** scriptabile — tutte scaricabili come eseguibile standalone senza installare Python.
@@ -577,10 +577,15 @@ poi conferma nel dialogo (necessario solo la prima volta).
    ```
    oppure fai doppio click su `cartellino-unisa-gui.exe` per la GUI
 
-In entrambi i casi il binario **non è firmato** (nessun certificato di firma codice per Windows,
-vedi `ignored/signed_windows.md` per le opzioni valutate), quindi al primo avvio SmartScreen mostra
-"Windows ha protetto il PC": clicca **Ulteriori informazioni** → **Esegui comunque** (necessario
-solo la prima volta).
+L'installer `cartellino-unisa-setup.exe` è **firmato** (certificato Certum, gratuito per progetti
+open-source) — la firma non elimina da sola l'avviso SmartScreen il primo giorno (la reputazione
+si costruisce nel tempo in base al volume di download), ma se compare puoi controllare che
+l'editore mostrato sia "Open Source Developer Andrea Bruno": clicca **Ulteriori informazioni** →
+**Esegui comunque** (necessario solo la prima volta).
+
+L'eseguibile dentro lo zip della cartella onedir (opzione alternativa sopra), invece, **non è
+firmato**: mostra sempre l'avviso SmartScreen, senza un editore verificato da controllare — stessa
+procedura (**Ulteriori informazioni** → **Esegui comunque**), ma preferisci l'installer se possibile.
 
 ### 🐧 Linux
 

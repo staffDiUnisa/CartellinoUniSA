@@ -209,8 +209,12 @@ uv run pyinstaller packaging/cartellino.spec --noconfirm
      Gatekeeper fa una verifica online al primo avvio invece che offline (verificato: un binario
      con attributo di quarantena reale si avvia senza blocchi). Il `.pkg` sotto, invece, viene
      staplato: è un formato supportato.
-  Windows resta non firmato (nessun certificato acquistato): SmartScreen mostra comunque
-  l'avviso, documentato in README.md.
+  L'installer Windows (`cartellino-unisa-setup-*.exe`) è firmato, ma non in questo job/CI — vedi
+  "Firma dell'installer Windows" più sotto per il perché e il come. Lo zip onedir Windows
+  (`cartellino-unisa-windows-*.zip`, eseguibili sciolti `cartellino-unisa.exe`/
+  `cartellino-unisa-gui.exe`) resta invece non firmato: gli script di firma coprono solo
+  l'installer, non i singoli eseguibili dentro lo zip — SmartScreen mostra quindi ancora
+  l'avviso in quel caso, documentato in README.md.
 - **Installer nativi per OS** (job `build`, oltre agli zip onedir storici — vedi README.md §
   "Eseguibili standalone" per le istruzioni utente finale):
   - **macOS `.pkg`**: `pkgbuild --root pkgroot --install-location / --scripts packaging/macos ...`
@@ -435,11 +439,13 @@ uv run pyinstaller packaging/cartellino.spec --noconfirm
           in un `try` comunque, per non rompere il lancio se una versione futura di iTerm2
           cambiasse ancora nome/comportamento.
   - **Windows `.exe`**: Inno Setup (`packaging/windows/installer.iss`, compilato con `ISCC.exe`
-    installato via `choco install innosetup`), payload = stessa cartella onedir. **Non firmato**
-    per ora — `ignored/signed_windows.md` (non versionato) raccoglie le opzioni valutate
-    (certificato OV esportabile con lo stesso pattern del `.p12` macOS, EV via servizio di firma
-    cloud dato che la chiave non è esportabile, o SignPath.io gratuito per OSS) da decidere in un
-    secondo momento.
+    installato via `choco install innosetup`), payload = stessa cartella onedir. La CI produce
+    l'installer **non firmato** (job `build (windows-latest, ...)`) — vedi "Firma dell'installer
+    Windows" più sotto per come viene firmato **dopo**, manualmente, prima della pubblicazione
+    della release. `ignored/signed_windows.md` (non versionato) raccoglie le opzioni valutate
+    prima di arrivare a questa (certificato OV esportabile con lo stesso pattern del `.p12`
+    macOS, EV via servizio di firma cloud dato che la chiave non è esportabile, o SignPath.io
+    gratuito per OSS).
   - **Linux `.deb`/`.rpm`**: `fpm` (Ruby gem, installato in CI con `gem install fpm` +
     `apt-get install rpm ruby-dev build-essential` per il target rpm, che richiede `rpmbuild`),
     un solo comando per formato dalla stessa cartella onedir mappata su `/opt/cartellino-unisa/`,
@@ -505,6 +511,50 @@ uv run pyinstaller packaging/cartellino.spec --noconfirm
       `cartellino-unisa-gui.exe`, "Cartellino UniSA (Terminale)" a `cartellino-unisa.exe`) — nessuna
       icona/voce desktop per la GUI su Linux (fuori scope, richiederebbe un file `.desktop` e
       l'installazione nel tema icone di sistema, infrastruttura non ancora nel repo).
+- **Firma dell'installer Windows** (`cartellino-unisa-setup-*.exe`, post-v3.1.0): certificato OV
+  (Organization Validation) **gratuito per progetti open-source**, emesso da **Certum** tramite
+  **SimplySign** — a differenza del percorso a pagamento/esportabile valutato in precedenza
+  (`ignored/signed_windows.md`), la chiave privata vive in un HSM cloud gestito da Certum e non è
+  mai esportabile. **Non automatizzato in CI**: ogni sessione di firma richiede un 2FA via app
+  mobile SimplySign, impossibile da soddisfare su un runner GitHub-hosted headless. La firma resta
+  quindi un passo **manuale, human-in-the-loop**, eseguito da un maintainer dopo che la CI ha
+  prodotto il draft della release:
+  - `packaging/windows/sign-release.ps1` (da una macchina Windows, `signtool.exe`) e
+    `packaging/windows/sign-release-macos.sh` (da un Mac, `osslsigncode` + motore PKCS#11 via
+    `libp11`, dato che `signtool.exe` è Windows-only) fanno la stessa cosa: scaricano l'asset
+    `.exe` non firmato dal draft, firmano con timestamp RFC3161 (TSA Certum), verificano la firma,
+    aggiornano `SHA256SUMS` se presente, ricaricano gli asset firmati sulla draft e, con
+    `-Publish`/`--publish`, pubblicano la release. Procedura completa (setup one-time, variabili
+    d'ambiente, prerequisiti) in `packaging/windows/SIGNING.md` (Windows) e
+    `packaging/windows/SIGNING-macos.md` (macOS).
+  - **Verificato end-to-end su una release reale** (`v3.2.0`, da macOS): confermato che
+    `pkcs11-tool --module /usr/local/lib/libSimplySignPKCS.dylib -O` con SimplySign Desktop
+    loggato espone direttamente l'URI PKCS#11 completo della chiave privata (nessuna necessità di
+    indovinare/costruire l'URI a mano) e che l'engine `libp11` installato via Homebrew si trova in
+    `$(brew --prefix libp11)/lib/engines-3/pkcs11.dylib` (percorso rilevato automaticamente dallo
+    script).
+  - **Bug reale trovato in produzione, non riscontrabile finché non si firma davvero**: il
+    certificato esportato dal token con `pkcs11-tool -r -y cert` contiene solo il certificato
+    foglia, non la catena — la firma con `osslsigncode sign` **riesce comunque** (il digest e il
+    timestamp risultano corretti), ma il passo di verifica locale dello script
+    (`osslsigncode verify`) fallisce con `unable to get local issuer certificate`, perché non
+    trova l'intermedio "Certum Code Signing 2021 CA" nel file PEM passato a `-certs`. Non è un
+    problema della firma in sé (Windows/Authenticode avrebbe verosimilmente comunque accettato il
+    file, risalendo alla CA tramite altri canali), ma lo script tratta la verifica come condizione
+    di successo, quindi fallisce comunque prima di pubblicare. Fix (manuale, non ancora
+    automatizzato nello script): il certificato foglia ha un'estensione **Authority Information
+    Access** con un URL `CA Issuers` diretto all'intermedio
+    (`http://repository.certum.pl/ccsca2021.cer` in questo caso — verificabile con
+    `openssl x509 -in cert.pem -noout -text | grep -A3 "Authority Information Access"`); scaricato
+    l'intermedio e concatenato al certificato foglia nello stesso file PEM (`CERT_PEM_PATH`), la
+    verifica passa. `SIGNING-macos.md` documenta già questo come rischio noto ("le label esatte
+    degli oggetti sul token... possono richiedere aggiustamenti alla prima esecuzione"), ma non
+    ancora questo fix specifico — da aggiungere se si ripresenta.
+  - **Ambito della firma, per design**: entrambi gli script firmano solo l'installer
+    `cartellino-unisa-setup-*.exe` (pattern esplicito nel filtro `gh release download`/
+    `gh release upload`), non i singoli eseguibili `cartellino-unisa.exe`/`cartellino-unisa-gui.exe`
+    dentro lo zip onedir Windows (`cartellino-unisa-windows-*.zip`) — quella variante resta non
+    firmata e continua a mostrare l'avviso SmartScreen, documentato in README.md.
 
 ## Architecture
 

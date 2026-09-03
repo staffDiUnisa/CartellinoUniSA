@@ -71,9 +71,12 @@ cd cartellino-unisa
 # oppure doppio click su cartellino-unisa-gui.exe per la GUI
 ```
 
-Il binario **non è firmato** (nessun certificato di firma codice per Windows): al primo avvio
-SmartScreen mostra "Windows ha protetto il PC" → **Ulteriori informazioni** → **Esegui comunque**
-(necessario solo la prima volta).
+L'installer `cartellino-unisa-setup.exe` è **firmato** (certificato Certum, gratuito per progetti
+open-source) — se SmartScreen mostra comunque "Windows ha protetto il PC" (la reputazione si
+costruisce nel tempo in base al volume di download), controlla che l'editore mostrato sia "Open
+Source Developer Andrea Bruno": **Ulteriori informazioni** → **Esegui comunque** (necessario solo
+la prima volta). L'eseguibile dentro lo zip della cartella onedir, invece, **non è firmato** e
+mostra sempre l'avviso senza un editore verificato — preferisci l'installer quando possibile.
 
 ## Linux
 
