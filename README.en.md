@@ -23,7 +23,7 @@ research projects. Available as a desktop **GUI** (PySide6), an interactive **TU
 interface), and a scriptable **CLI** — all downloadable as standalone executables with no Python
 installation required.
 
-📚 **[Full documentation](https://cartellino-unisa.readthedocs.io/)** (Italian)
+📚 **[Full documentation](https://cartellinounisa.readthedocs.io/)** (Italian)
 
 ## 🎯 Features
 
@@ -697,8 +697,8 @@ channel for bug reports. For a useful report, please include when possible: the 
 operating system, how you're running the app (standalone executable or from source), steps to
 reproduce the issue, and the log if available (`cartellino_tui.log`/`cartellino_gui.log` in the
 app's data folder — check first that it doesn't contain personal data). Full details in the
-[Reporting a bug](https://cartellino-unisa.readthedocs.io/reference/troubleshooting/#segnalare-un-bug)
-section of the [full documentation](https://cartellino-unisa.readthedocs.io/) (Italian).
+[Reporting a bug](https://cartellinounisa.readthedocs.io/reference/troubleshooting/#segnalare-un-bug)
+section of the [full documentation](https://cartellinounisa.readthedocs.io/) (Italian).
 
 ## 🤝 Contributing
 

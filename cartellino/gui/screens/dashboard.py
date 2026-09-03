@@ -38,7 +38,7 @@ from cartellino.update_checker import ReleaseInfo
 
 log = logging.getLogger(__name__)
 
-DOCS_URL = "https://cartellino-unisa.readthedocs.io/"
+DOCS_URL = "https://cartellinounisa.readthedocs.io/"
 
 
 def _categorizza_riposo(riposo) -> tuple[str, str]:

@@ -1,6 +1,6 @@
 site_name: Cartellino UniSA
 site_description: Download ed elaborazione del cartellino presenze UniSA da presenze.unisa.it
-site_url: https://cartellino-unisa.readthedocs.io/
+site_url: https://cartellinounisa.readthedocs.io/
 repo_url: https://github.com/staffDiUnisa/CartellinoUniSA
 repo_name: staffDiUnisa/CartellinoUniSA
 docs_dir: docs
