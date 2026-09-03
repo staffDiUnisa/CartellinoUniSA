@@ -14,6 +14,8 @@
 
 Strumento Python per il download automatico e l'elaborazione del cartellino presenze da [presenze.unisa.it](https://presenze.unisa.it). Calcola ore eccedenti, riposi compensativi, credito ore mensile e genera timesheet per progetti di ricerca. Disponibile come **GUI** desktop (PySide6), **TUI** (interfaccia testuale interattiva) e **CLI** scriptabile — tutte scaricabili come eseguibile standalone senza installare Python.
 
+📚 **[Documentazione completa](https://cartellino-unisa.readthedocs.io/)**
+
 ## 🎯 Funzionalità
 
 - **Download automatico** del cartellino da `presenze.unisa.it` tramite Selenium

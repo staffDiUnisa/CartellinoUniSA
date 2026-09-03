@@ -1,0 +1,60 @@
+site_name: Cartellino UniSA
+site_description: Download ed elaborazione del cartellino presenze UniSA da presenze.unisa.it
+site_url: https://cartellino-unisa.readthedocs.io/
+repo_url: https://github.com/staffDiUnisa/CartellinoUniSA
+repo_name: staffDiUnisa/CartellinoUniSA
+docs_dir: docs
+
+theme:
+  name: material
+  language: it
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: indigo
+      toggle:
+        icon: material/brightness-7
+        name: Passa al tema scuro
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: indigo
+      toggle:
+        icon: material/brightness-4
+        name: Passa al tema chiaro
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - navigation.top
+    - search.suggest
+    - content.code.copy
+
+markdown_extensions:
+  - admonition
+  - tables
+  - pymdownx.highlight
+  - pymdownx.superfences
+
+nav:
+  - Home: index.md
+  - Per iniziare:
+      - Installazione: getting-started/installation.md
+      - Eseguibili standalone: getting-started/standalone-executables.md
+      - Configurazione: getting-started/configuration.md
+  - Utilizzo:
+      - TUI: usage/tui.md
+      - GUI: usage/gui.md
+      - CLI: usage/cli.md
+      - Versione legacy: usage/legacy.md
+  - Dati:
+      - Struttura dati: data/data-layout.md
+      - File di input: data/input-files.md
+      - Output generati: data/output-files.md
+      - Timesheet e rendiconto: data/timesheet.md
+  - Riferimento:
+      - Codici del cartellino: reference/codes.md
+      - Data flow: reference/data-flow.md
+      - Troubleshooting: reference/troubleshooting.md
+  - Guida per sviluppatori:
+      - Architettura: developer-guide/architecture.md
+      - Contribuire: developer-guide/contributing.md
+  - Info: about.md

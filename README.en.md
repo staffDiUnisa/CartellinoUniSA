@@ -23,6 +23,8 @@ research projects. Available as a desktop **GUI** (PySide6), an interactive **TU
 interface), and a scriptable **CLI** — all downloadable as standalone executables with no Python
 installation required.
 
+📚 **[Full documentation](https://cartellino-unisa.readthedocs.io/)** (Italian)
+
 ## 🎯 Features
 
 - **Automatic download** of the attendance card from `presenze.unisa.it` via Selenium
