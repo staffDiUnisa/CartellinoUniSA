@@ -49,3 +49,21 @@
 **Eseguibile standalone non firmato/verificato (macOS, Windows)**
 
 - Vedi le note specifiche per sistema operativo in [Eseguibili standalone](../getting-started/standalone-executables.md)
+
+## Segnalare un bug
+
+Se un problema non è tra quelli elencati sopra, o pensi di aver trovato un bug, apri una
+[issue su GitHub](https://github.com/staffDiUnisa/CartellinoUniSA/issues/new) — è il canale
+ufficiale per le segnalazioni, permette di tenere traccia dello stato (in lavorazione, risolto,
+in quale release) e di collegare la segnalazione al commit/release che la risolve.
+
+Per una segnalazione utile, includi quando possibile:
+
+- **Versione** dell'applicazione (mostrata nell'header della TUI, nel titolo della finestra GUI,
+  o `cartellino-unisa --version` per la CLI) e **sistema operativo**
+- **Come stai eseguendo l'app**: eseguibile standalone (installer/`.pkg`/`.deb`/`.rpm`/zip) oppure
+  da sorgente (`uv run ...`)
+- **Passi per riprodurre** il problema, e cosa ti aspettavi che succedesse invece
+- Se disponibile, il **log**: `cartellino_tui.log`/`cartellino_gui.log` nella cartella dati
+  dell'app (vedi [Struttura dati](../dati-cartellino/data-layout.md)) — **verifica prima di
+  allegarlo che non contenga dati personali** (credenziali, dati del cartellino)

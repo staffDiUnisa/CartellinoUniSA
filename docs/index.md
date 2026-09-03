@@ -39,6 +39,7 @@ Il codice sorgente è su GitHub:
 - Configurare credenziali e opzioni: [Configurazione](getting-started/configuration.md)
 - Uso quotidiano: [TUI](usage/tui.md), [GUI](usage/gui.md), [CLI](usage/cli.md)
 - Qualcosa non funziona: [Troubleshooting](reference/troubleshooting.md)
+- Hai trovato un bug: [Segnalare un bug](reference/troubleshooting.md#segnalare-un-bug)
 
 !!! note "Documentazione interna"
     Questo sito copre l'uso dell'applicazione. Per i dettagli implementativi interni (packaging,

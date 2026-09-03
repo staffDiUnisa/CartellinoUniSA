@@ -665,6 +665,18 @@ uv run pyinstaller packaging/cartellino.spec
 - Non si verifica con i file generati dallo script, che aggiorna automaticamente i riferimenti formula
 - Può accadere se si rinominano manualmente i fogli mensili senza aggiornare il Riassuntivo
 
+### 🐛 Segnalare un bug
+
+Se un problema non è tra quelli sopra, o pensi di aver trovato un bug, apri una
+[issue su GitHub](https://github.com/staffDiUnisa/CartellinoUniSA/issues/new) — è il canale
+ufficiale per le segnalazioni. Per una segnalazione utile, includi quando possibile: versione
+dell'app e sistema operativo, come stai eseguendo l'app (eseguibile standalone o da sorgente),
+i passi per riprodurre il problema, e se disponibile il log (`cartellino_tui.log`/
+`cartellino_gui.log` nella cartella dati dell'app — verifica prima che non contenga dati
+personali). Dettagli completi nella sezione
+[Segnalare un bug](https://cartellino-unisa.readthedocs.io/reference/troubleshooting/#segnalare-un-bug)
+della [documentazione completa](https://cartellino-unisa.readthedocs.io/).
+
 ## 🤝 Contribuire
 
 1. Fork del repository

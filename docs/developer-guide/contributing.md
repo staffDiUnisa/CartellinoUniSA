@@ -1,5 +1,10 @@
 # Contribuire
 
+Hai trovato un bug o vuoi proporre una funzionalità? Apri una
+[issue su GitHub](https://github.com/staffDiUnisa/CartellinoUniSA/issues/new) — vedi
+[Segnalare un bug](../reference/troubleshooting.md#segnalare-un-bug) per cosa includere in una
+segnalazione utile. Per contribuire codice:
+
 1. Fork del repository
 2. Crea un branch: `git checkout -b feature/nuova-funzionalita`
 3. Commit: `git commit -m 'Aggiunta nuova funzionalità'`

@@ -6,6 +6,15 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Python CLI tool that downloads and processes UniSA employee attendance data (cartellino presenze) from `https://presenze.unisa.it`. It calculates overtime hours, compensatory rest days, monthly hour credits, and generates per-project timesheets.
 
+Bug reports and feature requests go through GitHub Issues on this repo — user-facing instructions
+for how to file one (what to include: version, OS, repro steps, log file) live in
+`README.md`/`README.en.md` (§ "Segnalare un bug"/"Reporting a bug", under Troubleshooting) and in
+`docs/reference/troubleshooting.md` (§ "Segnalare un bug", also linked from `docs/index.md` and
+`docs/developer-guide/contributing.md`) — kept in sync across all three since they're the same
+content addressed to the same audience. This is distinct from the maintainer-facing triage
+workflow in `TODO.md` (stati `WIP`/`VER`/`CLO`/`URG`), which governs what happens *after* a bug is
+reported, not how a user reports one.
+
 ## Setup
 
 Il progetto usa `mise` (pin versione Python + tool `uv`) e `uv` (gestione dipendenze/venv)
