@@ -22,8 +22,8 @@ presenze.unisa.it
        └── ore_svolte_per_giorno/{progetto}/   (solo se richiesto il timesheet di progetto)
 ```
 
-Dettaglio dei singoli file: [Struttura dati](../data/data-layout.md),
-[File di input](../data/input-files.md), [Output generati](../data/output-files.md).
+Dettaglio dei singoli file: [Struttura dati](../dati-cartellino/data-layout.md),
+[File di input](../dati-cartellino/input-files.md), [Output generati](../dati-cartellino/output-files.md).
 
 Il percorso legacy (`main.py`/`process.py`) usa lo stesso schema di output ma legge
 `cartellino.xlsx` direttamente (nessun formato Feather), in `data/{anno}/` — vedi

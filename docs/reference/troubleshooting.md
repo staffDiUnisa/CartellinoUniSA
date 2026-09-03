@@ -18,7 +18,7 @@
 **Date non riconosciute in `date_escluse.txt`**
 
 - Verificare il formato: `DD-MM-YYYY` oppure `DD-MM-YYYY HH:MM` — vedi
-  [File di input](../data/input-files.md)
+  [File di input](../dati-cartellino/input-files.md)
 
 **`min_date_riposi_usati`/`MIN_DATE_RIPOSI_USATI` non riconosciuta**
 
@@ -31,7 +31,7 @@
   le ore residue sono azzerate
 - Se il resto da aggiungere all'ultimo giorno è ≥ 30 min, viene stampato un avviso (il totale è
   comunque corretto)
-- Vedi [Timesheet e rendiconto](../data/timesheet.md)
+- Vedi [Timesheet e rendiconto](../dati-cartellino/timesheet.md)
 
 **Il rendiconto non viene generato**
 

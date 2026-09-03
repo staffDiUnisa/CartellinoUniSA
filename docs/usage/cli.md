@@ -1,7 +1,7 @@
 # CLI — `cartellino_v2.py`
 
 Uso non interattivo/scriptabile. Dati salvati in `data/v2/{anno}/` (relativo alla cwd) — vedi
-[Struttura dati](../data/data-layout.md).
+[Struttura dati](../dati-cartellino/data-layout.md).
 
 ```bash
 mise run app
@@ -47,4 +47,4 @@ uv run python cartellino_v2.py --no-aggiorna-cartellino --timesheet-progetto mio
 | `--auth-method` | `unisa`, `spid`, `cie` | Metodo di autenticazione per il download; se omesso e il download è attivo, viene chiesto a schermo |
 | `--export-format` | `xlsx`, `csv` | Formato dei report generati; se omesso usa quello configurato (default `xlsx`) |
 | `--solo-report` | `cartellino`, `riposo`, `credito`, `statistiche`, `ore-giornaliere` (separati da virgola) | Genera solo i report indicati; se omesso li genera tutti |
-| `--timesheet-progetto` | nome file YAML | Genera anche il timesheet di progetto — vedi [Timesheet e rendiconto](../data/timesheet.md) |
+| `--timesheet-progetto` | nome file YAML | Genera anche il timesheet di progetto — vedi [Timesheet e rendiconto](../dati-cartellino/timesheet.md) |

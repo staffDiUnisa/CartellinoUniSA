@@ -46,10 +46,10 @@ nav:
       - CLI: usage/cli.md
       - Versione legacy: usage/legacy.md
   - Dati:
-      - Struttura dati: data/data-layout.md
-      - File di input: data/input-files.md
-      - Output generati: data/output-files.md
-      - Timesheet e rendiconto: data/timesheet.md
+      - Struttura dati: dati-cartellino/data-layout.md
+      - File di input: dati-cartellino/input-files.md
+      - Output generati: dati-cartellino/output-files.md
+      - Timesheet e rendiconto: dati-cartellino/timesheet.md
   - Riferimento:
       - Codici del cartellino: reference/codes.md
       - Data flow: reference/data-flow.md

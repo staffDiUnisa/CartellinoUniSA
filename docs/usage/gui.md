@@ -25,7 +25,7 @@ Stesse della TUI, navigazione da pulsante invece che da scorciatoia da tastiera:
 | **Dashboard** | Home: eccezioni del mese, saldo ore, riepilogo riposi compensativi, ferie/PMF usati, ticket da ricevere, data ultimo aggiornamento |
 | **Aggiornamento** | Scelta del metodo di autenticazione (Credenziali UNISA/SPID/CIE, UNISA disabilitata fuori rete) e download con log in tempo reale |
 | **Report** | Generazione on-demand di riposo compensativo, credito ore, statistiche, ore giornaliere, nel formato scelto in Impostazioni |
-| **Timesheet progetto** | Selezione (o "Sfoglia...") ed esecuzione di uno YAML esistente in `timesheet/` — vedi [Timesheet e rendiconto](../data/timesheet.md) |
+| **Timesheet progetto** | Selezione (o "Sfoglia...") ed esecuzione di uno YAML esistente in `timesheet/` — vedi [Timesheet e rendiconto](../dati-cartellino/timesheet.md) |
 | **Statistiche** | Visualizzazione a schermo (non export) delle categorie di `statistiche.xlsx` — un pulsante per categoria, disabilitato se la categoria non ha dati |
 | **Impostazioni** | Anno, data minima riposi, formato export, codici dashboard, cartella dati/output (con selettore nativo del sistema operativo), data ticket mensa, gestione date escluse; credenziali UniSA modificabili in una finestra dedicata |
 
