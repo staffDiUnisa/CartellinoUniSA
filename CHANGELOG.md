@@ -6,6 +6,14 @@ Release: aggiungi la sezione della prossima versione **prima** di taggare una re
 altrimenti la release verrà pubblicata senza descrizione delle novità (solo changelog
 auto-generato da GitHub).
 
+## v3.3.0
+
+- **Pulsante "Documentazione" in Dashboard, TUI e GUI**: apre la documentazione utente su
+  ReadTheDocs (https://cartellinounisa.readthedocs.io/) nel browser di sistema.
+- **Istruzioni per segnalare un bug via GitHub Issues**: nuova sezione "Segnalare un bug" in
+  README.md/README.en.md e nella documentazione (troubleshooting), con indicazioni su cosa
+  includere in una segnalazione utile (versione, OS, passi per riprodurre, log).
+
 ## v3.2.0
 
 - **Corretto il calcolo del "Saldo ore del mese" in Dashboard** (issue #8): il codice `SCN`
