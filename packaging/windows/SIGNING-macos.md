@@ -61,13 +61,17 @@ pushato il tag e allontanarti, senza dover ricontrollare a mano quando la build 
    [repository certificati Certum](https://www.certum.eu/en/repository/) e concatenala nello
    stesso file PEM.
 
-   > Questi comandi sono best-effort basati sulla documentazione pubblica di `pkcs11-tool` e
-   > SimplySign: le label esatte degli oggetti sul token, ed eventuali differenze di versione di
-   > `osslsigncode`/`libp11` installate da Homebrew, possono richiedere piccoli aggiustamenti alla
-   > prima esecuzione — non sono stati verificati su un vero certificato SimplySign da questa
-   > sessione. Se `osslsigncode sign` fallisce con un errore sui flag PKCS#11, controlla
-   > `osslsigncode --help` per i nomi esatti supportati dalla versione installata (versioni più
-   > recenti usano `-pkcs11cert`/`-provider` invece di `-certs`/`-pkcs11engine` per OpenSSL 3.x).
+   > **Verificato end-to-end su più release reali** (v3.2.0 e v3.3.0, da macOS): il certificato
+   > esportato con `pkcs11-tool -r -y cert` contiene solo il certificato foglia, non la catena —
+   > la firma riesce comunque, ma `osslsigncode verify` si lamenta di
+   > `unable to get local issuer certificate` finché non si concatena nello stesso file PEM
+   > l'intermedio "Certum Code Signing 2021 CA", scaricabile dall'URL `CA Issuers` indicato
+   > nell'estensione Authority Information Access del certificato foglia
+   > (`openssl x509 -in cert.pem -noout -text | grep -A3 "Authority Information Access"` —
+   > tipicamente `http://repository.certum.pl/ccsca2021.cer`). Se `osslsigncode sign` fallisce con
+   > un errore sui flag PKCS#11, controlla `osslsigncode --help` per i nomi esatti supportati dalla
+   > versione installata (versioni più recenti usano `-pkcs11cert`/`-provider` invece di
+   > `-certs`/`-pkcs11engine` per OpenSSL 3.x).
 
 ## Prerequisiti per ogni sessione di firma
 

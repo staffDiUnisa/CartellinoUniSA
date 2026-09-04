@@ -536,7 +536,7 @@ uv run pyinstaller packaging/cartellino.spec --noconfirm
     `-Publish`/`--publish`, pubblicano la release. Procedura completa (setup one-time, variabili
     d'ambiente, prerequisiti) in `packaging/windows/SIGNING.md` (Windows) e
     `packaging/windows/SIGNING-macos.md` (macOS).
-  - **Verificato end-to-end su una release reale** (`v3.2.0`, da macOS): confermato che
+  - **Verificato end-to-end su più release reali** (`v3.2.0` e `v3.3.0`, da macOS): confermato che
     `pkcs11-tool --module /usr/local/lib/libSimplySignPKCS.dylib -O` con SimplySign Desktop
     loggato espone direttamente l'URI PKCS#11 completo della chiave privata (nessuna necessità di
     indovinare/costruire l'URI a mano) e che l'engine `libp11` installato via Homebrew si trova in
