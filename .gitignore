@@ -55,6 +55,11 @@
 # *.iml
 # *.ipr
 
+# PyCharm auto-generates a module file per content root it indexes; opening
+# build/ or dist/ as a source root creates extra "cartellino-unisa@N.iml"
+# files and re-adds them to modules.xml — local noise, not meant to be shared.
+.idea/*@*.iml
+
 # CMake
 cmake-build-*/
 
