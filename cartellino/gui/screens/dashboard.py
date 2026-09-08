@@ -216,8 +216,10 @@ class DashboardScreen(QWidget):
     @staticmethod
     def _sezione_ferie_pmf(cartellino: Cartellino) -> str:
         return (
-            "<b>Ferie e permessi (anno corrente)</b><br>"
-            f"&nbsp;&nbsp;Ferie usate: {len(cartellino.ferie)}<br>"
+            "<b>Ferie e permessi</b><br>"
+            f"&nbsp;&nbsp;Ferie usate anno corrente: {len(cartellino.ferie_anno_corrente)}<br>"
+            f"&nbsp;&nbsp;Ferie usate anni precedenti: {len(cartellino.ferie_anno_precedente)}<br>"
+            f"&nbsp;&nbsp;Festività soppresse: {len(cartellino.festivita_soppresse)}<br>"
             f"&nbsp;&nbsp;Permessi gravi motivi familiari usati: {len(cartellino.permesso_gravi_motivi)}"
         )
 

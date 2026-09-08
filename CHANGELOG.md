@@ -6,6 +6,13 @@ Release: aggiungi la sezione della prossima versione **prima** di taggare una re
 altrimenti la release verrà pubblicata senza descrizione delle novità (solo changelog
 auto-generato da GitHub).
 
+## v3.3.1
+
+- **Distinzione ferie anno corrente/anni precedenti in Dashboard** (issue #10): la sezione
+  "Ferie e permessi" ora mostra separatamente le ferie usate nell'anno corrente (codice `FER`),
+  le ferie usate negli anni precedenti (codice `FEV`) e le festività soppresse (codice `FST`),
+  invece di un unico conteggio aggregato. Vale sia per TUI che per GUI.
+
 ## v3.3.0
 
 - **Pulsante "Documentazione" in Dashboard, TUI e GUI**: apre la documentazione utente su

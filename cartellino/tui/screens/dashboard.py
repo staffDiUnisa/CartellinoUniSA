@@ -178,8 +178,10 @@ class DashboardScreen(Screen):
     @staticmethod
     def _sezione_ferie_pmf(cartellino: Cartellino) -> str:
         return (
-            "[b]Ferie e permessi (anno corrente)[/b]\n"
-            f"  Ferie usate: {len(cartellino.ferie)}\n"
+            "[b]Ferie e permessi[/b]\n"
+            f"  Ferie usate anno corrente: {len(cartellino.ferie_anno_corrente)}\n"
+            f"  Ferie usate anni precedenti: {len(cartellino.ferie_anno_precedente)}\n"
+            f"  Festività soppresse: {len(cartellino.festivita_soppresse)}\n"
             f"  Permessi gravi motivi familiari usati: {len(cartellino.permesso_gravi_motivi)}"
         )
 

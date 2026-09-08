@@ -129,6 +129,18 @@ class Cartellino:
         return self._filter("FER", "FEV", "FST")
 
     @property
+    def ferie_anno_corrente(self) -> pd.DataFrame:
+        return self._filter("FER")
+
+    @property
+    def ferie_anno_precedente(self) -> pd.DataFrame:
+        return self._filter("FEV")
+
+    @property
+    def festivita_soppresse(self) -> pd.DataFrame:
+        return self._filter("FST")
+
+    @property
     def permesso_gravi_motivi(self) -> pd.DataFrame:
         return self._filter("PMF")
 
