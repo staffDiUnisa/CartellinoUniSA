@@ -71,10 +71,18 @@ di complessità/impatto per ciascuna, in [`TODO_gui.md`](TODO_gui.md).
 
 | Issue |  Stato  | Complessità | Impatto utente | Difficoltà / rischi principali |
 |---|:-------:|:---:|:---:|---|
-| [#10 Distinzione ferie anno corrente e anno precedente](https://github.com/staffDiUnisa/CartellinoUniSA/issues/10) | VER | S | Basso | Sezione Dashboard rinominata "Ferie e permessi" e conteggio ferie usate diviso per codice: `FER` = anno corrente, `FEV` = anni precedenti, `FST` = Festività soppresse (nuova riga a parte, per specifica dell'utente — non fa parte delle "ferie" propriamente dette). Nuove property dedicate `Cartellino.ferie_anno_corrente`/`ferie_anno_precedente`/`festivita_soppresse` (`cartellino/cartellino.py`, accanto a `ferie` esistente che resta invariata — usata da `Statistiche.calcola()`/`statistiche.xlsx`, fuori scope). Duplicato in `_sezione_ferie_pmf` di entrambe le Dashboard (TUI `cartellino/tui/screens/dashboard.py`, GUI `cartellino/gui/screens/dashboard.py`). Solo presentazione, nessun impatto sui calcoli esistenti. |
+
+_nessuna issue in Backlog al momento._
 
 ## Implementate
 
+- [#10 Distinzione ferie anno corrente e anno precedente](https://github.com/staffDiUnisa/CartellinoUniSA/issues/10) —
+  sezione Dashboard rinominata "Ferie e permessi" (TUI e GUI) con conteggio ferie usate diviso per
+  codice: `FER` = anno corrente, `FEV` = anni precedenti, `FST` = Festività soppresse (riga a
+  parte, per specifica dell'utente — non fa parte delle "ferie" propriamente dette). Nuove
+  property dedicate `Cartellino.ferie_anno_corrente`/`ferie_anno_precedente`/`festivita_soppresse`
+  (`cartellino/cartellino.py`), accanto alla `ferie` esistente lasciata invariata (usata da
+  `Statistiche.calcola()`/`statistiche.xlsx`, fuori scope). Risolto in `v3.3.1`.
 - [#8 Errore visualizzazione Saldo ore del mese](https://github.com/staffDiUnisa/CartellinoUniSA/issues/8) —
   `SCN` (uno scostamento negativo) veniva sommato invece che sottratto nel calcolo del "Saldo
   ore del mese" in Dashboard (`cartellino/ore_helpers.py::calcola_saldo_minuti`, nuova costante
