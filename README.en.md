@@ -602,11 +602,14 @@ dialog (needed only the first time).
    ```
    or double-click `cartellino-unisa-gui.exe` for the GUI
 
-The `cartellino-unisa-setup.exe` installer **is signed** (free Certum certificate for open-source
-projects) — signing alone doesn't remove the SmartScreen warning from day one (reputation builds
-up over time based on download volume), but if it shows up you can check that the publisher listed
-is "Open Source Developer Andrea Bruno": click **More info** → **Run anyway** (needed only the
-first time).
+The `cartellino-unisa-setup.exe` installer **is signed** (free Certum OV certificate for
+open-source projects) — signing alone doesn't remove the SmartScreen warning from day one: unlike
+an EV certificate (paid), an OV one doesn't grant instant trust, reputation builds up over time
+based on the volume of installs with no reports (and partly resets with each release, since it has
+a different hash). If it shows up, check that the publisher listed is "Open Source Developer
+Andrea Bruno": click **More info** → **Run anyway** (needed only the first time for that version).
+Details in [Troubleshooting](https://cartellinounisa.readthedocs.io/reference/troubleshooting/)
+(Italian).
 
 The executable inside the onedir zip (alternative option above), however, **is not signed**: it
 always shows the SmartScreen warning, with no verified publisher to check — same steps (**More

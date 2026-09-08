@@ -50,6 +50,20 @@
 
 - Vedi le note specifiche per sistema operativo in [Eseguibili standalone](../getting-started/standalone-executables.md)
 
+**SmartScreen ("Windows ha protetto il PC") compare anche se l'installer è firmato**
+
+- L'installer `cartellino-unisa-setup.exe` è firmato con un certificato **OV** (Organization
+  Validation, Certum, gratuito per progetti open-source), ma la firma da sola non basta a far
+  sparire subito l'avviso: SmartScreen si basa su una **reputazione** costruita nel tempo da
+  Microsoft (identità del certificato + hash del singolo file + volume di installazioni senza
+  segnalazioni di malware), non su un semaforo verde immediato come per i certificati **EV**
+  (Extended Validation, a pagamento, non usati da questo progetto)
+- Ad ogni nuova release l'eseguibile ha un hash diverso, quindi la reputazione riparte in parte da
+  zero anche se il certificato è lo stesso e ha già reputazione accumulata
+- Se compare l'avviso, verifica che l'editore mostrato sia **"Open Source Developer Andrea
+  Bruno"**, poi clicca **Ulteriori informazioni** → **Esegui comunque** (necessario solo la prima
+  volta per quella versione) — non è un falso positivo da segnalare a Microsoft come malware
+
 ## Segnalare un bug
 
 Se un problema non è tra quelli elencati sopra, o pensi di aver trovato un bug, apri una

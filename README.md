@@ -577,11 +577,14 @@ poi conferma nel dialogo (necessario solo la prima volta).
    ```
    oppure fai doppio click su `cartellino-unisa-gui.exe` per la GUI
 
-L'installer `cartellino-unisa-setup.exe` è **firmato** (certificato Certum, gratuito per progetti
-open-source) — la firma non elimina da sola l'avviso SmartScreen il primo giorno (la reputazione
-si costruisce nel tempo in base al volume di download), ma se compare puoi controllare che
-l'editore mostrato sia "Open Source Developer Andrea Bruno": clicca **Ulteriori informazioni** →
-**Esegui comunque** (necessario solo la prima volta).
+L'installer `cartellino-unisa-setup.exe` è **firmato** (certificato Certum OV, gratuito per
+progetti open-source) — la firma non elimina da sola l'avviso SmartScreen il primo giorno: a
+differenza di un certificato EV (a pagamento), un OV non dà fiducia immediata, la reputazione si
+costruisce nel tempo in base al volume di installazioni senza segnalazioni (e riparte in parte ad
+ogni release, che ha un hash diverso). Se compare, controlla che l'editore mostrato sia "Open
+Source Developer Andrea Bruno": clicca **Ulteriori informazioni** → **Esegui comunque** (necessario
+solo la prima volta per quella versione). Dettagli in
+[Troubleshooting](https://cartellinounisa.readthedocs.io/reference/troubleshooting/).
 
 L'eseguibile dentro lo zip della cartella onedir (opzione alternativa sopra), invece, **non è
 firmato**: mostra sempre l'avviso SmartScreen, senza un editore verificato da controllare — stessa
