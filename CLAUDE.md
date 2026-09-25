@@ -468,15 +468,17 @@ uv run pyinstaller packaging/cartellino.spec --noconfirm
     gli asset onedir storici (necessario perché `zip` non è disponibile in Git Bash su
     `windows-latest`, quindi la compressione va fatta sempre nel job `release`, `ubuntu-latest`).
   - **Nome degli artefatti della release** (da `v2.0.2` in poi, sia draft che pubbliche): ogni
-    file allegato alla release (zip onedir, `.pkg`, `.exe`, `.deb`, `.rpm`) include versione e
-    commit nel nome, es. `cartellino-unisa-setup-2.0.2_rc5-27c435a.exe`. Calcolati una sola volta
-    nello step "Calcola versione e commit per il nome degli artefatti" (`release.yml`, job
-    `release`): `version_slug` da `GITHUB_REF_NAME` (tag) con `-` sostituito da `_` (es.
-    `v2.0.2-rc5` → `2.0.2_rc5` — l'underscore evita l'ambiguità con il `-` che separa poi versione
-    e sha nel nome file finale) e `short_sha` da `git rev-parse --short HEAD`. Lo step successivo
-    di compressione/copia usa questi due valori per rinominare esplicitamente ogni artefatto per
-    tipo (non un suffisso automatico generico sul nome originale, che per `.deb`/`.rpm` prodotti
-    da `fpm` avrebbe già contenuto una propria versione, duplicandola nel nome finale).
+    file allegato alla release (zip onedir, `.pkg`, `.exe`, `.deb`, `.rpm`) include la versione nel
+    nome, es. `cartellino-unisa-setup-3.3.3.exe`. Calcolata una sola volta nello step "Calcola
+    versione per il nome degli artefatti" (`release.yml`, job `release`): `version_slug` da
+    `GITHUB_REF_NAME` (tag) con `-` sostituito da `_` (es. `v3.4.0-rc5` → `3.4.0_rc5`). Lo step
+    successivo di compressione/copia usa questo valore per rinominare esplicitamente ogni
+    artefatto per tipo (non un suffisso automatico generico sul nome originale, che per
+    `.deb`/`.rpm` prodotti da `fpm` avrebbe già contenuto una propria versione, duplicandola nel
+    nome finale). **Fino a `v3.3.3`** il nome includeva anche lo short sha del commit
+    (`<versione>-<sha>`, es. `cartellino-unisa-setup-2.0.2_rc5-27c435a.exe`) — rimosso da `v3.3.4`
+    in poi perché ridondante: la versione già identifica univocamente l'artefatto, dato che ogni
+    tag corrisponde a un solo commit per convenzione del progetto.
   - **Packaging combinato TUI+GUI** (Fase 12-13 TODO_gui.md, v3.0.0): `packaging/cartellino.spec`
     usa due `Analysis`/`EXE` distinti (entrypoint ed hiddenimports diversi: la GUI non importa
     Textual/selenium direttamente) uniti con `MERGE`, che deduplica i moduli/binari condivisi

@@ -520,17 +520,17 @@ jobs:
         with:
           path: artifacts
 
-      - name: Calcola versione e commit per il nome degli artefatti
-        # Applicato a tutti gli asset della release (draft e pubbliche) da v2.0.2 in poi:
-        # <nome-base>-<versione>-<sha corto>.<ext>, es.
-        # cartellino-unisa-setup-2.0.2_rc5-27c435a.exe. "_" al posto di "-" tra numero di
-        # versione e suffisso rc, per non confondersi col "-" che separa versione e sha nel nome
-        # file (altrimenti "2.0.2-rc5-27c435a" sarebbe ambiguo su dove finisce la versione).
+      - name: Calcola versione per il nome degli artefatti
+        # Applicato a tutti gli asset della release (draft e pubbliche): <nome-base>-<versione>.<ext>,
+        # es. cartellino-unisa-setup-2.0.2_rc5.exe. "_" al posto di "-" per il suffisso rc, per
+        # coerenza col resto del nome file (evita un "-" aggiuntivo che spezzerebbe la versione
+        # in due token). Fino a v3.3.3 il nome includeva anche lo short sha del commit
+        # (<versione>-<sha>): con la versione già presente nel tag/nel nome, lo sha era ridondante
+        # e rendeva il nome più lungo senza aggiungere informazione utile all'utente finale.
         id: artifact_suffix
         run: |
           version_slug=$(echo "${GITHUB_REF_NAME#v}" | tr '-' '_')
-          short_sha=$(git rev-parse --short HEAD)
-          echo "suffix=${version_slug}-${short_sha}" >> "$GITHUB_OUTPUT"
+          echo "suffix=${version_slug}" >> "$GITHUB_OUTPUT"
 
       - name: Comprime le cartelle onedir e copia gli installer nativi già pronti
         # I job di build girano anche su windows-latest, dove `zip` non è
