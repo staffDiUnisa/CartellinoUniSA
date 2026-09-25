@@ -7,7 +7,7 @@ from pathlib import Path
 
 import pandas as pd
 from selenium import webdriver
-from selenium.common import TimeoutException
+from selenium.common import ElementClickInterceptedException, TimeoutException
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.common.by import By
@@ -25,6 +25,24 @@ def multiselect_set_selections(driver, element_name, labels) -> None:
     for option in el.find_elements(By.TAG_NAME,'option'):
         if option.text in labels:
             option.click()
+
+def click_robusto(driver, by: str, value: str, timeout: float = 20) -> None:
+    """Click con fallback via JS se il click "reale" viene intercettato da un overlay.
+
+    Riscontrato in produzione (issue #11): con la finestra headless piccola (800x600) il
+    click sul submit del login SSO UNISA viene a volte intercettato da un elemento che si
+    sovrappone al bottone, probabilmente per un layout responsive scattato a quella
+    risoluzione. Lo scroll esplicito + il fallback JS (che non richiede che l'elemento sia
+    realmente "sopra" al punto cliccato) rendono il click resiliente a piccoli overlay senza
+    dover identificare/gestire ogni singolo banner che potrebbe comparire.
+    """
+    el = WebDriverWait(driver, timeout).until(EC.element_to_be_clickable((by, value)))
+    driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", el)
+    try:
+        el.click()
+    except ElementClickInterceptedException:
+        log.warning(f"Click intercettato su {by}={value!r}, riprovo con click via JS")
+        driver.execute_script("arguments[0].click();", el)
 
 METODI_AUTENTICAZIONE = ["Credenziali UNISA", "SPID", "CIE"]
 
@@ -67,7 +85,7 @@ def ottieni_cartellino(data_folder: Path, metodo: str | None = None) -> None:
     if metodo is None:
         metodo = scegli_metodo_autenticazione()
 
-    WINDOW_SIZE = "800,600"
+    WINDOW_SIZE = "1366,900"
     chrome_options = Options()
     if headless and metodo == "Credenziali UNISA":
         chrome_options.add_argument("--headless")
@@ -85,13 +103,13 @@ def ottieni_cartellino(data_folder: Path, metodo: str | None = None) -> None:
                     "(cartellino.credentials.set_credentials) oppure tramite il file '.env' legacy."
                 )
             username_value, password_value = credentials
-            driver.find_element(By.LINK_TEXT, "Credenziali UNISA").click()
+            click_robusto(driver, By.LINK_TEXT, "Credenziali UNISA")
             time.sleep(1)
             username = driver.find_element(By.ID, "_username")
             username.send_keys(username_value)
             password = driver.find_element(By.ID, "password")
             password.send_keys(password_value)
-            driver.find_element(By.NAME, "_eventId_proceed").click()
+            click_robusto(driver, By.NAME, "_eventId_proceed")
             time.sleep(10)
         else:
             driver.find_element(By.LINK_TEXT, metodo).click()

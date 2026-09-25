@@ -6,6 +6,13 @@ Release: aggiungi la sezione della prossima versione **prima** di taggare una re
 altrimenti la release verrà pubblicata senza descrizione delle novità (solo changelog
 auto-generato da GitHub).
 
+## v3.3.2
+
+- **Corretto il download del cartellino con Credenziali UNISA** (issue #11): il login SSO falliva
+  con "element click intercepted" sul submit, probabilmente per un overlay che compariva con la
+  finestra headless piccola (800x600). Finestra alzata a una risoluzione desktop più realistica e
+  aggiunto un fallback via click JavaScript quando il click "reale" viene intercettato.
+
 ## v3.3.1
 
 - **Distinzione ferie anno corrente/anni precedenti in Dashboard** (issue #10): la sezione

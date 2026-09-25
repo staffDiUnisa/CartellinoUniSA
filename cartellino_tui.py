@@ -21,13 +21,21 @@ from pathlib import Path
 # processo (os.execve) con un ambiente ripulito PRIMA che dyld/pyarrow vengano
 # toccati di nuovo — dyld del nuovo processo parte così senza queste variabili
 # fin dall'inizio.
-if getattr(sys, "frozen", False) and (
-    os.environ.get("DYLD_LIBRARY_PATH") or os.environ.get("DYLD_FALLBACK_LIBRARY_PATH")
-):
+#
+# Non più limitato al binario "frozen" (PyInstaller): lo stesso problema si
+# riproduce identico anche lanciando da sorgente con `uv run` se lo sviluppatore
+# ha `apache-arrow` installato via brew e la sua shell esporta permanentemente
+# quelle variabili (es. `export DYLD_LIBRARY_PATH=...` in `.zshrc`, non solo
+# `brew shellenv` per-formula) — riscontrato in produzione durante lo sviluppo,
+# non solo sul bundle pacchettizzato. Da non-frozen, `sys.argv` non include
+# l'interprete (`sys.argv[0]` è lo script), quindi va ricostruito esplicitamente
+# per `execve`; da frozen, `sys.argv[0]` è già l'eseguibile stesso.
+if os.environ.get("DYLD_LIBRARY_PATH") or os.environ.get("DYLD_FALLBACK_LIBRARY_PATH"):
     _env_pulito = dict(os.environ)
     _env_pulito.pop("DYLD_LIBRARY_PATH", None)
     _env_pulito.pop("DYLD_FALLBACK_LIBRARY_PATH", None)
-    os.execve(sys.executable, sys.argv, _env_pulito)
+    _argv = sys.argv if getattr(sys, "frozen", False) else [sys.executable, __file__, *sys.argv[1:]]
+    os.execve(sys.executable, _argv, _env_pulito)
 
 # Import esplicito e ANTICIPATO sul thread principale, prima di avviare la TUI.
 # `pandas` importa `pyarrow` in modo lazy solo alla prima chiamata reale a

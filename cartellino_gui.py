@@ -7,17 +7,16 @@ from pathlib import Path
 # stesso identico workaround di cartellino_tui.py, vedi lì per i dettagli — su
 # macOS, DYLD_LIBRARY_PATH/DYLD_FALLBACK_LIBRARY_PATH esportate da Homebrew
 # possono far caricare a `dyld` una libarrow di sistema incompatibile al posto
-# di quella bundled. Il fix (rilancio del processo con ambiente ripulito) non è
-# stato ancora riverificato sul binario GUI (spike PyInstaller, Fase 0
-# TODO_gui.md) ma è applicato preventivamente per coerenza con l'entrypoint TUI,
-# che condivide la stessa dipendenza pyarrow/pandas.
-if getattr(sys, "frozen", False) and (
-    os.environ.get("DYLD_LIBRARY_PATH") or os.environ.get("DYLD_FALLBACK_LIBRARY_PATH")
-):
+# di quella bundled. Non più limitato al binario "frozen": riprodotto anche da
+# sorgente con `uv run` quando la shell dello sviluppatore esporta quelle
+# variabili in modo permanente (es. `export DYLD_LIBRARY_PATH=...` in
+# `.zshrc`) e ha `apache-arrow` installato via brew.
+if os.environ.get("DYLD_LIBRARY_PATH") or os.environ.get("DYLD_FALLBACK_LIBRARY_PATH"):
     _env_pulito = dict(os.environ)
     _env_pulito.pop("DYLD_LIBRARY_PATH", None)
     _env_pulito.pop("DYLD_FALLBACK_LIBRARY_PATH", None)
-    os.execve(sys.executable, sys.argv, _env_pulito)
+    _argv = sys.argv if getattr(sys, "frozen", False) else [sys.executable, __file__, *sys.argv[1:]]
+    os.execve(sys.executable, _argv, _env_pulito)
 
 # Import esplicito e anticipato sul thread principale, prima di avviare la GUI.
 # Stesso motivo di cartellino_tui.py: pandas importa pyarrow in modo lazy solo

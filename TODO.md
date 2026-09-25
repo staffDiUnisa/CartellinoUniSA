@@ -76,6 +76,17 @@ _nessuna issue in Backlog al momento._
 
 ## Implementate
 
+- [#11 Problema con Credenziali Unisa](https://github.com/staffDiUnisa/CartellinoUniSA/issues/11) —
+  il login SSO con Credenziali UNISA falliva con `ElementClickInterceptedException` sul submit
+  (`_eventId_proceed`), probabilmente per un overlay che compariva con la finestra headless
+  piccola (`800x600`) a causa di un layout responsive. `get.py::WINDOW_SIZE` alzata a `1366,900`
+  e nuova `click_robusto()` (scroll + fallback click via JS se il click "reale" viene
+  intercettato), usata sul link "Credenziali UNISA" e sul submit. In parallelo, esteso anche a
+  modalità non-frozen il workaround pyarrow/Homebrew già presente in `cartellino_tui.py`/
+  `cartellino_gui.py` (`DYLD_LIBRARY_PATH`/`DYLD_FALLBACK_LIBRARY_PATH` che possono far caricare
+  una `libarrow` di sistema incompatibile), che bloccava l'avvio da sorgente (`uv run`) su
+  macchine con quelle variabili esportate in modo permanente in shell — scoperto durante la
+  verifica di questo fix. Verificato dal segnalante. Risolto in `v3.3.2`.
 - [#10 Distinzione ferie anno corrente e anno precedente](https://github.com/staffDiUnisa/CartellinoUniSA/issues/10) —
   sezione Dashboard rinominata "Ferie e permessi" (TUI e GUI) con conteggio ferie usate diviso per
   codice: `FER` = anno corrente, `FEV` = anni precedenti, `FST` = Festività soppresse (riga a
