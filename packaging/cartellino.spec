@@ -106,11 +106,16 @@ a_tui = Analysis(  # noqa: F821
     optimize=0,
 )
 
+gui_datas = [
+    (str(REPO_ROOT / "pyproject.toml"), "."),
+    (str(REPO_ROOT / "cartellino" / "gui" / "style.qss"), "cartellino/gui"),
+]
+
 a_gui = Analysis(  # noqa: F821
     [str(REPO_ROOT / "cartellino_gui.py")],
     pathex=[str(REPO_ROOT)],
     binaries=[],
-    datas=[(str(REPO_ROOT / "pyproject.toml"), ".")],
+    datas=gui_datas,
     # Stessi hiddenimports selenium della TUI (Fase 4 TODO_gui.md,
     # `cartellino/gui/workers.py` importa `get.ottieni_cartellino` per il
     # download): stesso problema di lazy import via `__getattr__` (PEP 562)
@@ -139,7 +144,7 @@ a_gui_bundle = Analysis(  # noqa: F821
     [str(REPO_ROOT / "cartellino_gui.py")],
     pathex=[str(REPO_ROOT)],
     binaries=[],
-    datas=[(str(REPO_ROOT / "pyproject.toml"), ".")],
+    datas=gui_datas,
     hiddenimports=[
         "selenium.webdriver.chrome.webdriver",
         "selenium.webdriver.chrome.options",

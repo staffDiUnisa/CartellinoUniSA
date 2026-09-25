@@ -6,6 +6,13 @@ Release: aggiungi la sezione della prossima versione **prima** di taggare una re
 altrimenti la release verrà pubblicata senza descrizione delle novità (solo changelog
 auto-generato da GitHub).
 
+## v3.3.3
+
+- **Corretti i pulsanti senza colore nella GUI installata**: `style.qss` non veniva incluso nel
+  pacchetto PyInstaller e il percorso di lettura non era compatibile con il binario "frozen",
+  per cui lo stylesheet risultava vuoto solo nel pacchetto installato (funzionava correttamente
+  in sviluppo con `mise run gui`).
+
 ## v3.3.2
 
 - **Corretto il download del cartellino con Credenziali UNISA** (issue #11): il login SSO falliva

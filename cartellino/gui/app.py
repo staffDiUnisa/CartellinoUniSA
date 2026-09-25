@@ -53,7 +53,16 @@ def _app_version() -> str:
 
 
 def _load_stylesheet() -> str:
-    qss_path = Path(__file__).resolve().parent / "style.qss"
+    """Legge ``style.qss``, risolvendo il percorso rispetto a ``_bundle_base()``.
+
+    Da non-frozen coincide con ``Path(__file__).resolve().parent`` (entrambi puntano a
+    ``cartellino/gui/``); da frozen, ``__file__`` di un modulo Python non è un percorso
+    file reale su disco (vive nell'archivio PYZ) — va risolto rispetto a ``sys._MEIPASS``
+    come già fatto per ``pyproject.toml``/``app.tcss``. Bug reale in produzione: senza
+    questo fix il file non viene trovato, l'eccezione viene silenziosamente ignorata e i
+    pulsanti restano senza stile nel pacchetto installato.
+    """
+    qss_path = _bundle_base() / "cartellino" / "gui" / "style.qss"
     try:
         return qss_path.read_text(encoding="utf-8")
     except OSError:
